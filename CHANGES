@@ -2,6 +2,11 @@
 
 Tue Mar 22 11:10:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
+ - apccmib.h: minor change to get the firmware of the Silcon DP3160E
+   by interrogating an ap9606
+
+   (Christophe Grenier) [Alioth Patch #301283]
+   
  - fentonups.h, driver.list: add support for Sysgration UPGUARDS Pro650
 
    (Simon J. Rowe) [Alioth Patch #301281]
