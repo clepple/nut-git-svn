@@ -1,5 +1,12 @@
 2.1.0:
 
+Tue Mar 22 11:10:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - powermust.c, driver.list: rework initups/initinfo to follow NUT
+   standard recommendation, and add support for SquareOne Power QP1000
+
+   (Carlos Rodrigues) [Alioth Patch #301146]
+   
 Mon Mar 21 15:52:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - tripplite.c: fix the reporting of the battery voltage and charge
@@ -20,6 +27,8 @@ Fri Mar 18 13:36:20 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
    and AEC MiniGuard UPS 700 (using Megatec M2501 cable)
 
    (Nick Barnes) [Alioth Patch #301143]
+
+ * Forked from 2.0.1 to start the new 2.1 dev tree.
 
 2.0.1:
 
