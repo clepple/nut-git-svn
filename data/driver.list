@@ -188,6 +188,8 @@
 "Mustek"	"Powermust"	"600VA Plus"	"powermust"
 "Mustek"	"Powermust"	"800VA Pro"	"powermust"
 "Mustek"	"Powermust"	"1000VA Plus"	"powermust"
+"Mustek"	"Powermust"	"1400VA Plus"	"powermust"
+"Mustek"	"Powermust"	"2000VA USB"	"powermust"
 
 "Nitram"	"Elite 500"	""	"genericups upstype=8"
 "Nitram"	"Elite 2002"	""	"genericups upstype=16"

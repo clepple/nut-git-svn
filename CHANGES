@@ -2,6 +2,10 @@
 
 Tue Mar 22 11:10:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
+ - driver.list: add missing Mustek PowerMust 1400VA Plus and 2000VA USB
+
+   (Carlos Rodrigues) [Alioth Patch #301289]
+   
  * MGE patch-set:
    - driver.list: add Pulsar EXtreme C / EX RT, Comet EX RT, Pulsar SV,
      Pulsar PSX and NOVA AVR USB
