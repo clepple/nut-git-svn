@@ -2,6 +2,10 @@
 
 Tue Mar 22 11:10:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
+ - energizerups: fix for Linux 2.6 byte dropping
+
+   (Viktor T. Toth) [Alioth Patch #301279]
+   
  - powermust.c, driver.list: rework initups/initinfo to follow NUT
    standard recommendation, and add support for SquareOne Power QP1000
 
