@@ -2,11 +2,16 @@
 
 Fri Mar 18 13:36:20 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
+ - drivers/main.c, nutupsdrv.8: brings the drivers usage message and
+   the generic driver man page in line with the getopt processing.
+   It also remove an unused -d option from the getopt call.
+
+   (Niels Baggesen) [Alioth Patch #301145]
+
  - genericups.h, genericups.8, driver.list: add Generic RUPS 2000
    and AEC MiniGuard UPS 700 (using Megatec M2501 cable)
 
    (Nick Barnes) [Alioth Patch #301143]
-   [http://lists.exploits.org/upsdev/Oct2004/00004.html]
 
 2.0.1:
 

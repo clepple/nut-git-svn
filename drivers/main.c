@@ -69,11 +69,14 @@ static void help(void)
 
 	printf("\nusage: %s [OPTIONS] [<device>]\n\n", progname);
 
+	printf("  -V             - print version, then exit\n");
+	printf("  -L             - print parseable list of driver variables\n");
 	printf("  -a <id>        - autoconfig using ups.conf section <id>\n");
 	printf("                 - note: -x after -a overrides ups.conf settings\n");
 	printf("  -D             - raise debugging level\n");
 	printf("  -h             - display this help\n");
 	printf("  -k             - force shutdown\n");
+	printf("  -i <int>       - poll interval\n");
 	printf("  -r <dir>       - chroot to <dir>\n");
 	printf("  -u <user>      - switch to <user> (if started as root)\n");
 	printf("  -x <var>=<val> - set driver variable <var> to <val>\n");
@@ -469,7 +472,7 @@ int main(int argc, char **argv)
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();
 
-	while ((i = getopt(argc, argv, "+a:d:kDhx:Lr:u:Vi:")) != EOF) {
+	while ((i = getopt(argc, argv, "+a:kDhx:Lr:u:Vi:")) != EOF) {
 		switch (i) {
 			case 'a':
 				upsname = optarg;
