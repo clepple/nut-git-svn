@@ -81,6 +81,11 @@ struct {
 	{ "WELI 500 1.0", "Giant Power", "MT650", 10.6, 3.7, 170, 180, 270, 280, 0 },
 	{ "SMART-UPS       1800VA     T18Q16AG", "Effekta", "MT 2000 RM",
 		50.0, 19.5, 171, 200, 260, 278, 1 },
+	
+	/* Sysgration model data from Simon J. Rowe */
+	
+	{ "Pro 650 4.01", "Sysgration", "UPGUARDS Pro650", 
+		9.6, 2.4, 168, 196, 252, 284, 1 },
 
 	/* SuperPower model data from Denis Zaika */
 
