@@ -1,3 +1,13 @@
+2.1.0:
+
+Fri Mar 18 13:36:20 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - genericups.h, genericups.8, driver.list: add Generic RUPS 2000
+   and AEC MiniGuard UPS 700 (using Megatec M2501 cable)
+
+   (Nick Barnes) [Alioth Patch #301143]
+   [http://lists.exploits.org/upsdev/Oct2004/00004.html]
+
 2.0.1:
 
 Thu Feb 24 00:55:20 CST 2005 / Russell Kroll <rkroll@exploits.org>
