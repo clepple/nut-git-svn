@@ -2,6 +2,8 @@
 
 Fri Mar 18 13:36:20 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
+ - driver.list: add the missing Powerware 5119 RM (genericups type=20)
+
  - drivers/main.c, nutupsdrv.8: brings the drivers usage message and
    the generic driver man page in line with the getopt processing.
    It also remove an unused -d option from the getopt call.
