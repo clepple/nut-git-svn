@@ -80,6 +80,15 @@ hid_info_t hid_mge[] = {
     "%.0f", HU_FLAG_OK, &trim_info[0] },
   { "ups.status", 0, 1, "UPS.PowerConverter.Input.[1].PresentStatus.Boost", 
     "%.0f", HU_FLAG_OK, &boost_info[0] },
+  { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.Good", 
+    "%.0f", HU_FLAG_OK, &off_info[0] },  
+  /* FIXME: extend ups.status for BYPASS: */
+  /* Manual bypass */
+  { "ups.status", 0, 1, "UPS.PowerConverter.Input[4].PresentStatus.Used", 
+    "%.0f", HU_FLAG_OK, &bypass_info[0] },  
+  /* Automatic bypass */
+  { "ups.status", 0, 1, "UPS.PowerConverter.Input[2].PresentStatus.Used", 
+    "%.0f", HU_FLAG_OK, &bypass_info[0] },
 
   /* Input page */
   { "input.voltage", 0, 0, "UPS.PowerConverter.Input.[1].Voltage", "%.1f", HU_FLAG_OK, NULL },

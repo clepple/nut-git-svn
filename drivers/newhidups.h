@@ -123,7 +123,16 @@ info_lkp_t boost_info[] = {
   { 1, "BOOST" },
   { 0, "NULL" }
 };
-/* TODO: add BYPASS, OFF, CAL */
+/* FIXME: extend ups.status for BYPASS Manual/Automatic */
+info_lkp_t bypass_info[] = {
+  { 1, "BYPASS" },
+  { 0, "NULL" }
+};
+info_lkp_t off_info[] = {
+  { 0, "OFF" },
+  { 0, "NULL" }
+};
+/* FIXME: add CAL */
 
 info_lkp_t test_write_info[] = {
   { 0, "No test" },

@@ -506,6 +506,7 @@ static usage_lkp_t usage_lkp[] = {
 	{  "ShutdownImminent", 0x00840069 },
 	{  "SwitchOn/Off", 0x0084006b },
 	{  "Switchable", 0x0084006c },
+	{  "Used", 0x0084006d },
 	{  "Boost", 0x0084006e },
 	{  "Buck", 0x0084006f },
 	{  "CommunicationLost", 0x00840073 },

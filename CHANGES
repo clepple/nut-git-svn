@@ -2,6 +2,21 @@
 
 Tue Mar 22 11:10:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
+ * MGE patch-set:
+   - driver.list: add Pulsar EXtreme C / EX RT, Comet EX RT, Pulsar SV,
+     Pulsar PSX and NOVA AVR USB
+   - mge-utalk.ch, mge-utalk.8: enhance support for old units, by adding
+     disable_ups_comm, and Si discovering ; rework the model names,
+     change driver version numbering to X.Y (instead of X.Y.Z) and
+     bump to 0.85 (thanks to Martin Loyer and Patrick Agrain)
+   - mgehid.h: add BYPASS management for newhidups
+   - libhid.c: add the HID "Used" usage for the mgehid.h BYPASS
+     management 
+   - newhidups.h: add the lookup values for mgehid.h/libhid.c
+     above changes
+   - mge-shut.ch, mge-shut.8: rework the model names, add value
+     lookup, bump the driver version to 0.62
+ 
  - apccmib.h: minor change to get the firmware of the Silcon DP3160E
    by interrogating an ap9606
 
