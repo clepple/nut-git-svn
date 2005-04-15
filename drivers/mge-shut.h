@@ -26,7 +26,7 @@
 #include "hidparser.h"
 #include "hidtypes.h"
 
-#define DRIVER_VERSION "0.62"
+#define DRIVER_VERSION "0.63"
 
 #define DEFAULT_TIMEOUT 	3000
 #define MAX_STRING      	64
@@ -177,6 +177,11 @@ models_name_t models_names [] =
 	{ "ellipse", "PR650", "ellipse premium 650" },
 	{ "ellipse", "PR800", "ellipse premium 800" },
 	{ "ellipse", "PR1200", "ellipse premium 1200" },
+	/* Ellipse "Pro" */
+	{ "ELLIPSE", "600", "Ellipse 600" },
+	{ "ELLIPSE", "750", "Ellipse 750" },
+	{ "ELLIPSE", "1000", "Ellipse 1000" },
+	{ "ELLIPSE", "1500", "Ellipse 1500" },
 	/* Evolution models */
 	{ "Evolution", "500", "Pulsar Evolution 500" },
 	{ "Evolution", "800", "Pulsar Evolution 800" },

@@ -1,5 +1,30 @@
 2.1.0:
 
+Thu Apr 15 11:04:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - mge-shut.h: add Ellipse Pro models, and bump driver version to 0.63
+
+ * newhidups patch-set:
+   - libusb.c: enhance discovery performance (only search for MGE / APC),
+   - newhidups.c: 
+     - add the code to manage Interrupt Pipe (will improve USB flow
+       by lowering polling on device), and a pollfreq parameter
+       (default to 60 sec, newhidups will wait for Interrupt in the
+       meantime). This is disabled for the moment
+     - lower USB flow by only querying ups.status information within
+       the above pollfreq period.
+     - improve ups.status handling (needed for interrupt and partial
+       status update)
+     - enhance model name exposure
+     - factorise the data walking code
+     - a bit of code cleaning
+     - enable device reconnexion (still not working!)
+   - mge-hid.h: renamed from mgehid.h, and completed with the model names,
+     outlet collection, and some missing data
+   - apc-hid.h: add and complete this file
+   - prepare the future merge of mge-shut
+   - add Unitek VendorID
+
 Tue Mar 22 11:10:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - driver.list: add missing Mustek PowerMust 1400VA Plus and 2000VA USB
