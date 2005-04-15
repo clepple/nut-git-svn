@@ -181,6 +181,11 @@
 "MGE UPS SYSTEMS"	"Pulsar / Comet / Galaxy (SNMP)"	"SNMP card (ref 66062)"	"snmp-ups (experimental)"
 "MGE UPS SYSTEMS"	"Pulsar (SNMP)"		"SNMP card (ref 66045)"	"snmp-ups (experimental)"
 "MGE UPS SYSTEMS"	"UM-Link (SNMP)"		"Not a UPS (ref 66850)"	"snmp-ups (experimental)"
+ 
+"MicroDowell"	"B.Box BP  500"	""	"cpsups"
+"MicroDowell"	"B.Box BP  750"	""	"cpsups"
+"MicroDowell"	"B.Box BP 1000"	""	"cpsups"
+"MicroDowell"	"B.Box BP 1500"	""	"cpsups"
 
 "Mustek"	"Various"	""	"mustek"
 

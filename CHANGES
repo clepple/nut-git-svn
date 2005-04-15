@@ -2,6 +2,18 @@
 
 Thu Apr 15 11:04:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
+ - driver.list: add MicroDowell B.Box BP 500/750/1000/1500
+ - cpups.ch: add MicroDowell support, and fix a segfault on upsdrv_shutdown
+
+   (Armin Diehl) [Alioth Patch #301282]
+
+ - upsstats.c: fix a case where upsstats.cgi crashes if hosts.conf has
+   no valid MONITOR lines
+
+   (Charles Lepple) [Alioth Patch #301461]
+
+Thu Apr 15 11:04:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
  - mge-shut.h: add Ellipse Pro models, and bump driver version to 0.63
 
  * newhidups patch-set:
