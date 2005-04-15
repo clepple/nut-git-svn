@@ -240,6 +240,7 @@
 "SOLA/BASIC Mexico"	"various"	"ISBMEX protocol"	"isbmex"
 
 "Socomec Sicon"	"Egys"	"420 VA"	"powercom"  
+"Socomec Sicon"	"Netvision"	"UPS equipped with Netvision WEB/SNMP card/external box"	"snmp-ups (experimental)" 
 
 "Soltec"	"Winmate 525/625/800/1000"	""	"safenet"
 

@@ -2,6 +2,11 @@
 
 Thu Apr 15 11:04:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
+ - netvisionmib.h, snmp-ups.ch8, driver.list: add Socomec SNMP
+   card/external box (Netvision MIB support)
+
+   (Thanos Chatziathanassiou) [Alioth Patch #301296]
+
  - driver.list: add MicroDowell B.Box BP 500/750/1000/1500
  - cpups.ch: add MicroDowell support, and fix a segfault on upsdrv_shutdown
 
