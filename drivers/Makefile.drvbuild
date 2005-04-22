@@ -61,3 +61,5 @@ bestfcom: bestfcom.o main.o serial.o dstate.o ../common/state.o ../common/upscon
 	$(CC) $(CFLAGS) -o bestfcom bestfcom.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $(LIBOBJ) 
 powermust: powermust.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $(LIBDEP)
 	$(CC) $(CFLAGS) -o powermust powermust.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $(LIBOBJ) 
+bcmxcp: bcmxcp.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $(LIBDEP)
+	$(CC) $(CFLAGS) -o bcmxcp bcmxcp.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $(LIBOBJ)

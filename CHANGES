@@ -1,5 +1,14 @@
 2.1.0:
 
+Fri Apr 22 11:42:22 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - bcmxcp.ch8: reintegrate the new BCM/XCP driver (0.08) ; adjust
+   Makefile's accordingly
+ - driver.list: update according to the tested units
+   http://web.telia.com/~u50205618/compatibility.html
+
+   (Tore Ørpetveit, Kjell Claesson) [Alioth Patch #301290]
+
 Thu Apr 15 11:04:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - netvisionmib.h, snmp-ups.ch8, driver.list: add Socomec SNMP
