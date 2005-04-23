@@ -1,5 +1,13 @@
 2.1.0:
 
+Sat Apr 23 19:34:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
+
+ - drivers/main.c: move upsdrv_initups() to point after become_user().
+   This makes clear error message when user has no write privilege
+   on the device.
+ 
+   (?) [Alioth Patch #301284]
+
 Fri Apr 22 11:42:22 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - bcmxcp.ch8: reintegrate the new BCM/XCP driver (0.08) ; adjust

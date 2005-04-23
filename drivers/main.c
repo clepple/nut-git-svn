@@ -540,18 +540,6 @@ int main(int argc, char **argv)
 
 	upsdebugx(1, "debug level is '%d'", nut_debug_level);
 
-	upsdrv_initups();
-
-	/* now see if things are very wrong out there */
-	if (broken_driver) {
-		printf("Fatal error: broken driver.  It probably needs to be converted.\n");
-		printf("Search for 'broken_driver = 1' in the source for more details.\n");
-		exit(EXIT_FAILURE);
-	}
-
-	if (do_forceshutdown)
-		forceshutdown();
-
 	if ((new_uid = get_user_pwent(user)) == NULL)
 		fatal("getpwnam(%s)", user);
 	
@@ -567,6 +555,18 @@ int main(int argc, char **argv)
 
 	/* clear out callback handler data */
 	memset(&upsh, '\0', sizeof(upsh));
+
+	upsdrv_initups();
+
+	/* now see if things are very wrong out there */
+	if (broken_driver) {
+		printf("Fatal error: broken driver. It probably needs to be converted.\n");
+		printf("Search for 'broken_driver = 1' in the source for more details.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	if (do_forceshutdown)
+		forceshutdown();
 
 	/* get the base data established before allowing connections */
 	upsdrv_initinfo();
