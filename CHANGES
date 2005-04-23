@@ -2,6 +2,11 @@
 
 Sat Apr 23 19:34:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
 
+ - cyberpower.c: add CyberPower 1000AVR support
+ - driver.list: complete the missing CyberPower models
+
+   (Dave Huang) [Alioth Patch #301288]
+
  - drivers/main.c: move upsdrv_initups() to point after become_user().
    This makes clear error message when user has no write privilege
    on the device.
