@@ -1,5 +1,11 @@
 2.1.0:
 
+Sun Apr 243 19:03:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
+
+ - etapro.c: fix brokeness due to ser_get_line use
+
+   (Marek Michalkiewicz) [Alioth Patch #301505]
+
 Sat Apr 23 19:34:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
 
  - cyberpower.c: add CyberPower 1000AVR support
