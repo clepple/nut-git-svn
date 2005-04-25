@@ -1,5 +1,9 @@
 2.1.0:
 
+Mon Apr 25 22:03:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
+
+ - Makefiles: add LDFLAGS support
+
 Sun Apr 243 19:03:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
 
  - etapro.c: fix brokeness due to ser_get_line use
