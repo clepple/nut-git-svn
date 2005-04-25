@@ -92,7 +92,7 @@ newhidups: newhidups.o main.o dstate.o ../common/state.o \
 		$(STRLCPY) libhid.o libusb.o hidparser.o
 	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o $@ $@.o main.o dstate.o \
 		../common/state.o ../common/upsconf.o ../common/parseconf.o \
-		$(LIBOBJ) $(STRLCPY) $(LIBUSB_LIBS) $(LDFLAGS) libhid.o libusb.o hidparser.o
+		$(LIBOBJ) $(LIBUSB_LIBS) $(LDFLAGS) libhid.o libusb.o hidparser.o
 
 newhidups.o: newhidups.c newhidups.h
 	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -c newhidups.c

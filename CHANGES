@@ -3,6 +3,7 @@
 Mon Apr 25 22:03:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
 
  - Makefiles: add LDFLAGS support
+ - drivers/Makefile.in: remove unneeded STRLCPY flag for newhidups
 
 Sun Apr 243 19:03:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
 
