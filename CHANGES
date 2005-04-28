@@ -1,5 +1,9 @@
 2.1.0:
 
+Thu Apr 28 18:03:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
+
+ - configure.in, drivers/Makefile: check which USB driver(s) to build
+
 Mon Apr 25 22:03:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
 
  - Makefiles: add LDFLAGS support
