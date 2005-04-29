@@ -1,5 +1,11 @@
 2.1.0:
 
+Fri Apr 29 16:03:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
+
+ - apcsmart: fix APC600 support, and bump driver release to 1.99.7
+
+   (?) [Alioth Patch #301287]
+
 Thu Apr 28 18:03:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
 
  - configure.in, drivers/Makefile: check which USB driver(s) to build
@@ -35,7 +41,7 @@ Fri Apr 22 11:42:22 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
  - driver.list: update according to the tested units
    http://web.telia.com/~u50205618/compatibility.html
 
-   (Tore Ørpetveit, Kjell Claesson) [Alioth Patch #301290]
+   (Tore ï¿½petveit, Kjell Claesson) [Alioth Patch #301290]
 
 Thu Apr 15 11:04:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
@@ -3311,7 +3317,7 @@ Mon Dec  2 06:11:22 CST 2002 / Russell Kroll <rkroll@exploits.org>
 Mon Dec  2 04:59:43 CST 2002 / Russell Kroll <rkroll@exploits.org>
 
  - genericups: applied patch from Tomek Orzechowski and 
-   Arkadiusz Mi¶kiewicz to support Fideltronik Ares Series as type 19.
+   Arkadiusz Mikiewicz to support Fideltronik Ares Series as type 19.
 
 1.2.1-pre1:
 
