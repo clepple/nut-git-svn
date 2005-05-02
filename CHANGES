@@ -1,5 +1,12 @@
 2.1.0:
 
+Mon May  2 11:14:40 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - pwmib.h, snmp-ups.ch8, driver.list: add Powerware MIB support for
+   Powerware devices with ConnectUPS SNMP cards
+
+   (Olli Salvia) [Alioth Patch #301568]
+
 Fri Apr 29 16:03:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
 
  - apcsmart: fix APC600 support, and bump driver release to 1.99.7
@@ -15,7 +22,7 @@ Mon Apr 25 22:03:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
  - Makefiles: add LDFLAGS support
  - drivers/Makefile.in: remove unneeded STRLCPY flag for newhidups
 
-Sun Apr 243 19:03:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
+Sun Apr 24 19:03:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
 
  - etapro.c: fix brokeness due to ser_get_line use
 

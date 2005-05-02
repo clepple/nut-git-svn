@@ -231,6 +231,7 @@
 "Powerware"	"PW5125"	""	"bcmxcp"
 "Powerware"	"PW9120"	""	"bcmxcp"
 "Powerware"	"PW9125"	""	"bcmxcp"
+"Powerware"	"(various)"	"ConnectUPS Web/SNMP card"	"snmp-ups (experimental driver)"
 
 "Powerwell"	"PM525A/-625A/-800A/-1000A/-1250A"	""	"safenet"
 
