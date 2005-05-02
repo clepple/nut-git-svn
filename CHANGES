@@ -3,6 +3,7 @@
 Mon May  2 11:14:40 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - configure, man/Makefile: check which USB manpage(s) to install
+ - man/Makefile: suppress snmp-ups duplication
 
  - pwmib.h, snmp-ups.ch8, driver.list: add Powerware MIB support for
    Powerware devices with ConnectUPS SNMP cards

@@ -41,7 +41,6 @@ DRIVERPAGES = \
 	powermust.8	\
 	safenet.8	\
 	sms.8		\
-	snmp-ups.8	\
 	tripplite.8	\
 	tripplitesu.8	\
 	victronups.8	\
