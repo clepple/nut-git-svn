@@ -50,7 +50,7 @@ DRIVERPAGES = \
 
 SNMPPAGES = snmp-ups.8
 
-USBPAGES = hidups.8 newhidups.8 energizerups.8
+USBPAGES = @USBPAGES@
 
 DRIVER_BUILD_LIST = @DRIVER_BUILD_LIST@
 

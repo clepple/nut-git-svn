@@ -353,6 +353,7 @@ then
 else
 	AC_MSG_RESULT($LIBUSB_CFLAGS)
 	USB_DRIVER_LIST=newhidups
+	USBPAGES=newhidups.8
 fi
 
 AC_MSG_CHECKING(for libusb libs)
@@ -384,6 +385,7 @@ AC_ARG_WITH(linux-hiddev,
 				[Complete path for Linux hiddev.h])
 			LINUX_HIDDEV=/usr/include/linux/hiddev.h
 			USB_DRIVER_LIST="$USB_DRIVER_LIST hidups energizerups"
+			USBPAGES="$USBPAGES hidups.8 energizerups.8"
 		fi
 		;;
 	no)
@@ -397,6 +399,7 @@ AC_ARG_WITH(linux-hiddev,
 				[Complete path for Linux hiddev.h])
 			LINUX_HIDDEV=$withval
 			USB_DRIVER_LIST="$USB_DRIVER_LIST hidups energizerups"
+			USBPAGES="$USBPAGES hidups.8 energizerups.8"
 		else
 			AC_MSG_RESULT($withval not found)
 		fi
@@ -410,6 +413,7 @@ AC_ARG_WITH(linux-hiddev,
 			[Complete path for Linux hiddev.h])
 		LINUX_HIDDEV=/usr/include/linux/hiddev.h
 		USB_DRIVER_LIST="$USB_DRIVER_LIST hidups energizerups"
+		USBPAGES="$USBPAGES hidups.8 energizerups.8"
 	else
 		AC_MSG_RESULT(no)
 	fi
@@ -718,6 +722,7 @@ AC_SUBST(LIBUSB_CFLAGS)
 AC_SUBST(LIBUSB_LIBS)
 AC_SUBST(DRIVER_BUILD_LIST)
 AC_SUBST(USB_DRIVER_LIST)
+AC_SUBST(USBPAGES)
 AC_SUBST(DRIVER_INSTALL_TARGET)
 AC_SUBST(STRLCPY)
 AC_SUBST(LIBOBJ)
