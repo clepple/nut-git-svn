@@ -2,6 +2,10 @@
 
 Tue May  3 09:09:07 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
+ - driver.list: add Powerware 3110 support, through genericups type=7
+
+   (Paul Andreassen) [Alioth Patch #301573]
+
  - upscode2: merge this driver for Fiskars, Compaq and Powerware
    devices.
 
