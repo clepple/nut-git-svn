@@ -2,6 +2,16 @@
 
 Tue May  3 09:09:07 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
+ * fentonups:
+   - fix a problem with establishing serial communication,
+   - fix UNITEK Alpha 500iC model exposure,
+   - add separate battery voltage scales to better determine charge
+     percentage when on AC/charging
+   - add a user-defined battery voltage under which the UPS is considered
+     on "low battery" condition when running on battery ("lowbattvolt")
+
+   (Michel Bouissou) [Alioth Patch #301574] 
+
  - driver.list: add Powerware 3110 support, through genericups type=7
 
    (Paul Andreassen) [Alioth Patch #301573]
