@@ -125,14 +125,8 @@ HIDDevice *HIDOpenDevice(const char *port, MatchFlags *flg, int mode)
 	}
 
 	/* get and parse descriptors (dev, cfg and report) */
-/* 	if ( mode == MODE_OPEN ) */
-/* 	  ReportSize = libusb_open(&curDevice, flg, ReportDesc, mode); */
-/* 	else */
-	  ReportSize = libusb_open(&curDevice, flg, ReportDesc, mode);
+	ReportSize = libusb_open(&curDevice, flg, ReportDesc, mode);
 
-/* 	if ((ReportSize = libusb_open(&curDevice, flg, ReportDesc, mode)) == -1) { */
-/* 		return NULL; */
-/* 	} */
 	if (ReportSize == -1)
 	  return NULL;
 	else
@@ -151,19 +145,6 @@ HIDDevice *HIDOpenDevice(const char *port, MatchFlags *flg, int mode)
 		hParser.ReportDescSize = ReportSize;
 		memcpy(hParser.ReportDesc, ReportDesc, ReportSize);
 		HIDParse(&hParser, &hData);
-
-		/* FIXME: not needed anymore */
-		/* CHeck for matching UsageCode (1rst collection == application == type of device) */
-/* 		if ((hData.Path.Node[0].UPage == ((flg->UsageCode & 0xFFFF0000) / 0x10000)) */
-/* 			&& (hData.Path.Node[0].Usage == (flg->UsageCode & 0x0000FFFF))) */
-/* 		{ */
-/* 				TRACE(2, "Found a device matching UsageCode (0x%08x)", flg->UsageCode); */
-/* 		} */
-/* 		else */
-/* 		{ */
-/* 			TRACE(2, "Found a device, but not matching UsageCode (0x%08x)", flg->UsageCode); */
-/* 			return NULL; */
-/* 		} */
 	}
 	return &curDevice;
 }
@@ -209,7 +190,7 @@ float HIDGetItemValue(char *path, float *Value)
 				/* Extract the data value */
 				GetValue((const unsigned char *) raw_buf, &hData);
 
-				TRACE(3, "=>> Before exponent: %ld, %i/%i)", hData.Value,
+				TRACE(4, "=>> Before exponent: %ld, %i/%i)", hData.Value,
 					(int)hData.UnitExp, (int)get_unit_expo(hData.Unit) );
 
 				/* Convert Logical Min, Max and Value in Physical */
@@ -224,6 +205,9 @@ float HIDGetItemValue(char *path, float *Value)
 
 				/* Convert Logical Min, Max and Value into Physical */
 				logical_to_physical(&hData);
+
+				TRACE(4, "=>> After conversion: %ld, %i/%i)", hData.Value,
+					(int)hData.UnitExp, (int)get_unit_expo(hData.Unit) );
 
 				dump_hex ("Report ", raw_buf, replen);
 
@@ -337,9 +321,6 @@ int HIDGetEvents(HIDDevice *dev, HIDItem **eventsList)
   unsigned char buf[20];
   char itemPath[128];
   int size, offset = 0, itemCount = 0;
-
-  /* disabled for now */
-  return 0;
 
   upsdebugx(1, "Waiting for notifications...");
 

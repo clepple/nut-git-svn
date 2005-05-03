@@ -121,7 +121,7 @@ hid_info_t hid_mge[] =
     "UPS.PowerSummary.DelayBeforeStartup", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL},
   { "ups.test.result", 0, 0,
     "UPS.BatterySystem.Battery.Test", NULL, "%s", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, &test_read_info[0] },
-  { "ups.test.interval", ST_FLAG_RW | ST_FLAG_STRING, 6,
+  { "ups.test.interval", ST_FLAG_RW | ST_FLAG_STRING, 8,
     "UPS.BatterySystem.Battery.TestPeriod", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
   { "ups.temperature", 0, 0, 
     "UPS.PowerSummary.Temperature", NULL, "%.1f", HU_FLAG_OK, NULL },

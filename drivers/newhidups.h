@@ -27,7 +27,7 @@
 #include <unistd.h>
 #include "config.h"
 
-#define DRIVER_VERSION		"0.20"
+#define DRIVER_VERSION		"0.21"
 
 /* --------------------------------------------------------------- */
 /*      Supported Manufacturers IDs                                */
@@ -63,9 +63,9 @@ typedef struct
 								/* and powering up of load, in seconds */
 								/* CAUTION: ondelay > offdelay */
 #define DEFAULT_OFFDELAY	20	/* Delay before power off, in seconds */ 
-#define DEFAULT_POLLFREQ	60	/* Polling interval, in seconds */
+#define DEFAULT_POLLFREQ	30	/* Polling interval, in seconds */
 								/* The driver will wait for Interrupt */
-								/* in the meantime */
+								/* and do "light poll" in the meantime */
 
 #define MAX_STRING_SIZE    	128
 

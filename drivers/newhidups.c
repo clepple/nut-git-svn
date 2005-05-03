@@ -226,8 +226,10 @@ void upsdrv_updateinfo(void)
 		reconnect_ups();
 	  }
 
-	/* Only update by polling every pollfreq */
-	if (time(NULL) <= (lastpoll + pollfreq))
+	/* Only update by full polling every pollfreq 
+	 * or upon data change (ie setvar/instcmd) */
+	if ( (time(NULL) <= (lastpoll + pollfreq))
+		 && (data_has_changed != TRUE) )
 	  {
 		/* Wait for HID notifications on Interrupt pipe */
 		if ((evtCount = HIDGetEvents(NULL, eventsList)) > 0)
@@ -567,16 +569,20 @@ static bool hid_ups_walk(int mode)
 			  }
 
 			/* atomic call */
-			dstate_dataok();
+/* 			dstate_dataok(); */
 
 			/* store timestamp */
 /* 			lastpoll = time(NULL); */
 		  }
 		else
 		  {
-			if ( (retcode == -1) || (retcode == -EPIPE)
-				 || (retcode == -ENODEV) )
+			if ( (retcode == -EPERM) || (retcode == -EPIPE)
+				 || (retcode == -ENODEV) || (retcode == -EACCES) )
 			  break;
+			else {
+			  /* atomic call */
+			  dstate_dataok();
+			}
 
 			if (mode == HU_WALKMODE_INIT)
 			  {
@@ -584,7 +590,7 @@ static bool hid_ups_walk(int mode)
 				item->hidflags &= ~HU_FLAG_OK;
 			  }
 		  }
-	  }
+	  } /* end for */
 
 	if (mode == HU_WALKMODE_FULL_UPDATE)
 	  {
@@ -594,12 +600,16 @@ static bool hid_ups_walk(int mode)
 
 	/* Reserved values: -1/-10 for nul delay, -2 can't get value */
 	/* device has been disconnected, try to reconnect */
-	if ( (retcode == -EPIPE) || (retcode == -ENODEV) )
+	if ( (retcode == -EPERM) || (retcode == -EPIPE)
+		 || (retcode == -ENODEV) || (retcode == -EACCES) )
 	  {
 		hd = NULL;
 		reconnect_ups();
 	  }
-
+	else {
+	  /* atomic call */
+	  dstate_dataok();
+	}
 
   return TRUE;
 }
@@ -612,11 +622,11 @@ static void reconnect_ups(void)
 	  upsdebugx(2, "= device has been disconnected, try to reconnect =");
 	  upsdebugx(2, "==================================================");
 	  
+	  /* Not really useful as the device is no more reachable */
 	  HIDCloseDevice(NULL);
-	  sleep(1);
-	  hd = HIDOpenDevice(device_path, &flg, MODE_REOPEN);
 	  
-	  dstate_datastale();
+	  if ((hd = HIDOpenDevice(device_path, &flg, MODE_REOPEN)) == NULL)
+		dstate_datastale();
 	}
 }
 

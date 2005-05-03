@@ -1,5 +1,10 @@
 2.1.0:
 
+Tue May  3 09:09:07 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - newhidups, libhid, libusb: improve UBS support. Interrupt and
+   device reconnexion are now supported.
+
 Mon May  2 11:14:40 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - configure, man/Makefile: check which USB manpage(s) to install
