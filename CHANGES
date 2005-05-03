@@ -2,6 +2,11 @@
 
 Tue May  3 09:09:07 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
+ - upscode2: merge this driver for Fiskars, Compaq and Powerware
+   devices.
+
+   (Niels Baggesen, Havard Lygre) [Alioth Patch #301144]
+
  - newhidups, libhid, libusb: improve UBS support. Interrupt and
    device reconnexion are now supported.
 

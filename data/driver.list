@@ -58,6 +58,8 @@
 
 "Centralion"	"Blazer"		""	"blazer"
 
+"Compaq"	"T1500h"	""	"upscode2 use_pre_lf"
+
 "Cyber Power Systems"	"320AVR"	""	"cyberpower"
 "Cyber Power Systems"	"500AVR"	""	"cyberpower"
 "Cyber Power Systems"	"650AVR"	""	"cyberpower"
@@ -95,6 +97,10 @@
 
 "Fideltronik"	"Ares 700 and larger"	""	"genericups upstype=6"
 "Fideltronik"	"Other Ares models"	""	"genericups upstype=19"
+
+"Fiskars"	"PowerRite MAX"	""	"upcsode2"
+"Fiskars"	"PowerServer 10"	""	"upcsode2"
+"Fiskars"	"PowerServer 30"	""	"upcsode2"
 
 "Gemini"	"UPS625/UPS1000"	""	"safenet"
 
@@ -231,6 +237,9 @@
 "Powerware"	"PW5125"	""	"bcmxcp"
 "Powerware"	"PW9120"	""	"bcmxcp"
 "Powerware"	"PW9125"	""	"bcmxcp"
+"Powerware"	"9120"	""	"upscode2"
+"Powerware"	"9150"	""	"upscode2"
+"Powerware"	"9305"	""	"upscode2"
 "Powerware"	"(various)"	"ConnectUPS Web/SNMP card"	"snmp-ups (experimental driver)"
 
 "Powerwell"	"PM525A/-625A/-800A/-1000A/-1250A"	""	"safenet"
