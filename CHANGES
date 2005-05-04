@@ -1,5 +1,11 @@
 2.1.0:
 
+Wed May  4 07:09:02 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - solis: new driver for Microsol units
+
+   (Silvino B. Magalhaes) [Alioth Patch #301272]
+
 Tue May  3 09:09:07 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  * fentonups:

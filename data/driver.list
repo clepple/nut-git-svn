@@ -198,6 +198,11 @@
 "MicroDowell"	"B.Box BP 1000"	""	"cpsups"
 "MicroDowell"	"B.Box BP 1500"	""	"cpsups"
 
+"Microsol"	"Solis 1.0"	"1000VA"	"solis"
+"Microsol"	"Solis 1.5"	"1500VA"	"solis"
+"Microsol"	"Solis 2.0"	"2000VA"	"solis"
+"Microsol"	"Solis 3.0"	"3000VA"	"solis"
+
 "Mustek"	"Various"	""	"mustek"
 
 "Mustek"	"Powermust"	"400VA Plus"	"powermust"

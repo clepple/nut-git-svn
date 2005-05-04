@@ -41,6 +41,7 @@ DRIVERPAGES = \
 	powermust.8	\
 	safenet.8	\
 	sms.8		\
+	solis.8		\
 	tripplite.8	\
 	tripplitesu.8	\
 	upscode2.8	\
