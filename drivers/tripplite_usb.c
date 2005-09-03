@@ -154,7 +154,7 @@ static int send_cmd(const char *msg, size_t msg_len, char *reply, size_t reply_l
 {
 	char c, buffer_out[8];
 	unsigned char csum = 0;
-	int ret, send_try, recv_try, done = 0;
+	int ret, send_try, recv_try=0, done = 0;
 	size_t i = 0;
 
 	upsdebugx(3, "send_cmd(msg_len=%d)", msg_len);
@@ -188,7 +188,7 @@ static int send_cmd(const char *msg, size_t msg_len, char *reply, size_t reply_l
 			return -1;
 		}
 
-		if(!done) { upsdebugx(5, "not done yet"); sleep(1); /* TODO: nanosleep */ }
+		if(!done) { usleep(1000*100); /* TODO: nanosleep */ }
 
 		for(recv_try=0; !done && recv_try < MAX_RECV_TRIES; recv_try++) {
 			upsdebugx(7, "send_cmd recv_try %d", recv_try+1);
@@ -206,7 +206,8 @@ static int send_cmd(const char *msg, size_t msg_len, char *reply, size_t reply_l
 				reply[4], reply[5], reply[6], reply[7], done ? "OK" : "bad");
 	}
 	
-	upsdebugx(5, "send_cmd: send_try = %d, recv_try = %d\n", send_try, recv_try);
+	upsdebugx(((send_try != 1) || (recv_try != 1)) ? 3 : 6, 
+			"send_cmd: send_try = %d, recv_try = %d\n", send_try, recv_try);
 
 	return 8;
 }
@@ -399,93 +400,71 @@ void upsdrv_shutdown(void)
 
 void upsdrv_updateinfo(void)
 {
-	char buf[256];
+	char b_msg[] = "B", l_msg[] = "L", s_msg[] = "S";
+	char b_value[9], l_value[9], s_value[9];
 	int bp;
 	float bv;
 
-#if 0
-	send_cmd(":D\r", buf, sizeof buf);
-
-	if (strlen(buf) < 21) {
-		ser_comm_fail("Failed to get data: short read from UPS");
-		dstate_datastale();
-		return;
-	}
-
-	if (strlen(buf) > 21) {
-		ser_comm_fail("Failed to get data: oversized read from UPS");
-		dstate_datastale();
-		return;
-	}
-
-	dstate_setinfo("input.voltage", "%0d", hex2d(buf + 2, 2));
-	dstate_setinfo("ups.temperature", "%3d",
-			(int)(hex2d(buf + 6, 2)*0.3636 - 21.0));
-	dstate_setinfo("ups.load", "%3d", hex2d(buf + 12, 2));
-	dstate_setinfo("input.frequency", "%02.2f", hex2d(buf + 18, 3) / 10.0);
+	int ret;
 
 	status_init();
 
-	/* Battery Voltage Condition */
-	switch (buf[0]) {
-		case '0': /* Low Battery */
-			status_set("LB");
-			break;
-		case '1': /* Normal */
-			break;
-		default: /* Unknown */
-			upslogx(LOG_ERR, "Unknown battery state: %c", buf[0]);
-			break;
+	/* General status (e.g. "S10") */
+	ret = send_cmd(s_msg, sizeof(s_msg), s_value, sizeof(s_value));
+	if(ret <= 0) {
+		/* TODO: implement ser_comm_fail() for USB */
+		upslogx(LOG_WARNING, "Error reading S value");
+		dstate_datastale();
+		return;
 	}
 
-	/* Load State */
-	switch (buf[1]) {
-		case '0': /* Overload */
-			status_set("OVER");
-			break;
-		case '1': /* Normal */
-			break;
-		default: /* Unknown */
-			upslogx(LOG_ERR, "Unknown load state: %c", buf[1]);
-			break;
-	}
-
-	/* Tap State */
-	switch (buf[4]) {
-		case '0': /* Normal */
-			break;
-		case '1': /* Reducing */
-			status_set("TRIM");
-			break;
-		case '2': /* Boost */
-		case '3': /* Extra Boost */
-			status_set("BOOST");
-			break;
-		default: /* Unknown */
-			upslogx(LOG_ERR, "Unknown tap state: %c", buf[4]);
-			break;
-	}
-
-	/* Mode */
-	switch (buf[5]) {
-		case '0': /* Off */
-			status_set("OFF");
-			break;
-		case '1': /* On Battery */
-			status_set("OB");
-			break;
-		case '2': /* On Line */
+	switch(s_value[2]) {
+		case '0':
 			status_set("OL");
 			break;
-		case '3': /* On Battery */
+		case '1':
 			status_set("OB");
 			break;
-		default: /* Unknown */
-			upslogx(LOG_ERR, "Unknown mode state: %c", buf[4]);
+		case '3': /* I have seen this once when switching from off+LB to charging */
+			upslogx(LOG_WARNING, "Unknown value for s[2]: 0x%02x", s_value[2]);
+			break;
+		default:
+			upslogx(LOG_ERR, "Unknown value for s[2]: 0x%02x", s_value[2]);
 			break;
 	}
 
+	switch(s_value[1]) {
+		case '0':
+			status_set("LB");
+			break;
+		case '1':
+			break;
+		default:
+			upslogx(LOG_ERR, "Unknown value for s[1]: 0x%02x", s_value[1]);
+	}
+
+	ret = send_cmd(b_msg, sizeof(b_msg), b_value, sizeof(b_value));
+	if(ret <= 0) {
+		upslogx(LOG_WARNING, "Error reading B value");
+		dstate_datastale();
+		return;
+	}
+
+	dstate_setinfo("battery.voltage", "%.2f", hex2d(b_value+5, 2)/16.0);
+	dstate_setinfo("input.frequency", "%.2f", hex2d(b_value+1, 4)/55.0);
+
+	ret = send_cmd(l_msg, sizeof(l_msg), l_value, sizeof(l_value));
+	if(ret <= 0) {
+		upslogx(LOG_WARNING, "Error reading L value");
+		dstate_datastale();
+		return;
+	}
+
+	dstate_setinfo("output.voltage", "%.1f", hex2d(l_value+1, 4)/2.0);
+
 	status_commit();
+
+#if 0
 	send_cmd(":B\r", buf, sizeof buf);
 	bv = (float)hex2d(buf, 2) / 10.0;
 
@@ -528,9 +507,9 @@ void upsdrv_updateinfo(void)
 			break;
 	}
 
-	dstate_dataok();
 	/* ser_comm_good(); */
 #endif
+	dstate_dataok();
 }
 
 void upsdrv_help(void)
@@ -564,7 +543,7 @@ void upsdrv_initups(void)
 {
         /* Search for the first supported UPS, no matter Mfr or exact product */
         if ((hd = HIDOpenDevice(device_path, &flg, MODE_OPEN)) == NULL)
-                fatalx("No USB/HID UPS found");
+                fatalx("No USB HID UPS found");
         else
                 upslogx(1, "Detected an UPS: %s/%s\n", hd->Vendor, hd->Product);
 
