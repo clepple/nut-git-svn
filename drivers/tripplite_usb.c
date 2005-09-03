@@ -85,15 +85,25 @@
 
 #include "main.h"
 #include "libhid.h"
+#include "hid-usb.h"
 #include "newhidups.h"
 #include <math.h>
 #include <ctype.h>
 
+#define toprint(x) (isprint(x) ? (x) : '.')
+
 #define ENDCHAR '\r'           /* replies end with CR LF -- use LF to end */
 #define IGNCHAR '\r'           /* ignore CR */
-#define MAXTRIES 3
-#define SER_WAIT_SEC  3        /* allow 3.0 sec for ser_get calls */
-#define SER_WAIT_USEC 0
+
+#define MAX_SYNC_TRIES 3
+
+#define MAX_SEND_TRIES 3
+#define SEND_WAIT_SEC 0
+#define SEND_WAIT_NSEC (1000*1000*100)
+
+#define MAX_RECV_TRIES 3
+#define RECV_WAIT_MSEC 100
+
 // #define DEFAULT_OFFDELAY   64  /* seconds (max 0xFF) */
 #define DEFAULT_STARTDELAY 60  /* seconds (max 0xFFFFFF) */
 #define DEFAULT_BOOTDELAY  64  /* seconds (max 0xFF) */
@@ -134,56 +144,66 @@ static int hex2d(char *start, unsigned int len)
 	return strtol(buf, NULL, 16);
 }
 
-/* The UPS that I'm using (SMART700SER) has the bizarre characteristic
- * of innately echoing back commands.  Therefore, we cannot use
- * ser_get_line and must manually discard our echoed command.
- *
- * All UPS commands are challenge-response, so this function makes things
+/* All UPS commands are challenge-response, so this function makes things
  * very clean.
  *
+ * You do not need to pass in the ':' or '\r'
+ *
  * return: # of chars in buf, excluding terminating \0 */
-static int send_cmd(const char *str, char *buf, size_t len)
+static int send_cmd(const char *msg, size_t msg_len, char *reply, size_t reply_len)
 {
-	char c;
-	int ret;
+	char c, buffer_out[8];
+	unsigned char csum = 0;
+	int ret, send_try, recv_try, done = 0;
 	size_t i = 0;
 
-/* TODO: send USB control message */
-#if 0
-	ser_send(upsfd, str);
+	upsdebugx(3, "send_cmd()");
 
-	if (!len || !buf)
-		return -1;
-
-	for (;;) {
-		ret = ser_get_char(upsfd, &c, SER_WAIT_SEC, SER_WAIT_USEC);
-		if (ret == -1)
-			return -1;
-		if (c == ENDCHAR)
-			break;
+	if(msg_len > 5) {
+		fatalx("send_cmd(): Trying to pass too many characters to UPS (%u)", (unsigned)msg_len);
 	}
-	do {
-		ret = ser_get_char(upsfd, &c, SER_WAIT_SEC, SER_WAIT_USEC);
-		if (ret == -1)
-			return -1;
 
-		if (c == IGNCHAR || c == ENDCHAR)
-			continue;
-		buf[i++] = c;
-	} while (c != ENDCHAR && i < len);
-	buf[i] = '\0';
-	ser_flush_in(upsfd, NULL, 0);
-#endif
+	buffer_out[0] = ':';
+	for(i=1; i<8; i++) buffer_out[i] = '\0';
+
+	for(i=0; i<msg_len; i++) {
+		buffer_out[i+1] = msg[i];
+		csum += msg[i];
+	}
+
+	buffer_out[i] = 255-csum;
+	buffer_out[i+1] = 0x0d;
+
+	for(send_try=0; !done && send_try < MAX_SEND_TRIES; send_try++) {
+		ret = libusb_set_report(0, buffer_out, sizeof(buffer_out));
+
+		if(ret != sizeof(buffer_out)) {
+			upslogx(1, "libusb_set_report() returned %d instead of %d", ret, sizeof(buffer_out));
+			return -1;
+		}
+
+		for(recv_try=0; !done && recv_try < MAX_RECV_TRIES; recv_try++) {
+			ret = libusb_get_interrupt(reply, reply_len, RECV_WAIT_MSEC);
+			if(ret != sizeof(buffer_out)) {
+				upslogx(1, "libusb_get_interrupt() returned %d instead of %d", ret, sizeof(buffer_out));
+			}
+			done = (ret == sizeof(buffer_out)) && (buffer_out[1] == reply[0]);
+		}
+
+		if(!done) { /* TODO: sleep */ }
+	}
+
 	return i;
 }
 
 static void ups_sync(void)
 {
-	char buf[256];
+	char msg[] = "S", buf[256];
 	int tries, ret;
 
-	for (tries = 0; tries < MAXTRIES; ++tries) {
-		ret = send_cmd(":W\r", buf, sizeof buf);
+	for (tries = 0; tries < MAX_SYNC_TRIES; ++tries) {
+		upsdebugx(3, "Trying to sync (attempt %d)", tries+1);
+		ret = send_cmd(msg, strlen(msg), buf, sizeof buf);
 		if ((ret > 0) && isdigit((unsigned char)buf[0]))
 			return;
 	}
@@ -192,41 +212,52 @@ static void ups_sync(void)
 
 static int do_reboot_now(void)
 {
+#if 0
 	char buf[256], cmd[16];
 
 	snprintf(cmd, sizeof cmd, ":H%06X\r", startdelay);
 	return send_cmd(cmd, buf, sizeof buf);
+#else
+	return 0;
+#endif
 }
 
 static void do_reboot(void)
 {
+#if 0
 	char buf[256], cmd[16];
 
 	snprintf(cmd, sizeof cmd, ":N%02X\r", bootdelay);
 	send_cmd(cmd, buf, sizeof buf);
 	do_reboot_now();
+#endif
 }
 
 static int soft_shutdown(void)
 {
+#if 0
 	char buf[256], cmd[16];
 
 	snprintf(cmd, sizeof cmd, ":N%02X\r", offdelay);
 	send_cmd(cmd, buf, sizeof buf);
 	return send_cmd(":G\r", buf, sizeof buf);
+#endif
 }
 
 static int hard_shutdown(void)
 {
+#if 0
 	char buf[256], cmd[16];
 
 	snprintf(cmd, sizeof cmd, ":N%02X\r", offdelay);
 	send_cmd(cmd, buf, sizeof buf);
 	return send_cmd(":K0\r", buf, sizeof buf);
+#endif
 }
 
 static int instcmd(const char *cmdname, const char *extra)
 {
+#if 0
 	char buf[256];
 
 	if (!strcasecmp(cmdname, "test.battery.start")) {
@@ -257,6 +288,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		hard_shutdown();
 		return STAT_INSTCMD_HANDLED;
 	}
+#endif
 
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
 	return STAT_INSTCMD_UNKNOWN;
@@ -264,6 +296,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 static int setvar(const char *varname, const char *val)
 {
+#if 0
 	if (!strcasecmp(varname, "ups.delay.shutdown")) {
 		offdelay = atoi(val);
 		dstate_setinfo("ups.delay.shutdown", val);
@@ -279,42 +312,39 @@ static int setvar(const char *varname, const char *val)
 		dstate_setinfo("ups.delay.reboot", val);
 		return STAT_SET_HANDLED;
 	}
+#endif
 	return STAT_SET_UNKNOWN;
 }
 
 void upsdrv_initinfo(void)
 {
-	const char *model;
-	char buf[16], w_value[16], l_value[16], v_value[16], x_value[16];
-	int  va;
+	const char *model, f_msg[] = "F", l_msg[] = "L", p_msg[] = "P",
+		s_msg[] = "S", v_msg[] = "V", w_msg[] = "W\0";
+	char f_value[9], l_value[9], p_value[9], s_value[9], v_value[9], w_value[9];
+	int  va, ret;
 	long w, l;
-
 
 	/* Detect the UPS or die. */
 	ups_sync();
 
-	send_cmd(":W\r", w_value, sizeof w_value);
-	send_cmd(":L\r", l_value, sizeof l_value);
-	send_cmd(":V\r", v_value, sizeof v_value);
-	send_cmd(":X\r", x_value, sizeof x_value);
+	/* Reset watchdog: */
+	ret = send_cmd(w_msg, sizeof(w_msg), w_value, sizeof(w_value)-1);
 
 	dstate_setinfo("ups.mfr", "%s", "Tripp Lite");
 
-	w = hex2d(w_value, 2);
-	l = hex2d(l_value, 2);
+	ret = send_cmd(p_msg, sizeof(p_msg), p_value, sizeof(p_value)-1);
+	va = hex2d(p_value + 1, 5);
 
-	model = "Smart %d";
-	if (w & 0x40)
-		model = "Unison %d";
-
-	va = ((w & 0x3f) * 32 + (l >> 3)) * 5;  /* New formula */
-	if (!(w & 0x80))
-		va = l / 2;   /* Old formula */
+	model = "OMNIVS%d";
 
 	dstate_setinfo("ups.model", model, va);
-	dstate_setinfo("ups.firmware", "%c%c",
-			'A'+v_value[0]-'0', 'A'+v_value[1]-'0');
 
+	ret = send_cmd(v_msg, sizeof(v_msg), v_value, sizeof(v_value)-1);
+
+	dstate_setinfo("ups.firmware", "%c%c%c",
+			toprint(v_value[1]), toprint(v_value[2]), toprint(v_value[3]));
+
+#if 0
 	snprintf(buf, sizeof buf, "%d", offdelay);
 	dstate_setinfo("ups.delay.shutdown", buf);
 	dstate_setflags("ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING);
@@ -335,6 +365,7 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("shutdown.reboot.graceful");
 	dstate_addcmd("shutdown.return");
 	dstate_addcmd("shutdown.stayoff");
+#endif
 
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
@@ -356,9 +387,9 @@ void upsdrv_updateinfo(void)
 	int bp;
 	float bv;
 
+#if 0
 	send_cmd(":D\r", buf, sizeof buf);
 
-#if 0
 	if (strlen(buf) < 21) {
 		ser_comm_fail("Failed to get data: short read from UPS");
 		dstate_datastale();
@@ -370,7 +401,6 @@ void upsdrv_updateinfo(void)
 		dstate_datastale();
 		return;
 	}
-#endif
 
 	dstate_setinfo("input.voltage", "%0d", hex2d(buf + 2, 2));
 	dstate_setinfo("ups.temperature", "%3d",
@@ -484,6 +514,7 @@ void upsdrv_updateinfo(void)
 
 	dstate_dataok();
 	/* ser_comm_good(); */
+#endif
 }
 
 void upsdrv_help(void)
