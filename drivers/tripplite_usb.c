@@ -25,14 +25,16 @@
 */
 
 /* UPS Commands: (capital letters are literals, lower-case are variables)
- * :B     -> Bxxxxyy (xxxx/55.0: Hz in? yy/16: battery voltage)
+ * :B     -> Bxxxxyy (xxxx/55.0: Hz in, yy/16: battery voltage)
  * :F     -> F1143_A (where _ = \0) Firmware version?
- * :L     -> LvvvvXX (vvvv/2.0: VAC out?)
+ * :L     -> LvvvvXX (vvvv/2.0: VAC out)
  * :P     -> P01000X (1000VA unit)
  * :S     -> Sbb_XXX (bb = 10: on-line, 11: on battery)
- * :V     -> V102XXX (firmware version)
+ * :V     -> V102XXX (firmware/protocol version?)
  * :Wt    -> Wt      (watchdog; t = time in seconds (binary, not hex), 
- *                   0 = disable)
+ *                   0 = disable; if UPS is not pinged in this interval, it
+ *                   will power off the load, and then power it back on after
+ *                   a delay.)
  *
  * The outgoing commands are sent with HID Set_Report commands over EP0
  * (control message), and incoming commands are received on EP1IN (interrupt
@@ -116,7 +118,6 @@
 static HIDDevice *hd;
 static MatchFlags flg;
 
-
 /* We calculate battery charge (q) as a function of voltage (V).
  * It seems that this function probably varies by firmware revision or
  * UPS model - the Windows monitoring software gives different q for a
@@ -141,6 +142,7 @@ static int hex2d(char *start, unsigned int len)
 	buf[32] = '\0';
 
 	strncpy(buf, start, (len < (sizeof buf) ? len : (sizeof buf - 1)));
+	if(len < sizeof(buf)) buf[len] = '\0';
 	return strtol(buf, NULL, 16);
 }
 
@@ -152,9 +154,9 @@ static int hex2d(char *start, unsigned int len)
  * return: # of chars in buf, excluding terminating \0 */
 static int send_cmd(const char *msg, size_t msg_len, char *reply, size_t reply_len)
 {
-	char c, buffer_out[8];
+	char buffer_out[8];
 	unsigned char csum = 0;
-	int ret, send_try, recv_try=0, done = 0;
+	int ret = 0, send_try, recv_try=0, done = 0;
 	size_t i = 0;
 
 	upsdebugx(3, "send_cmd(msg_len=%d)", msg_len);
@@ -206,24 +208,10 @@ static int send_cmd(const char *msg, size_t msg_len, char *reply, size_t reply_l
 				reply[4], reply[5], reply[6], reply[7], done ? "OK" : "bad");
 	}
 	
-	upsdebugx(((send_try != 1) || (recv_try != 1)) ? 3 : 6, 
+	upsdebugx(((send_try > 2) || (recv_try > 2)) ? 3 : 6, 
 			"send_cmd: send_try = %d, recv_try = %d\n", send_try, recv_try);
 
-	return 8;
-}
-
-static void ups_sync(void)
-{
-	char msg[] = "S", buf[256];
-	int tries, ret;
-
-	for (tries = 0; tries < MAX_SYNC_TRIES; ++tries) {
-		upsdebugx(3, "Trying to sync (attempt %d)", tries+1);
-		ret = send_cmd(msg, sizeof(msg), buf, sizeof buf);
-		if (ret > 0)
-			return;
-	}
-	fatalx("\nFailed to find UPS - giving up...");
+	return sizeof(buffer_out);
 }
 
 static int do_reboot_now(void)
@@ -257,6 +245,8 @@ static int soft_shutdown(void)
 	snprintf(cmd, sizeof cmd, ":N%02X\r", offdelay);
 	send_cmd(cmd, buf, sizeof buf);
 	return send_cmd(":G\r", buf, sizeof buf);
+#else
+	return 0;
 #endif
 }
 
@@ -268,6 +258,8 @@ static int hard_shutdown(void)
 	snprintf(cmd, sizeof cmd, ":N%02X\r", offdelay);
 	send_cmd(cmd, buf, sizeof buf);
 	return send_cmd(":K0\r", buf, sizeof buf);
+#else
+	return 0;
 #endif
 }
 
@@ -334,31 +326,40 @@ static int setvar(const char *varname, const char *val)
 
 void upsdrv_initinfo(void)
 {
-	const char *model, f_msg[] = "F", l_msg[] = "L", p_msg[] = "P",
+	const char *model, f_msg[] = "F", p_msg[] = "P",
 		s_msg[] = "S", v_msg[] = "V", w_msg[] = "W\0";
-	char f_value[9], l_value[9], p_value[9], s_value[9], v_value[9], w_value[9];
+	char f_value[9], p_value[9], s_value[9], v_value[9], w_value[9];
 	int  va, ret;
-	long w, l;
-
-	/* Detect the UPS or die. */
-	ups_sync();
 
 	/* Reset watchdog: */
 	ret = send_cmd(w_msg, sizeof(w_msg), w_value, sizeof(w_value)-1);
+	if(ret <= 0) {
+		fatalx("Could not reset watchdog... is this an OMNIVS model?");
+	}
+
+	ret = send_cmd(s_msg, sizeof(s_msg), s_value, sizeof(s_value)-1);
+	if(ret <= 0) {
+		fatalx("Could not retrieve status ... is this an OMNIVS model?");
+	}
 
 	dstate_setinfo("ups.mfr", "%s", "Tripp Lite");
 
 	ret = send_cmd(p_msg, sizeof(p_msg), p_value, sizeof(p_value)-1);
-	// p_value[6] = '\0';
 	va = strtol(p_value+1, NULL, 10);
 
 	model = "OMNIVS%d";
 
 	dstate_setinfo("ups.model", model, va);
 
+	ret = send_cmd(f_msg, sizeof(f_msg), f_value, sizeof(f_value)-1);
+
+	dstate_setinfo("ups.firmware", "F%c%c%c%c %c",
+			toprint(f_value[1]), toprint(f_value[2]), toprint(f_value[3]),
+			toprint(f_value[4]), toprint(f_value[6]));
+
 	ret = send_cmd(v_msg, sizeof(v_msg), v_value, sizeof(v_value)-1);
 
-	dstate_setinfo("ups.firmware", "%c%c%c",
+	dstate_setinfo("ups.firmware.aux", "V%c%c%c",
 			toprint(v_value[1]), toprint(v_value[2]), toprint(v_value[3]));
 
 #if 0
@@ -388,7 +389,8 @@ void upsdrv_initinfo(void)
 	upsh.setvar = setvar;
 
 	printf("Detected %s %s on %s\n",
-	dstate_getinfo("ups.mfr"), dstate_getinfo("ups.model"), device_path);
+			dstate_getinfo("ups.mfr"), dstate_getinfo("ups.model"),
+			device_path);
 
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 }
@@ -403,7 +405,7 @@ void upsdrv_updateinfo(void)
 	char b_msg[] = "B", l_msg[] = "L", s_msg[] = "S";
 	char b_value[9], l_value[9], s_value[9];
 	int bp;
-	float bv;
+	double bv;
 
 	int ret;
 
@@ -443,6 +445,8 @@ void upsdrv_updateinfo(void)
 			upslogx(LOG_ERR, "Unknown value for s[1]: 0x%02x", s_value[1]);
 	}
 
+	status_commit();
+
 	ret = send_cmd(b_msg, sizeof(b_msg), b_value, sizeof(b_value));
 	if(ret <= 0) {
 		upslogx(LOG_WARNING, "Error reading B value");
@@ -450,7 +454,6 @@ void upsdrv_updateinfo(void)
 		return;
 	}
 
-	dstate_setinfo("battery.voltage", "%.2f", hex2d(b_value+5, 2)/16.0);
 	dstate_setinfo("input.frequency", "%.2f", hex2d(b_value+1, 4)/55.0);
 
 	ret = send_cmd(l_msg, sizeof(l_msg), l_value, sizeof(l_value));
@@ -462,11 +465,11 @@ void upsdrv_updateinfo(void)
 
 	dstate_setinfo("output.voltage", "%.1f", hex2d(l_value+1, 4)/2.0);
 
-	status_commit();
+	upsdebugx(5, "b_value[5,6] = %c%c", b_value[5], b_value[6]);
 
-#if 0
-	send_cmd(":B\r", buf, sizeof buf);
-	bv = (float)hex2d(buf, 2) / 10.0;
+	bv = hex2d(b_value+5, 2)/16.0;
+
+	upsdebugx(5, "hex2d = %d", hex2d(b_value+5, 2));
 
 	/* dq ~= sqrt(dV) is a reasonable approximation
 	 * Results fit well against the discrete function used in the Tripp Lite
@@ -477,38 +480,11 @@ void upsdrv_updateinfo(void)
 		bp = 10;
 	else
 		bp = (int)(100*sqrt((bv - V_interval[0])
-							/ (V_interval[1] - V_interval[0])));
+					/ (V_interval[1] - V_interval[0])));
 
-	dstate_setinfo("battery.voltage", "%.1f", bv);
+	dstate_setinfo("battery.voltage", "%.2f", (float)bv);
 	dstate_setinfo("battery.charge",  "%3d", bp);
 
-	send_cmd(":M\r", buf, sizeof buf);
-	dstate_setinfo("input.voltage.maximum", "%d", hex2d(buf, 2));
-
-	send_cmd(":I\r", buf, sizeof buf);
-	dstate_setinfo("input.voltage.minimum", "%d", hex2d(buf, 2));
-
-	send_cmd(":C\r", buf, sizeof buf);
-	switch (atoi(buf)) {
-		case 0:
-			dstate_setinfo("ups.test.result", "%s", "OK");
-			break;
-		case 1:
-			dstate_setinfo("ups.test.result", "%s", "Battery Bad (Replace)");
-			break;
-		case 2:
-			dstate_setinfo("ups.test.result", "%s", "In Progress");
-			break;
-		case 3:
-			dstate_setinfo("ups.test.result", "%s", "Bad Inverter");
-			break;
-		default:
-			dstate_setinfo("ups.test.result", "Unknown (%s)", buf);
-			break;
-	}
-
-	/* ser_comm_good(); */
-#endif
 	dstate_dataok();
 }
 
