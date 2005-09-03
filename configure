@@ -5910,7 +5910,7 @@ echo "${ECHO_T}not found" >&6
 else
 	echo "$as_me:$LINENO: result: $LIBUSB_CFLAGS" >&5
 echo "${ECHO_T}$LIBUSB_CFLAGS" >&6
-	USB_DRIVER_LIST="newhidups bcmxcp_usb"
+	USB_DRIVER_LIST="newhidups bcmxcp_usb tripplite_usb"
 	USBPAGES=newhidups.8
 fi
 
