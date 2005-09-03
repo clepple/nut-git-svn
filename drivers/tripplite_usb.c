@@ -95,7 +95,7 @@
 #define ENDCHAR '\r'           /* replies end with CR LF -- use LF to end */
 #define IGNCHAR '\r'           /* ignore CR */
 
-#define MAX_SYNC_TRIES 3
+#define MAX_SYNC_TRIES 1
 
 #define MAX_SEND_TRIES 3
 #define SEND_WAIT_SEC 0
@@ -147,7 +147,7 @@ static int hex2d(char *start, unsigned int len)
 /* All UPS commands are challenge-response, so this function makes things
  * very clean.
  *
- * You do not need to pass in the ':' or '\r'
+ * You do not need to pass in the ':' or '\r'. Be sure to use sizeof(msg) instead of strlen(msg).
  *
  * return: # of chars in buf, excluding terminating \0 */
 static int send_cmd(const char *msg, size_t msg_len, char *reply, size_t reply_len)
@@ -157,7 +157,7 @@ static int send_cmd(const char *msg, size_t msg_len, char *reply, size_t reply_l
 	int ret, send_try, recv_try, done = 0;
 	size_t i = 0;
 
-	upsdebugx(3, "send_cmd()");
+	upsdebugx(3, "send_cmd(msg_len=%d)", msg_len);
 
 	if(msg_len > 5) {
 		fatalx("send_cmd(): Trying to pass too many characters to UPS (%u)", (unsigned)msg_len);
@@ -174,7 +174,13 @@ static int send_cmd(const char *msg, size_t msg_len, char *reply, size_t reply_l
 	buffer_out[i] = 255-csum;
 	buffer_out[i+1] = 0x0d;
 
+	upsdebugx(5, "send_cmd: sending %02x %02x %02x %02x %02x %02x %02x %02x",
+		buffer_out[0], buffer_out[1], buffer_out[2], buffer_out[3],
+		buffer_out[4], buffer_out[5], buffer_out[6], buffer_out[7]);
+
 	for(send_try=0; !done && send_try < MAX_SEND_TRIES; send_try++) {
+		upsdebugx(6, "send_cmd send_try %d", send_try+1);
+
 		ret = libusb_set_report(0, buffer_out, sizeof(buffer_out));
 
 		if(ret != sizeof(buffer_out)) {
@@ -182,18 +188,27 @@ static int send_cmd(const char *msg, size_t msg_len, char *reply, size_t reply_l
 			return -1;
 		}
 
+		if(!done) { upsdebugx(5, "not done yet"); sleep(1); /* TODO: nanosleep */ }
+
 		for(recv_try=0; !done && recv_try < MAX_RECV_TRIES; recv_try++) {
-			ret = libusb_get_interrupt(reply, reply_len, RECV_WAIT_MSEC);
+			upsdebugx(7, "send_cmd recv_try %d", recv_try+1);
+			ret = libusb_get_interrupt(reply, sizeof(buffer_out), RECV_WAIT_MSEC);
 			if(ret != sizeof(buffer_out)) {
 				upslogx(1, "libusb_get_interrupt() returned %d instead of %d", ret, sizeof(buffer_out));
 			}
 			done = (ret == sizeof(buffer_out)) && (buffer_out[1] == reply[0]);
 		}
-
-		if(!done) { /* TODO: sleep */ }
 	}
 
-	return i;
+	if(ret == sizeof(buffer_out)) {
+		upsdebugx(5, "send_cmd: received %02x %02x %02x %02x %02x %02x %02x %02x (%s)",
+				reply[0], reply[1], reply[2], reply[3],
+				reply[4], reply[5], reply[6], reply[7], done ? "OK" : "bad");
+	}
+	
+	upsdebugx(5, "send_cmd: send_try = %d, recv_try = %d\n", send_try, recv_try);
+
+	return 8;
 }
 
 static void ups_sync(void)
@@ -203,8 +218,8 @@ static void ups_sync(void)
 
 	for (tries = 0; tries < MAX_SYNC_TRIES; ++tries) {
 		upsdebugx(3, "Trying to sync (attempt %d)", tries+1);
-		ret = send_cmd(msg, strlen(msg), buf, sizeof buf);
-		if ((ret > 0) && isdigit((unsigned char)buf[0]))
+		ret = send_cmd(msg, sizeof(msg), buf, sizeof buf);
+		if (ret > 0)
 			return;
 	}
 	fatalx("\nFailed to find UPS - giving up...");
@@ -333,7 +348,8 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("ups.mfr", "%s", "Tripp Lite");
 
 	ret = send_cmd(p_msg, sizeof(p_msg), p_value, sizeof(p_value)-1);
-	va = hex2d(p_value + 1, 5);
+	// p_value[6] = '\0';
+	va = strtol(p_value+1, NULL, 10);
 
 	model = "OMNIVS%d";
 
