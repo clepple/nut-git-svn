@@ -211,7 +211,7 @@ static int send_cmd(const char *msg, size_t msg_len, char *reply, size_t reply_l
 	upsdebugx(((send_try > 2) || (recv_try > 2)) ? 3 : 6, 
 			"send_cmd: send_try = %d, recv_try = %d\n", send_try, recv_try);
 
-	return sizeof(buffer_out);
+	return done ? sizeof(buffer_out) : 0;
 }
 
 static int do_reboot_now(void)
@@ -432,6 +432,7 @@ void upsdrv_updateinfo(void)
 			break;
 		default:
 			upslogx(LOG_ERR, "Unknown value for s[2]: 0x%02x", s_value[2]);
+			dstate_datastale();
 			break;
 	}
 
@@ -443,6 +444,8 @@ void upsdrv_updateinfo(void)
 			break;
 		default:
 			upslogx(LOG_ERR, "Unknown value for s[1]: 0x%02x", s_value[1]);
+			dstate_datastale();
+			break;
 	}
 
 	status_commit();
@@ -465,11 +468,7 @@ void upsdrv_updateinfo(void)
 
 	dstate_setinfo("output.voltage", "%.1f", hex2d(l_value+1, 4)/2.0);
 
-	upsdebugx(5, "b_value[5,6] = %c%c", b_value[5], b_value[6]);
-
 	bv = hex2d(b_value+5, 2)/16.0;
-
-	upsdebugx(5, "hex2d = %d", hex2d(b_value+5, 2));
 
 	/* dq ~= sqrt(dV) is a reasonable approximation
 	 * Results fit well against the discrete function used in the Tripp Lite
