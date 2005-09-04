@@ -227,10 +227,12 @@ static int send_cmd(const char *msg, size_t msg_len, char *reply, size_t reply_l
 	return done ? sizeof(buffer_out) : 0;
 }
 
+#if 0
+/* using the watchdog to reboot won't work while polling */
 static void do_reboot_wait(unsigned dly)
 {
 	int ret;
-	char buf[256], cmd_W[]="Wx";
+	char buf[256], cmd_W[]="Wx"; 
 
 	cmd_W[1] = dly;
 	upsdebugx(3, "do_reboot_wait(wait=%d): N", dly);
@@ -248,6 +250,7 @@ static void do_reboot(void)
 {
 	do_reboot_wait(bootdelay);
 }
+#endif
 
 /* Called by 'tripplite_usb -k' */
 static int soft_shutdown(void)
@@ -270,7 +273,7 @@ static int soft_shutdown(void)
 	return (ret == 8);
 }
 
-#if 1
+#if 0
 static int hard_shutdown(void)
 {
 	int ret;
@@ -307,7 +310,6 @@ static int instcmd(const char *cmdname, const char *extra)
 		send_cmd(":K1\r", buf, sizeof buf);
 		return STAT_INSTCMD_HANDLED;
 	}
-#endif
 	if (!strcasecmp(cmdname, "shutdown.reboot")) {
 		do_reboot_now();
 		return STAT_INSTCMD_HANDLED;
@@ -316,12 +318,13 @@ static int instcmd(const char *cmdname, const char *extra)
 		do_reboot();
 		return STAT_INSTCMD_HANDLED;
 	}
-	if (!strcasecmp(cmdname, "shutdown.return")) {
-		soft_shutdown();
-		return STAT_INSTCMD_HANDLED;
-	}
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
 		hard_shutdown();
+		return STAT_INSTCMD_HANDLED;
+	}
+#endif
+	if (!strcasecmp(cmdname, "shutdown.return")) {
+		soft_shutdown();
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -342,12 +345,12 @@ static int setvar(const char *varname, const char *val)
 		dstate_setinfo("ups.delay.start", val);
 		return STAT_SET_HANDLED;
 	}
-#endif
 	if (!strcasecmp(varname, "ups.delay.reboot")) {
 		bootdelay = atoi(val);
 		dstate_setinfo("ups.delay.reboot", val);
 		return STAT_SET_HANDLED;
 	}
+#endif
 	return STAT_SET_UNKNOWN;
 }
 
@@ -374,6 +377,7 @@ void upsdrv_initinfo(void)
 	ret = send_cmd(p_msg, sizeof(p_msg), p_value, sizeof(p_value)-1);
 	va = strtol(p_value+1, NULL, 10);
 
+	/* TODO: get this from USB string descriptors (for 1500XL) */
 	model = "OMNIVS%d";
 
 	dstate_setinfo("ups.model", model, va);
@@ -393,26 +397,32 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("ups.delay.shutdown", buf);
 	dstate_setflags("ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.shutdown", 3);
+
 #if 0
 	snprintf(buf, sizeof buf, "%d", startdelay);
 	dstate_setinfo("ups.delay.start", buf);
 	dstate_setflags("ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.start", 8);
-#endif
+
 	snprintf(buf, sizeof buf, "%d", bootdelay);
 	dstate_setinfo("ups.delay.reboot", buf);
 	dstate_setflags("ups.delay.reboot", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.reboot", 3);
+#endif
 
 	dstate_addcmd("shutdown.return");
+
 #if 0
 	dstate_addcmd("shutdown.stayoff");
+
 	dstate_addcmd("test.battery.start"); /* Turns off automatically */
+
 	dstate_addcmd("load.off");
 	dstate_addcmd("load.on");
-#endif
+
 	dstate_addcmd("shutdown.reboot");
 	dstate_addcmd("shutdown.reboot.graceful");
+#endif
 
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
@@ -534,10 +544,10 @@ void upsdrv_makevartable(void)
 	snprintf(msg, sizeof msg, "Set start delay, in seconds (default=%d).",
 		DEFAULT_STARTDELAY);
 	addvar(VAR_VALUE, "startdelay", msg);
-#endif
 	snprintf(msg, sizeof msg, "Set reboot delay, in seconds (default=%d).",
 		DEFAULT_BOOTDELAY);
 	addvar(VAR_VALUE, "rebootdelay", msg);
+#endif
 }
 
 void upsdrv_banner(void)
@@ -566,9 +576,9 @@ void upsdrv_initups(void)
 #if 0
 	if (getval("startdelay"))
 		startdelay = atoi(getval("startdelay"));
-#endif
 	if (getval("rebootdelay"))
 		bootdelay = atoi(getval("rebootdelay"));
+#endif
 }
 
 void upsdrv_cleanup(void)
