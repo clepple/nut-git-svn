@@ -222,6 +222,7 @@ static int do_reboot_now(void)
 	snprintf(cmd, sizeof cmd, ":H%06X\r", startdelay);
 	return send_cmd(cmd, buf, sizeof buf);
 #else
+	upsdebugx(1, "do_reboot_now() not yet implemented");
 	return 0;
 #endif
 }
@@ -235,6 +236,7 @@ static void do_reboot(void)
 	send_cmd(cmd, buf, sizeof buf);
 	do_reboot_now();
 #endif
+	upsdebugx(1, "do_reboot() not yet implemented");
 }
 
 static int soft_shutdown(void)
@@ -246,6 +248,7 @@ static int soft_shutdown(void)
 	send_cmd(cmd, buf, sizeof buf);
 	return send_cmd(":G\r", buf, sizeof buf);
 #else
+	upsdebugx(1, "soft_shutdown() not yet implemented");
 	return 0;
 #endif
 }
@@ -259,6 +262,7 @@ static int hard_shutdown(void)
 	send_cmd(cmd, buf, sizeof buf);
 	return send_cmd(":K0\r", buf, sizeof buf);
 #else
+	upsdebugx(1, "hard_shutdown() not yet implemented");
 	return 0;
 #endif
 }
