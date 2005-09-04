@@ -83,21 +83,17 @@
  * :S     -- enables remote reboot/remote power on
  */
 
-#define DRV_VERSION "0.1"
+#define DRV_VERSION "0.2"
 
 #include "main.h"
 #include "libhid.h"
 #include "hid-usb.h"
-#include "newhidups.h"
 #include <math.h>
 #include <ctype.h>
 
 #define toprint(x) (isprint(x) ? (x) : '.')
 
-#define ENDCHAR '\r'           /* replies end with CR LF -- use LF to end */
-#define IGNCHAR '\r'           /* ignore CR */
-
-#define MAX_SYNC_TRIES 1
+#define ENDCHAR 13
 
 #define MAX_SEND_TRIES 3
 #define SEND_WAIT_SEC 0
@@ -106,7 +102,7 @@
 #define MAX_RECV_TRIES 3
 #define RECV_WAIT_MSEC 100
 
-// #define DEFAULT_OFFDELAY   64  /* seconds (max 0xFF) */
+#define DEFAULT_OFFDELAY   64  /* seconds (max 0xFF) */
 #define DEFAULT_STARTDELAY 60  /* seconds (max 0xFFFFFF) */
 #define DEFAULT_BOOTDELAY  64  /* seconds (max 0xFF) */
 #define MAX_VOLT 13.4          /* Max battery voltage (100%) */
@@ -133,7 +129,7 @@ static float V_interval[2] = {MIN_VOLT, MAX_VOLT};
 
 /* Time in seconds to delay before shutting down. */
 static unsigned int offdelay = DEFAULT_OFFDELAY;
-static unsigned int startdelay = DEFAULT_STARTDELAY;
+// static unsigned int startdelay = DEFAULT_STARTDELAY;
 static unsigned int bootdelay = DEFAULT_BOOTDELAY;
 
 static int hex2d(char *start, unsigned int len)
@@ -144,6 +140,25 @@ static int hex2d(char *start, unsigned int len)
 	strncpy(buf, start, (len < (sizeof buf) ? len : (sizeof buf - 1)));
 	if(len < sizeof(buf)) buf[len] = '\0';
 	return strtol(buf, NULL, 16);
+}
+
+static const char *hexascdump(char *msg, size_t len)
+{
+	size_t i;
+	static char buf[256], *bufp;
+
+	bufp = buf;
+	for(i=0; i<len; i++) {
+		bufp += sprintf(bufp, "%02x ", msg[i]);
+	}
+	*bufp++ = '"';
+	for(i=0; i<len; i++) {
+		*bufp++ = toprint(msg[i]);
+	}
+	*bufp++ = '"';
+	*bufp++ = '\0';
+
+	return buf;
 }
 
 /* All UPS commands are challenge-response, so this function makes things
@@ -159,7 +174,8 @@ static int send_cmd(const char *msg, size_t msg_len, char *reply, size_t reply_l
 	int ret = 0, send_try, recv_try=0, done = 0;
 	size_t i = 0;
 
-	upsdebugx(3, "send_cmd(msg_len=%d)", msg_len);
+	
+	upsdebugx(3, "send_cmd(msg_len=%d, type='%c')", msg_len, msg[0]);
 
 	if(msg_len > 5) {
 		fatalx("send_cmd(): Trying to pass too many characters to UPS (%u)", (unsigned)msg_len);
@@ -174,11 +190,9 @@ static int send_cmd(const char *msg, size_t msg_len, char *reply, size_t reply_l
 	}
 
 	buffer_out[i] = 255-csum;
-	buffer_out[i+1] = 0x0d;
+	buffer_out[i+1] = ENDCHAR;
 
-	upsdebugx(5, "send_cmd: sending %02x %02x %02x %02x %02x %02x %02x %02x",
-		buffer_out[0], buffer_out[1], buffer_out[2], buffer_out[3],
-		buffer_out[4], buffer_out[5], buffer_out[6], buffer_out[7]);
+	upsdebugx(5, "send_cmd: sending  %s", hexascdump(buffer_out, sizeof(buffer_out)));
 
 	for(send_try=0; !done && send_try < MAX_SEND_TRIES; send_try++) {
 		upsdebugx(6, "send_cmd send_try %d", send_try+1);
@@ -203,9 +217,8 @@ static int send_cmd(const char *msg, size_t msg_len, char *reply, size_t reply_l
 	}
 
 	if(ret == sizeof(buffer_out)) {
-		upsdebugx(5, "send_cmd: received %02x %02x %02x %02x %02x %02x %02x %02x (%s)",
-				reply[0], reply[1], reply[2], reply[3],
-				reply[4], reply[5], reply[6], reply[7], done ? "OK" : "bad");
+		upsdebugx(5, "send_cmd: received %s (%s)", hexascdump(reply, sizeof(buffer_out)),
+				done ? "OK" : "bad");
 	}
 	
 	upsdebugx(((send_try > 2) || (recv_try > 2)) ? 3 : 6, 
@@ -214,58 +227,68 @@ static int send_cmd(const char *msg, size_t msg_len, char *reply, size_t reply_l
 	return done ? sizeof(buffer_out) : 0;
 }
 
+static void do_reboot_wait(unsigned dly)
+{
+	int ret;
+	char buf[256], cmd_W[]="Wx";
+
+	cmd_W[1] = dly;
+	upsdebugx(3, "do_reboot_wait(wait=%d): N", dly);
+
+	ret = send_cmd(cmd_W, sizeof(cmd_W), buf, sizeof(buf));
+}
+
 static int do_reboot_now(void)
 {
-#if 0
-	char buf[256], cmd[16];
-
-	snprintf(cmd, sizeof cmd, ":H%06X\r", startdelay);
-	return send_cmd(cmd, buf, sizeof buf);
-#else
-	upsdebugx(1, "do_reboot_now() not yet implemented");
+	do_reboot_wait(1);
 	return 0;
-#endif
 }
 
 static void do_reboot(void)
 {
-#if 0
-	char buf[256], cmd[16];
-
-	snprintf(cmd, sizeof cmd, ":N%02X\r", bootdelay);
-	send_cmd(cmd, buf, sizeof buf);
-	do_reboot_now();
-#endif
-	upsdebugx(1, "do_reboot() not yet implemented");
+	do_reboot_wait(bootdelay);
 }
 
+/* Called by 'tripplite_usb -k' */
 static int soft_shutdown(void)
 {
-#if 0
-	char buf[256], cmd[16];
+	int ret;
+	char buf[256], cmd_N[]="N\0x", cmd_G[] = "G";
 
-	snprintf(cmd, sizeof cmd, ":N%02X\r", offdelay);
-	send_cmd(cmd, buf, sizeof buf);
-	return send_cmd(":G\r", buf, sizeof buf);
-#else
-	upsdebugx(1, "soft_shutdown() not yet implemented");
-	return 0;
-#endif
+	cmd_N[2] = offdelay;
+	cmd_N[1] = offdelay >> 8;
+	upsdebugx(3, "soft_shutdown(offdelay=%d): N", offdelay);
+
+	ret = send_cmd(cmd_N, sizeof(cmd_N), buf, sizeof(buf));
+	if(ret != 8) return ret;
+
+	sleep(2);
+	
+	/* The unit must be on battery for this to work. TODO: check for
+	 * on-battery condition, and print error if not. */
+	ret = send_cmd(cmd_G, sizeof(cmd_G), buf, sizeof(buf));
+	return (ret == 8);
 }
 
+#if 1
 static int hard_shutdown(void)
 {
-#if 0
-	char buf[256], cmd[16];
+	int ret;
+	char buf[256], cmd_N[]="N\0x", cmd_K[] = "K\0";
 
-	snprintf(cmd, sizeof cmd, ":N%02X\r", offdelay);
-	send_cmd(cmd, buf, sizeof buf);
-	return send_cmd(":K0\r", buf, sizeof buf);
-#else
-	upsdebugx(1, "hard_shutdown() not yet implemented");
-	return 0;
-#endif
+	cmd_N[2] = offdelay;
+	cmd_N[1] = offdelay >> 8;
+	upsdebugx(3, "hard_shutdown(offdelay=%d): N", offdelay);
+
+	ret = send_cmd(cmd_N, sizeof(cmd_N), buf, sizeof(buf));
+	if(ret != 8) return ret;
+
+	sleep(2);
+	
+	ret = send_cmd(cmd_K, sizeof(cmd_K), buf, sizeof(buf));
+	return (ret == 8);
 }
+#endif
 
 static int instcmd(const char *cmdname, const char *extra)
 {
@@ -284,6 +307,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		send_cmd(":K1\r", buf, sizeof buf);
 		return STAT_INSTCMD_HANDLED;
 	}
+#endif
 	if (!strcasecmp(cmdname, "shutdown.reboot")) {
 		do_reboot_now();
 		return STAT_INSTCMD_HANDLED;
@@ -300,7 +324,6 @@ static int instcmd(const char *cmdname, const char *extra)
 		hard_shutdown();
 		return STAT_INSTCMD_HANDLED;
 	}
-#endif
 
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
 	return STAT_INSTCMD_UNKNOWN;
@@ -308,23 +331,23 @@ static int instcmd(const char *cmdname, const char *extra)
 
 static int setvar(const char *varname, const char *val)
 {
-#if 0
 	if (!strcasecmp(varname, "ups.delay.shutdown")) {
 		offdelay = atoi(val);
 		dstate_setinfo("ups.delay.shutdown", val);
 		return STAT_SET_HANDLED;
 	}
+#if 0
 	if (!strcasecmp(varname, "ups.delay.start")) {
 		startdelay = atoi(val);
 		dstate_setinfo("ups.delay.start", val);
 		return STAT_SET_HANDLED;
 	}
+#endif
 	if (!strcasecmp(varname, "ups.delay.reboot")) {
 		bootdelay = atoi(val);
 		dstate_setinfo("ups.delay.reboot", val);
 		return STAT_SET_HANDLED;
 	}
-#endif
 	return STAT_SET_UNKNOWN;
 }
 
@@ -332,7 +355,7 @@ void upsdrv_initinfo(void)
 {
 	const char *model, f_msg[] = "F", p_msg[] = "P",
 		s_msg[] = "S", v_msg[] = "V", w_msg[] = "W\0";
-	char f_value[9], p_value[9], s_value[9], v_value[9], w_value[9];
+	char f_value[9], p_value[9], s_value[9], v_value[9], w_value[9], buf[256];
 	int  va, ret;
 
 	/* Reset watchdog: */
@@ -366,28 +389,30 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("ups.firmware.aux", "V%c%c%c",
 			toprint(v_value[1]), toprint(v_value[2]), toprint(v_value[3]));
 
-#if 0
 	snprintf(buf, sizeof buf, "%d", offdelay);
 	dstate_setinfo("ups.delay.shutdown", buf);
 	dstate_setflags("ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.shutdown", 3);
+#if 0
 	snprintf(buf, sizeof buf, "%d", startdelay);
 	dstate_setinfo("ups.delay.start", buf);
 	dstate_setflags("ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.start", 8);
+#endif
 	snprintf(buf, sizeof buf, "%d", bootdelay);
 	dstate_setinfo("ups.delay.reboot", buf);
 	dstate_setflags("ups.delay.reboot", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.reboot", 3);
 
+	dstate_addcmd("shutdown.return");
+#if 0
+	dstate_addcmd("shutdown.stayoff");
 	dstate_addcmd("test.battery.start"); /* Turns off automatically */
 	dstate_addcmd("load.off");
 	dstate_addcmd("load.on");
+#endif
 	dstate_addcmd("shutdown.reboot");
 	dstate_addcmd("shutdown.reboot.graceful");
-	dstate_addcmd("shutdown.return");
-	dstate_addcmd("shutdown.stayoff");
-#endif
 
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
@@ -431,6 +456,9 @@ void upsdrv_updateinfo(void)
 		case '1':
 			status_set("OB");
 			break;
+		case '2': /* "charge-only" mode, no AC in or out... the PC
+			     shouldn't see this, because there is no power in
+			     that case */
 		case '3': /* I have seen this once when switching from off+LB to charging */
 			upslogx(LOG_WARNING, "Unknown value for s[2]: 0x%02x", s_value[2]);
 			break;
@@ -497,19 +525,19 @@ void upsdrv_help(void)
 
 void upsdrv_makevartable(void)
 {
-#if 0
 	char msg[256];
 
 	snprintf(msg, sizeof msg, "Set shutdown delay, in seconds (default=%d).",
 		DEFAULT_OFFDELAY);
 	addvar(VAR_VALUE, "offdelay", msg);
+#if 0
 	snprintf(msg, sizeof msg, "Set start delay, in seconds (default=%d).",
 		DEFAULT_STARTDELAY);
 	addvar(VAR_VALUE, "startdelay", msg);
+#endif
 	snprintf(msg, sizeof msg, "Set reboot delay, in seconds (default=%d).",
 		DEFAULT_BOOTDELAY);
 	addvar(VAR_VALUE, "rebootdelay", msg);
-#endif
 }
 
 void upsdrv_banner(void)
@@ -533,14 +561,14 @@ void upsdrv_initups(void)
 		fatalx("This driver only supports Tripp Lite Omni UPSes. Try the newhidups driver instead.");
 	}
 
-#if 0
 	if (getval("offdelay"))
 		offdelay = atoi(getval("offdelay"));
+#if 0
 	if (getval("startdelay"))
 		startdelay = atoi(getval("startdelay"));
+#endif
 	if (getval("rebootdelay"))
 		bootdelay = atoi(getval("rebootdelay"));
-#endif
 }
 
 void upsdrv_cleanup(void)
