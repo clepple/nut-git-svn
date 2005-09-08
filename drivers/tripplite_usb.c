@@ -83,7 +83,7 @@
  * :S     -- enables remote reboot/remote power on
  */
 
-#define DRV_VERSION "0.2"
+#define DRV_VERSION "0.3"
 
 #include "main.h"
 #include "libhid.h"
@@ -356,9 +356,10 @@ static int setvar(const char *varname, const char *val)
 
 void upsdrv_initinfo(void)
 {
-	const char *model, f_msg[] = "F", p_msg[] = "P",
+	const char f_msg[] = "F", p_msg[] = "P",
 		s_msg[] = "S", v_msg[] = "V", w_msg[] = "W\0";
-	char f_value[9], p_value[9], s_value[9], v_value[9], w_value[9], buf[256];
+	char *model, *model_end, 
+	     f_value[9], p_value[9], s_value[9], v_value[9], w_value[9], buf[256];
 	int  va, ret;
 
 	/* Reset watchdog: */
@@ -377,10 +378,24 @@ void upsdrv_initinfo(void)
 	ret = send_cmd(p_msg, sizeof(p_msg), p_value, sizeof(p_value)-1);
 	va = strtol(p_value+1, NULL, 10);
 
-	/* TODO: get this from USB string descriptors (for 1500XL) */
-	model = "OMNIVS%d";
+	/* trim "TRIPP LITE" from beginning of model */
+	model = strdup(hd->Product);
+	if(strstr(model, hd->Vendor) == model) {
+		model += strlen(hd->Vendor);
+	}
 
-	dstate_setinfo("ups.model", model, va);
+	for(; *model == ' '; model++);
+
+	/* Trim trailing spaces */
+	for(model_end = model + strlen(model) - 1;
+			model_end > model && *model_end == ' ';
+			model_end--) {
+		*model_end = '\0';
+	}
+
+	dstate_setinfo("ups.model", model);
+
+	dstate_setinfo("ups.power.nominal", "%d", va);
 
 	ret = send_cmd(f_msg, sizeof(f_msg), f_value, sizeof(f_value)-1);
 
