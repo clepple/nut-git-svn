@@ -83,6 +83,79 @@
  * :S     -- enables remote reboot/remote power on
  */
 
+/*
+
+POD ("Plain Old Documentation") - run through pod2html or perldoc. See
+perlpod(1) for more information.
+
+pod2man --name='TRIPPLITE_USB' --section=8 --release=' ' --center='Network UPS Tools (NUT)' tripplite_usb.c
+
+=head1 NAME
+
+tripplite_usb - Driver for Tripp Lite OMNISV1000 and OMNISV1500XL USB-based UPS
+equipment
+
+=head1 NOTE
+
+This  man  page  only  documents  the hardware-specific features of the
+tripplite driver.  For information about the core driver, see nutupsdrv(8).
+
+=head1 SUPPORTED HARDWARE
+
+This driver should work with the OMNISV series UPSes, which are detected as
+USB HID-class devices. If your Tripp Lite UPS uses a serial port, you may wish
+to investigate the tripplite(8) or tripplite_su(8) driver.
+
+=head1 EXTRA ARGUMENTS
+
+This driver supports the following optional setting in the ups.conf(5) file:
+
+=over
+
+=item offdelay
+
+This setting controls the delay between receiving the "kill" command (C<-k>)
+and actually cutting power to the computer.
+
+=back
+
+=head1 RUNTIME VARIABLES
+
+=over
+
+=item ups.delay.shutdown
+
+This variable is the same as the C<offdelay> setting, but it can be changed at
+runtime by upsrw(8).
+
+=back
+
+=head1 KNOWN ISSUES AND BUGS
+
+The driver was not developed with any official documentation from Tripp Lite,
+so certain events may confuse the driver. If you observe any strange behavior,
+please re-run the driver with "-DDD" to increase the verbosity.
+
+=head1 AUTHORS
+
+Charles Lepple E<lt>clepple+nut@ghz.ccE<gt>, based on the tripplite driver by
+Rickard E. (Rik) Faith E<lt>faith@alephnull.comE<gt> and Nicholas Kain
+E<lt>nicholas@kain.usE<gt>.
+
+=head1 SEE ALSO
+
+=head2 The core driver:
+
+nutupsdrv(8)
+
+=head2 Internet resources:
+
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+=cut
+
+*/
+
 #define DRV_VERSION "0.3"
 
 #include "main.h"
