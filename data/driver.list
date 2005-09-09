@@ -294,6 +294,8 @@
 
 "Sysgration"	"UPGUARDS Pro650"	""	"fentonups"
 
+"Tripp-Lite"	"OMNIVS1000"	""	"tripplite_usb"
+"Tripp-Lite"	"OMNIVS1500XL"	""	"tripplite_usb"
 "Tripp-Lite"	"SmartUPS"	""	"tripplite"
 "Tripp-Lite"	"SmartOnline"	""	"tripplitesu"
 "Tripp-Lite"	"(various)"	"Lan 2.2 interface - black 73-0844 cable"	"genericups upstype=5"
