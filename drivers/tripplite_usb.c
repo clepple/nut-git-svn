@@ -170,6 +170,11 @@ The driver was not developed with any official documentation from Tripp Lite,
 so certain events may confuse the driver. If you observe any strange behavior,
 please re-run the driver with "-DDD" to increase the verbosity.
 
+So far, the Tripp Lite UPSes do not seem to have any serial number or other
+unique identifier accessible through USB. Therefore, you are limited to one
+Tripp Lite USB UPS per system (and in practice, this driver will not play well
+with other USB UPSes, either).
+
 =head1 AUTHORS
 
 Charles Lepple E<lt>clepple+nut@ghz.ccE<gt>, based on the tripplite driver by
@@ -208,17 +213,20 @@ The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 #define MAX_RECV_TRIES 3
 #define RECV_WAIT_MSEC 100
 
+#define MAX_RECONNECT_TRIES 10
+#define RECONNECT_DELAY 2	/*!< in seconds */
+
 #define DEFAULT_OFFDELAY   64  /*!< seconds (max 0xFF) */
 #define DEFAULT_STARTDELAY 60  /*!< seconds (max 0xFFFFFF) */
 #define DEFAULT_BOOTDELAY  64  /*!< seconds (max 0xFF) */
 #define MAX_VOLT 13.4          /*!< Max battery voltage (100%) */
 #define MIN_VOLT 11.0          /*!< Min battery voltage (10%) */
 
-#define USB_VID_TRIPP_LITE	0x09ae
-#define USB_PID_TRIPP_LITE	0x0001
+#define USB_VID_TRIPP_LITE	0x09ae /*!< USB Vendor ID for Tripp Lite */
+#define USB_PID_TRIPP_LITE	0x0001 /*!< Seems to be the same for all Tripp Lite USB UPSes */
 
 static HIDDevice *hd = NULL;
-static MatchFlags flg;
+static MatchFlags flg = { USB_VID_TRIPP_LITE, USB_PID_TRIPP_LITE, };
 
 /* We calculate battery charge (q) as a function of voltage (V).
  * It seems that this function probably varies by firmware revision or
@@ -235,7 +243,7 @@ static float V_interval[2] = {MIN_VOLT, MAX_VOLT};
 
 /*! Time in seconds to delay before shutting down. */
 static unsigned int offdelay = DEFAULT_OFFDELAY;
-static unsigned int bootdelay = DEFAULT_BOOTDELAY;
+/* static unsigned int bootdelay = DEFAULT_BOOTDELAY; */
 
 /*!@brief Convert N characters from hex to decimal
  *
@@ -281,6 +289,41 @@ static const char *hexascdump(char *msg, size_t len)
 	*bufp++ = '\0';
 
 	return buf;
+}
+
+int find_tripplite_ups(void);
+
+/*!@brief Report a USB comm failure, and reconnect if necessary
+ * 
+ * @param[in] res	Result code from libusb/libhid call
+ * @param[in] msg	Error message to display
+ */
+void usb_comm_fail(int res, const char *msg)
+{
+	int try = 0;
+
+	switch(res) {
+		case -ENODEV:
+			upslogx(LOG_WARNING, "%s: Device detached?", msg);
+			upsdrv_cleanup();
+
+			do {
+				sleep(RECONNECT_DELAY);
+				upslogx(LOG_NOTICE, "Reconnect attempt #%d", ++try);
+				find_tripplite_ups();
+			} while (!hd && (try < MAX_RECONNECT_TRIES));
+
+			if(hd) {
+				upslogx(LOG_NOTICE, "Successfully reconnected");
+			} else {
+				fatalx("Too many unsuccessful reconnection attempts");
+			}
+
+			break;
+		default:
+			upslogx(LOG_NOTICE, "%s: Unknown error %d", msg, res);
+			break;
+	}
 }
 
 /*!@brief Send a command to the UPS, and wait for a reply.
@@ -330,7 +373,7 @@ static int send_cmd(const char *msg, size_t msg_len, char *reply, size_t reply_l
 
 		if(ret != sizeof(buffer_out)) {
 			upslogx(1, "libusb_set_report() returned %d instead of %d", ret, sizeof(buffer_out));
-			return -1;
+			return ret;
 		}
 
 		if(!done) { usleep(1000*100); /* TODO: nanosleep */ }
@@ -396,8 +439,10 @@ static int soft_shutdown(void)
 
 	sleep(2);
 	
-	/* The unit must be on battery for this to work. TODO: check for
-	 * on-battery condition, and print error if not. */
+	/*! The unit must be on battery for this to work. 
+	 *
+	 * @todo check for on-battery condition, and print error if not.
+	 */
 	ret = send_cmd(cmd_G, sizeof(cmd_G), buf, sizeof(buf));
 	return (ret == 8);
 }
@@ -422,6 +467,8 @@ static int hard_shutdown(void)
 }
 #endif
 
+/*!@brief Handler for "instant commands"
+ */
 static int instcmd(const char *cmdname, const char *extra)
 {
 #if 0
@@ -597,9 +644,8 @@ void upsdrv_updateinfo(void)
 	/* General status (e.g. "S10") */
 	ret = send_cmd(s_msg, sizeof(s_msg), s_value, sizeof(s_value));
 	if(ret <= 0) {
-		/* TODO: implement ser_comm_fail() for USB */
-		upslogx(LOG_WARNING, "Error reading S value");
 		dstate_datastale();
+		usb_comm_fail(ret, "Error reading S value");
 		return;
 	}
 
@@ -638,8 +684,8 @@ void upsdrv_updateinfo(void)
 
 	ret = send_cmd(b_msg, sizeof(b_msg), b_value, sizeof(b_value));
 	if(ret <= 0) {
-		upslogx(LOG_WARNING, "Error reading B value");
 		dstate_datastale();
+		usb_comm_fail(ret, "Error reading B value");
 		return;
 	}
 
@@ -647,8 +693,8 @@ void upsdrv_updateinfo(void)
 
 	ret = send_cmd(l_msg, sizeof(l_msg), l_value, sizeof(l_value));
 	if(ret <= 0) {
-		upslogx(LOG_WARNING, "Error reading L value");
 		dstate_datastale();
+		usb_comm_fail(ret, "Error reading L value");
 		return;
 	}
 
@@ -702,11 +748,11 @@ void upsdrv_banner(void)
 	experimental_driver = 1;
 }
 
-void upsdrv_initups(void)
+int find_tripplite_ups(void)
 {
         /* Search for the first supported UPS, no matter Mfr or exact product */
         if ((hd = HIDOpenDevice(device_path, &flg, MODE_OPEN)) == NULL)
-                fatalx("No USB HID UPS found");
+		return -1;
         else
                 upslogx(1, "Detected an UPS: %s/%s\n", hd->Vendor, hd->Product);
 
@@ -714,7 +760,21 @@ void upsdrv_initups(void)
 
         if (hd->VendorID != USB_VID_TRIPP_LITE)
         {
-		fatalx("This driver only supports Tripp Lite Omni UPSes. Try the newhidups driver instead.");
+		upslogx(LOG_ERR, "This driver only supports Tripp Lite Omni UPSes. Try the newhidups driver instead.");
+		return -2;
+	}
+	return 0;
+}
+
+/*!@brief Find USB UPS, and open it
+ *
+ * @todo Allow binding based on firmware version (which seems to vary wildly
+ * from unit to unit)
+ */
+void upsdrv_initups(void)
+{
+	if(find_tripplite_ups() < 0) {
+                fatalx("No Tripp Lite USB HID UPS found");
 	}
 
 	if (getval("offdelay"))

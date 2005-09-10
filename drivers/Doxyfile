@@ -5,7 +5,7 @@
 #---------------------------------------------------------------------------
 PROJECT_NAME           = "NUT - tripplite_usb driver"
 PROJECT_NUMBER         = "Development tree"
-OUTPUT_DIRECTORY       = ../docs/
+OUTPUT_DIRECTORY       = ../docs/tripplite_usb
 CREATE_SUBDIRS         = NO
 OUTPUT_LANGUAGE        = English
 USE_WINDOWS_ENCODING   = NO
