@@ -1,6 +1,7 @@
-/* tripplite_usb.c - Driver for Tripp Lite entry-level USB
-   models.  (tested with: "OMNIVS1000")
-
+/*!@file tripplite_usb.c 
+ * @brief Driver for Tripp Lite entry-level USB models.  (tested with: "OMNIVS1000")
+ */
+/*
    tripplite_usb.c was derived from tripplite.c by Charles Lepple
    tripplite.c was derived from Russell Kroll's bestups.c by Rik Faith.
 
@@ -23,6 +24,8 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
+
+#define DRV_VERSION "0.3"
 
 /* % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
  *
@@ -187,14 +190,13 @@ The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 
 */
 
-#define DRV_VERSION "0.3"
-
 #include "main.h"
 #include "libhid.h"
 #include "hid-usb.h"
 #include <math.h>
 #include <ctype.h>
 
+/*!@brief If a character is not printable, return a dot. */
 #define toprint(x) (isprint(x) ? (x) : '.')
 
 #define ENDCHAR 13
@@ -206,16 +208,16 @@ The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 #define MAX_RECV_TRIES 3
 #define RECV_WAIT_MSEC 100
 
-#define DEFAULT_OFFDELAY   64  /* seconds (max 0xFF) */
-#define DEFAULT_STARTDELAY 60  /* seconds (max 0xFFFFFF) */
-#define DEFAULT_BOOTDELAY  64  /* seconds (max 0xFF) */
-#define MAX_VOLT 13.4          /* Max battery voltage (100%) */
-#define MIN_VOLT 11.0          /* Min battery voltage (10%) */
+#define DEFAULT_OFFDELAY   64  /*!< seconds (max 0xFF) */
+#define DEFAULT_STARTDELAY 60  /*!< seconds (max 0xFFFFFF) */
+#define DEFAULT_BOOTDELAY  64  /*!< seconds (max 0xFF) */
+#define MAX_VOLT 13.4          /*!< Max battery voltage (100%) */
+#define MIN_VOLT 11.0          /*!< Min battery voltage (10%) */
 
 #define USB_VID_TRIPP_LITE	0x09ae
-#define USB_PID_TRIPP_LITE_OMNI	0x0001
+#define USB_PID_TRIPP_LITE	0x0001
 
-static HIDDevice *hd;
+static HIDDevice *hd = NULL;
 static MatchFlags flg;
 
 /* We calculate battery charge (q) as a function of voltage (V).
@@ -231,11 +233,20 @@ static MatchFlags flg;
 /* Interval notation for Q% = 10% <= [minV, maxV] <= 100%  */
 static float V_interval[2] = {MIN_VOLT, MAX_VOLT};
 
-/* Time in seconds to delay before shutting down. */
+/*! Time in seconds to delay before shutting down. */
 static unsigned int offdelay = DEFAULT_OFFDELAY;
-// static unsigned int startdelay = DEFAULT_STARTDELAY;
 static unsigned int bootdelay = DEFAULT_BOOTDELAY;
 
+/*!@brief Convert N characters from hex to decimal
+ *
+ * @param start		Beginning of string to convert
+ * @param len		Maximum number of characters to consider (max 32)
+ *
+ * @a len characters of @a start are copied to a temporary buffer, then passed
+ * to strtol() to be converted to decimal.
+ *
+ * @return See strtol(3)
+ */
 static int hex2d(char *start, unsigned int len)
 {
 	char buf[32];
@@ -246,6 +257,13 @@ static int hex2d(char *start, unsigned int len)
 	return strtol(buf, NULL, 16);
 }
 
+/*!@brief Dump message in both hex and ASCII
+ *
+ * @param[in] msg	Buffer to dump
+ * @param[in] len	Number of bytes to dump
+ *
+ * @return		Pointer to static buffer with decoded message
+ */
 static const char *hexascdump(char *msg, size_t len)
 {
 	size_t i;
@@ -265,12 +283,20 @@ static const char *hexascdump(char *msg, size_t len)
 	return buf;
 }
 
-/* All UPS commands are challenge-response, so this function makes things
- * very clean.
+/*!@brief Send a command to the UPS, and wait for a reply.
  *
- * You do not need to pass in the ':' or '\r'. Be sure to use sizeof(msg) instead of strlen(msg).
+ * All of the UPS commands are challenge-response. If a command does not have
+ * anything to return, it simply returns the command character.
  *
- * return: # of chars in buf, excluding terminating \0 */
+ * @param[in] msg	Command string, minus the ':' or CR
+ * @param[in] msg_len	Be sure to use sizeof(msg) instead of strlen(msg),
+ * since some commands have embedded NUL characters
+ * @param[out] reply	Reply (but check return code for validity)
+ * @param[out] reply_len (currently unused)
+ *
+ * @return number of chars in reply, excluding terminating NUL
+ * @return 0 if command was not accepted
+ */
 static int send_cmd(const char *msg, size_t msg_len, char *reply, size_t reply_len)
 {
 	char buffer_out[8];
@@ -278,7 +304,6 @@ static int send_cmd(const char *msg, size_t msg_len, char *reply, size_t reply_l
 	int ret = 0, send_try, recv_try=0, done = 0;
 	size_t i = 0;
 
-	
 	upsdebugx(3, "send_cmd(msg_len=%d, type='%c')", msg_len, msg[0]);
 
 	if(msg_len > 5) {
@@ -356,7 +381,7 @@ static void do_reboot(void)
 }
 #endif
 
-/* Called by 'tripplite_usb -k' */
+/*! Called by 'tripplite_usb -k' */
 static int soft_shutdown(void)
 {
 	int ret;
@@ -671,8 +696,10 @@ void upsdrv_makevartable(void)
 
 void upsdrv_banner(void)
 {
-	printf("Network UPS Tools - Tripp Lite Omni driver %s (%s)\n",
+	printf("Network UPS Tools - Tripp Lite OMNIVS and SMARTPRO driver %s (%s)\n",
 			DRV_VERSION, UPS_VERSION);
+
+	experimental_driver = 1;
 }
 
 void upsdrv_initups(void)
