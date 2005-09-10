@@ -1,4 +1,4 @@
-/* tripplite_usb.c - model specific routines for Tripp Lite entry-level USB
+/* tripplite_usb.c - Driver for Tripp Lite entry-level USB
    models.  (tested with: "OMNIVS1000")
 
    tripplite_usb.c was derived from tripplite.c by Charles Lepple
@@ -24,7 +24,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-/* UPS Commands: (capital letters are literals, lower-case are variables)
+/* % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+ *
+ * OMNIVS Commands: (capital letters are literals, lower-case are variables)
  * :B     -> Bxxxxyy (xxxx/55.0: Hz in, yy/16: battery voltage)
  * :F     -> F1143_A (where _ = \0) Firmware version?
  * :L     -> LvvvvXX (vvvv/2.0: VAC out)
@@ -35,6 +37,8 @@
  *                   0 = disable; if UPS is not pinged in this interval, it
  *                   will power off the load, and then power it back on after
  *                   a delay.)
+ *
+ * % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
  *
  * The outgoing commands are sent with HID Set_Report commands over EP0
  * (control message), and incoming commands are received on EP1IN (interrupt
@@ -51,6 +55,33 @@
  * the command letter that was sent (no colon), and should be followed by
  * '\r'. If the command is not supported (or apparently if there is a serial
  * timeout internally), the previous response will be echoed back.
+ *
+ * % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+ *
+ * SMARTPRO commands:
+ *
+ * :A     -> ?          (start self-test)
+ * :D     -> D7187      (? - doesn't match tripplite.c)
+ * :F     -> F1019 A
+ * :K0/1  ->            (untested, but a switchable bank exists)
+ * :L     -> L290D_X
+ * :M     -> M007F      (127 - max voltage?)
+ * :P     -> P01500X    (max power)
+ * :Q     ->            (while online: reboot)
+ * :R     -> R<01><FF>
+ * :S     -> S100_Z0    (status?)
+ * :T     -> T7D2581    (temperature?)
+ * :U     -> U<FF><FF>
+ * :V     -> V1062XX
+ * :Z     -> Z
+ * 
+ * % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+ *
+ * The SMARTPRO unit seems to be slightly saner with regard to message
+ * polling. It specifies an interrupt in interval of 100 ms, but I just
+ * started at a 2 second timeout to obtain the above table. 
+ *
+ * % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
  *
  * Commands from serial tripplite.c:
  *
@@ -674,4 +705,4 @@ void upsdrv_cleanup(void)
         if (hd != NULL)
                 HIDCloseDevice(hd);
 }
-
+/* vim:se tw=78: */
