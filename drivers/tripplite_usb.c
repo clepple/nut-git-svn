@@ -320,8 +320,14 @@ void usb_comm_fail(int res, const char *msg)
 			} else {
 				fatalx("Too many unsuccessful reconnection attempts");
 			}
-
 			break;
+
+		case -EBUSY:
+			upslogx(LOG_WARNING, "%s: Device claimed by another process", msg);
+			fatalx("Terminating: EBUSY");
+			upsdrv_cleanup();
+			break;
+
 		default:
 			upslogx(LOG_NOTICE, "%s: Unknown error %d", msg, res);
 			break;
