@@ -25,7 +25,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define DRV_VERSION "0.3"
+#define DRV_VERSION "0.4"
 
 /* % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
  *
@@ -292,6 +292,7 @@ static const char *hexascdump(char *msg, size_t len)
 }
 
 int find_tripplite_ups(void);
+void upsdrv_initinfo(void);
 
 /*!@brief Report a USB comm failure, and reconnect if necessary
  * 
@@ -315,6 +316,7 @@ void usb_comm_fail(int res, const char *msg)
 
 			if(hd) {
 				upslogx(LOG_NOTICE, "Successfully reconnected");
+				upsdrv_initinfo();
 			} else {
 				fatalx("Too many unsuccessful reconnection attempts");
 			}
@@ -618,9 +620,8 @@ void upsdrv_initinfo(void)
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
 
-	printf("Detected %s %s on %s\n",
-			dstate_getinfo("ups.mfr"), dstate_getinfo("ups.model"),
-			device_path);
+	printf("Attached to %s %s\n",
+			dstate_getinfo("ups.mfr"), dstate_getinfo("ups.model"));
 
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 }
@@ -689,7 +690,7 @@ void upsdrv_updateinfo(void)
 		return;
 	}
 
-	dstate_setinfo("input.frequency", "%.2f", hex2d(b_value+1, 4)/55.0);
+	dstate_setinfo("input.voltage", "%.2f", hex2d(b_value+1, 4)/30.0);
 
 	ret = send_cmd(l_msg, sizeof(l_msg), l_value, sizeof(l_value));
 	if(ret <= 0) {
