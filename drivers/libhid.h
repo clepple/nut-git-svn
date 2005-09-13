@@ -42,7 +42,7 @@ typedef int bool;
 #define MODE_OPEN 0
 #define MODE_REOPEN 1
 
-#define MAX_TS			2		/* validity period of a gotten report (1 sec) */
+#define MAX_TS			2		/* validity period of a gotten report (2 sec) */
 
 /* ---------------------------------------------------------------------- */
 
@@ -74,7 +74,7 @@ typedef struct
 	long    LogMin;		/*!< Logical Min							*/
 	long    LogMax;		/*!< Logical Max						*/
 	long    PhyMin;		/*!< Physical Min						*/
-	long    PhyMax;		/*!< Physical Max						*/
+	long    PhyMax;		/*!< Physical Max						*/	
 } HIDItem;
 
 /*!
@@ -105,32 +105,32 @@ HIDItem *HIDGetItem(const char *ItemPath);
 /*
  * HIDGetItemValue
  * -------------------------------------------------------------------------- */
-float HIDGetItemValue(const char *path, float *Value);
+float HIDGetItemValue(char *path, float *Value);
 
 /*
  * HIDGetItemString
  * -------------------------------------------------------------------------- */
-char *HIDGetItemString(const char *path);
+char *HIDGetItemString(char *path);
 
 /*
  * HIDSetItemValue
  * -------------------------------------------------------------------------- */
-bool HIDSetItemValue(const char *path, float value);
+bool HIDSetItemValue(char *path, float value);
 
 /*
  * HIDGetNextEvent
  * -------------------------------------------------------------------------- */
-HIDItem *HIDGetNextEvent(HIDDevice *dev);
+int HIDGetEvents(HIDDevice *dev, HIDItem **eventsList);
 
 /*
  * HIDCloseDevice
  * -------------------------------------------------------------------------- */
 void HIDCloseDevice(HIDDevice *dev);
 
-
-
+/*
+ * Support functions
+ * -------------------------------------------------------------------------- */
+int get_current_data_attribute();
 void HIDDumpTree(HIDDevice *hd);
-int hid_lookup_usage(char *name);
-
 
 #endif /* _LIBHID_H */

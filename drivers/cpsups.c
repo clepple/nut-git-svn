@@ -26,7 +26,7 @@
 
 #include "cpsups.h"
 
-#define DRV_VERSION ".03"
+#define DRV_VERSION ".04"
 
 static void model_set(const char *abbr, const char *rating)
 {
@@ -42,7 +42,7 @@ static void model_set(const char *abbr, const char *rating)
 	        dstate_setinfo("ups.mfr", "%s", "CyberPower");
 	        dstate_setinfo("ups.model", "CPS1500AVR %s", rating);
 		dstate_setinfo("ups.runtime", "%s", "90");
-		dstate_setinfo("ups.voltage", "%s", "1500");
+		dstate_setinfo("ups.power.nominal", "%s", "1500");
 	        return;
 	}
 
@@ -50,13 +50,31 @@ static void model_set(const char *abbr, const char *rating)
 	        dstate_setinfo("ups.mfr", "%s", "CyberPower");
 	        dstate_setinfo("ups.model", "CPS1100VA %s", rating);
 		dstate_setinfo("ups.runtime", "%s", "60");
-		dstate_setinfo("ups.voltage", "%s", "1100");
+		dstate_setinfo("ups.power.nominal", "%s", "1100");
 	        return;
+	}
+
+	/* Added: Armin Diehl <diehl@...> 14Dec04 */
+	if (!strcmp(abbr, "#1000VA    ")) {
+		dstate_setinfo("ups.mfr", "%s", "MicroDowell");
+		dstate_setinfo("ups.model", "B.Box BP 1000 %s", rating);
+		dstate_setinfo("ups.runtime", "%s", "50");
+		dstate_setinfo("ups.voltage", "%s", "1000");
+		return;
 	}
 	        
 	if (!strcmp(abbr, "#825VA     ")) {
 		dstate_setinfo("ups.mfr", "%s", "CyberPower");
 		dstate_setinfo("ups.model", "CPS825VA %s", rating);
+		dstate_setinfo("ups.runtime", "%s", "29");
+		dstate_setinfo("ups.power.nominal", "%s", "825");
+		return;
+	}
+
+	/* Added: Armin Diehl <diehl@...> 14Dec04 */
+	if (!strcmp(abbr, "#750VA     ")) {
+		dstate_setinfo("ups.mfr", "%s", "MicroDowell");
+		dstate_setinfo("ups.model", "B.Box BP 750 %s", rating);
 		dstate_setinfo("ups.runtime", "%s", "29");
 		dstate_setinfo("ups.voltage", "%s", "825");
 		return;
@@ -66,14 +84,14 @@ static void model_set(const char *abbr, const char *rating)
                 dstate_setinfo("ups.mfr", "%s", "CyberPower");
                 dstate_setinfo("ups.model", "OP500TE %s", rating);
                 dstate_setinfo("ups.runtime", "%s", "16.5");
-                dstate_setinfo("ups.voltage", "%s", "500");
+                dstate_setinfo("ups.power.nominal", "%s", "500");
 		return;
 	}
 
 	dstate_setinfo("ups.mfr", "%s", "Unknown");
 	dstate_setinfo("ups.model", "Unknown %s (%s)", abbr, rating);
 	dstate_setinfo("ups.runtime", "%s", "1");
-	dstate_setinfo("ups.voltage", "%s", "1");
+	dstate_setinfo("ups.power.nominal", "%s", "1");
 
 	printf("Unknown model detected - please report this ID: '%s'\n", abbr);
 }
@@ -127,7 +145,7 @@ static int get_ident(char *buf, size_t bufsize)
 static int scan_poll_values(char *buf)
 {
 	char values[20][200], *pos;
-	int i = 0, battvolt, length, rseconds;
+	int i = 0, battremain, length, rseconds;
 	double rminutes;
 
 /*	These are used to hold status of UPS.
@@ -161,15 +179,14 @@ static int scan_poll_values(char *buf)
 
 
 	pos = values[3];
-        battvolt = strtol(dstate_getinfo("ups.voltage"),NULL,10) * (strtod(pos,NULL)/100);
+        battremain = strtol(dstate_getinfo("ups.power.nominal"),NULL,10) * (strtod(pos,NULL)/100);
 
 	/* Figure out runtime minutes */
 	rminutes = strtod(dstate_getinfo("ups.runtime"),NULL) * 
-		((battvolt * ( 1 - (strtod (values[2],NULL) / 100 ))) / 
-		 strtol(dstate_getinfo("ups.voltage"),NULL,10));
+		((battremain * ( 1 - (strtod (values[2],NULL) / 100 ))) / 
+		 strtol(dstate_getinfo("ups.power.nominal"),NULL,10));
 	rseconds = ((int)(rminutes*100) - ((int)rminutes)*100) * 0.6 ;
 
-	dstate_setinfo("battery.voltage", "%i", battvolt);
         dstate_setinfo("input.voltage", "%g", strtod(values[0],NULL));
         dstate_setinfo("output.voltage", "%g", strtod(values[1],NULL));
         dstate_setinfo("ups.load", "%li", strtol(values[2],NULL,10));
@@ -228,13 +245,17 @@ static void ups_sync(void)
 
 	for (i = 0; i < MAXTRIES; i++) {
 		ser_send_pace(upsfd, UPSDELAY, "\rP4\r");
+		upsdebugx(3, "ups_sync: send [%s]", "\\rP4\\r");
 
 		ret = ser_get_line(upsfd, buf, sizeof(buf), ENDCHAR, "",
 			SER_WAIT_SEC, SER_WAIT_USEC);
+		upsdebugx(3, "ups_sync: got ret %d [%s]", ret, buf);
 
 		/* return once we get something that looks usable */
-		if ((ret > 0) && (buf[0] == '#'))
+		if ((ret > 0) && (buf[0] == '#')) {
+			upsdebugx(3, "ups_sync: got line beginning with #, looks usable, returning");
 			return;
+		}
 
 		usleep(250000);
 	}
@@ -278,10 +299,10 @@ static int ups_on_line(void)
 		/* D must return 34 bytes starting with a # */
 		if ((ret > 0) && (temp[0] == '#') && (strlen(temp) == 34)) {
 
-			scan_poll_values(temp);
+			char * pos = &temp[pollstatusmap[POLL_UPSSTATUS].begin];
 
-			if (strstr(dstate_getinfo("ups.status"),"OL")) 
-				return 1;	/* on line */
+			if ((*pos & CPS_STAT_OL) && !(*pos & CPS_STAT_OB))
+				return(1);    /* on line */
 
 			return 0;	/* on battery */
 		}
@@ -296,6 +317,11 @@ static int ups_on_line(void)
 
 void upsdrv_shutdown(void)
 {
+	int ret;
+	char    buf[256];
+
+	ups_sync();
+
 	printf("The UPS will shut down in approximately one minute.\n");
 
 	if (ups_on_line())
@@ -307,6 +333,12 @@ void upsdrv_shutdown(void)
 	 * does indeed shutdown correctly. */
 
 	ser_send_pace(upsfd, UPSDELAY, "S01R0001\r");
+
+	ret = ser_get_line(upsfd, buf, sizeof(buf), ENDCHAR, "",
+					   SER_WAIT_SEC, SER_WAIT_USEC);
+
+	if ((ret < 1) || (buf[0] != '#'))
+		printf ("Warning: got unexpected reply to shutdown command, shutdown may fail\n");
 }
 
 void upsdrv_updateinfo(void)
