@@ -21,6 +21,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+/* for regular expressions: */
+#include <sys/types.h>
+#include <regex.h>
+
 #include "main.h"
 #include "libhid.h"
 #include "newhidups.h"
@@ -35,7 +39,6 @@ static models_name_t *model_names;
 
 /* Global vars */
 static HIDDevice *hd;
-static MatchFlags flg;
 static int offdelay = DEFAULT_OFFDELAY;
 static int ondelay = DEFAULT_ONDELAY;
 static int pollfreq = DEFAULT_POLLFREQ;
@@ -235,7 +238,12 @@ void upsdrv_makevartable(void)
 		DEFAULT_POLLFREQ);
 	addvar(VAR_VALUE, HU_VAR_POLLFREQ, temp);
 	
-	/* FIXME: autodetection values (Mfr, Product, Index, ...) */
+	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
+	addvar(VAR_VALUE, "vendor", "Regular expression to match UPS Manufacturer string");
+	addvar(VAR_VALUE, "product", "Regular expression to match UPS Product string");
+	addvar(VAR_VALUE, "serial", "Regular expression to match UPS Serial number");
+	addvar(VAR_VALUE, "vendorid", "Regular expression to match UPS Manufacturer numerical ID (4 digits hexadecimal)");
+	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
 }
 
 void upsdrv_banner(void)
@@ -393,13 +401,64 @@ void upsdrv_initinfo(void)
 	upsh.instcmd = instcmd;
 }
 
+/* Compile an extended, case insensitive regular expression. On
+   success, return an allocated regex_t item. On failure, log an error
+   message and return NULL. Returned regex_t must first be freed with
+   regfree(), then free(), see regex(3). As a special case, if
+   regex==NULL, return NULL (this allows the user to specify no
+   regular expression at all). */
+static inline regex_t *compile_regex(char *regex) {
+	int r;
+	regex_t *preg;
+	char errbuf[256];
+
+	if (regex == NULL) {
+		return NULL;
+	}
+	preg = (regex_t *)xmalloc(sizeof(regex_t));
+
+	r = regcomp(preg, regex, REG_ICASE | REG_EXTENDED);
+	if (r) {
+		regerror(r, preg, errbuf, sizeof(errbuf));
+		fatalx("Unable to parse regular expression %s: %s\n", regex, errbuf);
+		return NULL;
+	}
+	return preg;
+}
+
 void upsdrv_initups(void)
 {
+	MatchFlags_t match;
+
+        /* parse the UPS selection options */
+	match.re_Vendor = compile_regex(getval("vendor"));
+	match.re_VendorID = compile_regex(getval("vendorid"));
+	match.re_Product = compile_regex(getval("product"));
+	match.re_ProductID = compile_regex(getval("productid"));
+	match.re_Serial = compile_regex(getval("serial"));
+	match.str_Vendor = getval("vendor");
+	match.str_VendorID = getval("vendorid");
+	match.str_Product = getval("product");
+	match.str_ProductID = getval("productid");
+	match.str_Serial = getval("serial");
+
 	/* Search for the first supported UPS, no matter Mfr or exact product */
-	if ((hd = HIDOpenDevice(device_path, &flg, MODE_OPEN)) == NULL)
-		fatalx("No USB/HID UPS found");
+	if ((hd = HIDOpenDevice(device_path, &match, MODE_OPEN)) == NULL)
+		fatalx("No matching USB/HID UPS found");
 	else
 		upslogx(1, "Detected an UPS: %s/%s\n", hd->Vendor, hd->Product);
+
+	/* free the regular expressions */
+	regfree(match.re_Vendor);
+	free(match.re_Vendor);
+	regfree(match.re_VendorID);
+	free(match.re_VendorID);
+	regfree(match.re_Product);
+	free(match.re_Product);
+	regfree(match.re_ProductID);
+	free(match.re_ProductID);
+	regfree(match.re_Serial);
+	free(match.re_Serial);
 
 	/* See initinfo for WARNING */
 	switch (hd->VendorID)
@@ -695,7 +754,7 @@ static void reconnect_ups(void)
 	  /* Not really useful as the device is no more reachable */
 	  HIDCloseDevice(NULL);
 	  
-	  if ((hd = HIDOpenDevice(device_path, &flg, MODE_REOPEN)) == NULL)
+	  if ((hd = HIDOpenDevice(device_path, NULL, MODE_REOPEN)) == NULL)
 		dstate_datastale();
 	}
 }

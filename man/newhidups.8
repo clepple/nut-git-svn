@@ -37,6 +37,20 @@ ensures the machines connected to the UPS are, in all cases, rebooted after
 a power failure.
 The default value is 30 (in seconds), and MUST BE GREATER than offdelay.
 
+.IP "vendor=\fIregex\fR"
+.IP "product=\fIregex\fR"
+.IP "serial=\fIregex\fR"
+.IP "vendorid=\fIregex\fR"
+.IP "productid=\fIregex\fR"
+
+Select a specific UPS, in case there is more than one connected on the
+USB bus. Each option specifies an extended regular expression (see
+\fIregex(7)\fR) that must match the entire vendor/product/serial
+string (minus any surrounding whitespace), or the whole 4-digit
+hexadecimal code for vendorid and productid. Try \fI-D -D\fR for
+finding out the strings to match. Examples: \fI-x vendor="APC.*"\fR,
+\fI-x product=".*(Smart|Back)-?UPS.*"\fR.
+
 .SH EXPERIMENTAL DRIVER
 This driver has been tagged experimental, even if it has been reported
 to be stable. Thus it is not suitable for production systems and it is

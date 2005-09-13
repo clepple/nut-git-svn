@@ -143,7 +143,7 @@ void HIDDumpTree(HIDDevice *hd)
 	}
 }
 						
-HIDDevice *HIDOpenDevice(const char *port, MatchFlags *flg, int mode)
+HIDDevice *HIDOpenDevice(const char *port, MatchFlags_t *flg, int mode)
 {
 	int ReportSize;
 

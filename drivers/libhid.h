@@ -28,6 +28,7 @@
 #define _LIBHID_H
 
 #include <sys/types.h>
+#include <regex.h>
 #include "timehead.h"
 #include "hidtypes.h"
 
@@ -77,25 +78,33 @@ typedef struct
 	long    PhyMax;		/*!< Physical Max						*/	
 } HIDItem;
 
-/*!
- * Describe a set of values to match for finding a special HID device
- */
-typedef struct
-{
-	int VendorID;
-	int ProductID;
-	int UsageCode;
-	int Index;
-} MatchFlags;
+/* Describe a set of values to match for finding a special HID device.
+ * This is given by a set of (compiled) regular expressions. If any
+ * expression is NULL, it matches anything. The second set of values
+ * are the original (not compiled) regular expression strings. They
+ * are only used to product human-readable log messages, but not for
+ * the actual matching. */
 
-#define ANY	-1 /* 0xffff */ /* match any vendor or product */
+struct MatchFlags_s {
+	regex_t *re_Vendor;
+	regex_t *re_VendorID;
+	regex_t *re_Product;
+	regex_t *re_ProductID;
+	regex_t *re_Serial;
+	char *str_Vendor;
+	char *str_VendorID;
+	char *str_Product;
+	char *str_ProductID;
+	char *str_Serial;
+};
+typedef struct MatchFlags_s MatchFlags_t;
 
- /* ---------------------------------------------------------------------- */
+/* ---------------------------------------------------------------------- */
 
 /*
  * HIDOpenDevice
  * -------------------------------------------------------------------------- */
-HIDDevice *HIDOpenDevice(const char *port, MatchFlags *flg, int mode);
+HIDDevice *HIDOpenDevice(const char *port, MatchFlags_t *flg, int mode);
 
 /*
  * HIDGetItem

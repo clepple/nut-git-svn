@@ -30,6 +30,9 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
+#include <regex.h>
+
 #include "libhid.h"
 
 #include "hid-usb.h"
@@ -84,10 +87,62 @@ static inline int typesafe_control_msg(usb_dev_handle *dev,
 
 #define usb_control_msg         typesafe_control_msg
 
+/* Check if the entire string str (minus any initial and trailing
+   whitespace) matches the compiled regular expression preg. Return 1
+   if it matches, 0 if not. Special cases: if preg==NULL, it matches
+   everything.  If str==NULL, then it is treated as "". */
+static int match_regex(regex_t *preg, char *str) {
+  int r;
+  regmatch_t pmatch[1];
+  char *p, *q;
+  int len;
+
+  if (preg == NULL) {
+    return 1;
+  }
+  if (str == NULL) {
+    str = "";
+  }
+
+  /* make a copy of str with whitespace stripped */
+  for (q=str; *q==' ' || *q=='\t' || *q=='\n'; q++) {
+    /* empty */
+  }
+  len = strlen(q);
+  p = (char *)xmalloc(len+1);
+  memcpy(p, q, len+1);
+  while (len>0 && (p[len-1]==' ' || p[len-1]=='\t' || p[len-1]=='\n')) {
+    len--;
+  }
+  p[len] = 0;
+
+  /* test the regular expression */
+  r = regexec(preg, p, 1, pmatch, 0);
+  free(p);
+  if (r) {
+    return 0;
+  }
+  /* check that the match is the entire string */
+  if (pmatch[0].rm_so != 0 || pmatch[0].rm_eo != len) {
+    return 0;
+  }
+  return 1;
+}
+
+/* similar to match_regex, but the argument being matched is a
+ * (hexadecimal) number, rather than a string. It is converted to a
+ * 4-digit hexadecimal string. */
+static int match_regex_hex(regex_t *preg, int n) {
+	char buf[10];
+	sprintf(buf, "%04x", n);
+	return match_regex(preg, buf);
+}
+
+
 /* return report descriptor on success, NULL otherwise */
 /* mode: MODE_OPEN for the 1rst time, MODE_REOPEN to skip getting
     report descriptor (the longer part) */
-int libusb_open(HIDDevice *curDevice, MatchFlags *flg, unsigned char *ReportDesc, int mode)
+int libusb_open(HIDDevice *curDevice, MatchFlags_t *flg, unsigned char *ReportDesc, int mode)
 {
 	int found = 0;
 #if LIBUSB_HAS_DETACH_KRNL_DRV
@@ -122,28 +177,48 @@ int libusb_open(HIDDevice *curDevice, MatchFlags *flg, unsigned char *ReportDesc
 			udev = usb_open(dev);
 			if (udev) {
 
+			  curDevice->VendorID = 0;
+			  curDevice->ProductID = 0;
+			  curDevice->Vendor = NULL;
+			  curDevice->Product = NULL;
+			  curDevice->Serial = NULL;
+
 			  /* Check the VendorID for matching flag */
 			  /* FIXME: temporary method, not generic/flexible enough */
 			  if ( (dev->descriptor.idVendor == MGE_UPS_SYSTEMS)
 				  || (dev->descriptor.idVendor == APC)
 				  || ( (dev->descriptor.idVendor == BELKIN)
-					&& (dev->descriptor.idProduct == 0x0551) )
+				       && (dev->descriptor.idProduct == 0x0551))
 				  || (dev->descriptor.idVendor == MUSTEK)
 				  || (dev->descriptor.idVendor == TRIPPLITE)
 				  || (dev->descriptor.idVendor == UNITEK) )
 				{
 
 				  TRACE(2, "Found 0x%04x/0x%04x", dev->descriptor.idVendor, dev->descriptor.idProduct);
-				  /* when reopening, try to find the
-				     same USB as before. */
-				  if (mode == MODE_REOPEN) {
-				    if (dev->descriptor.idVendor != reopen_VendorID ||
-					dev->descriptor.idProduct != reopen_ProductID) {
-				      TRACE(2, "Not the same device as before - not reopening it");
-				      usb_close(udev);
-				      udev = NULL;
-				      continue;
-				    }
+				  if (mode == MODE_OPEN) {
+					  /* when opening, try to match 
+					     requested device */
+					  if (!match_regex_hex(flg->re_VendorID, dev->descriptor.idVendor)) {
+						  TRACE(2, "VendorID %04x does not match regular expression %s - not opening", dev->descriptor.idVendor, flg->str_VendorID);
+						  usb_close(udev);
+                                                  udev = NULL;
+                                                  continue;
+					  } else if (!match_regex_hex(flg->re_ProductID, dev->descriptor.idProduct)) {
+						  TRACE(2, "ProductID %04x does not match regular expression %s - not opening", dev->descriptor.idProduct, flg->str_ProductID);
+						  usb_close(udev);
+                                                  udev = NULL;
+                                                  continue;
+                                          }
+				  } else if (mode == MODE_REOPEN) {
+					  /* when reopening, try to find the
+					     same USB as before. */
+					  if (dev->descriptor.idVendor != reopen_VendorID ||
+					      dev->descriptor.idProduct != reopen_ProductID) {
+						  TRACE(2, "Not the same device as before - not reopening it");
+						  usb_close(udev);
+						  udev = NULL;
+						  continue;
+					  }
 				  }
 
 				  curDevice->VendorID = dev->descriptor.idVendor;
@@ -231,22 +306,42 @@ int libusb_open(HIDDevice *curDevice, MatchFlags *flg, unsigned char *ReportDesc
 				  {
 					TRACE(2, "- Serial Number: %s", string);
 					curDevice->Serial = strdup(string);
-					/* when reopening, only open a
-					   device with the same serial
-					   number as before */
-					if (mode == MODE_REOPEN) {
-					  if (strcmp(reopen_Serial, curDevice->Serial) != 0) {
-					    TRACE(2, "Not the same serial number as before - not reopening");
-					    usb_close(udev);
-					    udev = NULL;
-                                            continue; 
-					  }
-					}
 				  }
 				else
-				  TRACE(2, "- Unable to fetch serial number string");
+					TRACE(2, "- Unable to fetch serial number string");
 			  } else
-				TRACE(2, "- No serial number string");
+				  TRACE(2, "- No serial number string");
+
+			  if (mode == MODE_OPEN) {
+				  /* when opening, try to match
+				     requested device */
+				  if (!match_regex(flg->re_Vendor, curDevice->Vendor)) {
+					  TRACE(2, "Vendor %s does not match regular expression %s - not opening", curDevice->Vendor, flg->str_Vendor);
+					  usb_close(udev);
+					  udev = NULL;
+					  continue; 
+				  } else if (!match_regex(flg->re_Product, curDevice->Product)) {
+					  TRACE(2, "Product %s does not match regular expression %s - not opening", curDevice->Product, flg->str_Product);
+					  usb_close(udev);
+					  udev = NULL;
+					  continue; 
+				  } else if (!match_regex(flg->re_Serial, curDevice->Serial)) {
+					  TRACE(2, "Serial number %s does not match regular expression %s - not opening", curDevice->Serial, flg->str_Serial);
+					  usb_close(udev);
+					  udev = NULL;
+					  continue; 
+				  }
+			  } else if (mode == MODE_REOPEN) {
+				  /* when reopening, only open a
+				     device with the same serial
+				     number as before */
+				  if (curDevice->Serial && strcmp(reopen_Serial, curDevice->Serial) != 0) {
+					  TRACE(2, "Not the same serial number as before - not reopening");
+					  usb_close(udev);
+					  udev = NULL;
+					  continue; 
+				  }
+			  }
 	
 			  /* Get HID descriptor */
 			  desc = (struct my_usb_hid_descriptor *)buf;
