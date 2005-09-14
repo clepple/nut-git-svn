@@ -449,17 +449,27 @@ void upsdrv_initups(void)
 		upslogx(1, "Detected an UPS: %s/%s\n", hd->Vendor, hd->Product);
 
 	/* free the regular expressions */
-	regfree(match.re_Vendor);
-	free(match.re_Vendor);
-	regfree(match.re_VendorID);
-	free(match.re_VendorID);
-	regfree(match.re_Product);
-	free(match.re_Product);
-	regfree(match.re_ProductID);
-	free(match.re_ProductID);
-	regfree(match.re_Serial);
-	free(match.re_Serial);
-
+	if (match.re_Vendor) {
+		regfree(match.re_Vendor);
+		free(match.re_Vendor);
+	}
+	if (match.re_VendorID) {
+		regfree(match.re_VendorID);
+		free(match.re_VendorID);
+	}
+	if (match.re_Product) {
+		regfree(match.re_Product);
+		free(match.re_Product);
+	}
+	if (match.re_ProductID) {
+		regfree(match.re_ProductID);
+		free(match.re_ProductID);
+	}
+	if (match.re_Serial) {
+		regfree(match.re_Serial);
+		free(match.re_Serial);
+	}
+	
 	/* See initinfo for WARNING */
 	switch (hd->VendorID)
 	{
