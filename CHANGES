@@ -6,6 +6,27 @@ Wed Sep 14 18:31:47 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
  - newhidups: fixed "free null pointer" error in regular expression
    code.
 
+Wed Sep 14 16:23:55 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: renamed ups.devicechemistry as battery.type, bumped 
+   newhidups driver release.
+
+Tue Sep 13 20:50:14 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: added Belkin support. Also added some new variables and
+   instant commands (some of these were already used by other
+   drivers); see new-names.txt.
+
+ - newhidups: fixed return value bug in libusb.c:libusb_open() when no
+   device was found.
+
+Tue Sep 13 08:06:52 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - driver.list: add Exide NETUPS SE and Deltec PowerRite Pro II
+   (rebranded models of Powerware 5119)
+
+   (Karl Schmidt) [Alioth Patch #301881]
+
 Tue Sep 13 05:22:49 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: added options -x vendor=X, -x vendorid=X, -x product=X,
