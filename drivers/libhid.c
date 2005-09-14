@@ -2,10 +2,11 @@
  * @file libhid.c
  * @brief HID Library - User API (Generic HID Access using MGE HIDParser)
  *
- * @author Copyright (C) 2003
+ * @author Copyright (C) 2003 - 2005
  *	Arnaud Quette <arnaud.quette@free.fr> && <arnaud.quette@mgeups.com>
  *	Philippe Marzouk <philm@users.sourceforge.net> (dump_hex())
- *
+ *	John Stamp <kinsayder@hotmail.com>
+ *	
  * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
  *
  *      The logic of this file is ripped from mge-shut driver (also from
@@ -52,34 +53,42 @@ static int prev_report; /* previously retrieved report ID */
 static time_t prev_report_ts = 0; /* timestamp of the previously retrieved report */
 unsigned char ReportDesc[4096];
 
-#define MAX_REPORT_SIZE         0x1800
+/* FIXME: we currently "hard-wire" the report buffer size in the calls
+   to libusb_get_report() below to 8 bytes. This is not really a great
+   idea, but it is necessary because Belkin models will crash,
+   sometimes with permanent firmware damage, if called with a larger
+   buffer size (never mind the USB specification). Let's hope for now
+   that no other UPS needs a buffer greater than 8. Ideally, the
+   libhid library should calculate the *exact* size of the required
+   report buffer from the report descriptor. */
+#define REPORT_SIZE 8
 
 /* TODO: rework all that */
 extern void upsdebugx(int level, const char *fmt, ...);
 #define TRACE upsdebugx
 
-/* Units and exponents table (HID PDC, §3.2.3) */
+/* Units and exponents table (HID PDC, 3.2.3) */
 #define NB_HID_UNITS 10
 const long HIDUnits[NB_HID_UNITS][2]=
 {
-  {0x00000000,0}, /* None */
-  {0x00F0D121,7}, /* Voltage */
-  {0x00100001,0}, /* Ampere */
-  {0x0000D121,7}, /* VA */
-  {0x0000D121,7}, /* Watts */
-  {0x00001001,0}, /* second */
-  {0x00010001,0}, /* °K */
-  {0x00000000,0}, /* percent */
-  {0x0000F001,0}, /* Hertz */
-  {0x00101001,0}, /* As */
+	{0x00000000,0}, /* None */
+	{0x00F0D121,7}, /* Voltage */
+	{0x00100001,0}, /* Ampere */
+	{0x0000D121,7}, /* VA */
+	{0x0000D121,7}, /* Watts */
+	{0x00001001,0}, /* second */
+	{0x00010001,0}, /* K */
+	{0x00000000,0}, /* percent */
+	{0x0000F001,0}, /* Hertz */
+	{0x00101001,0}, /* As */
 };
 
 /* support functions */
 void logical_to_physical(HIDData *Data);
 void physical_to_logical(HIDData *Data);
-const char *hid_lookup_path(int usage);
+const char *hid_lookup_path(unsigned int usage);
 int hid_lookup_usage(char *name);
-ushort lookup_path(const char *HIDpath, HIDData *data);
+ushort lookup_path(char *HIDpath, HIDData *data);
 void dump_hex (const char *msg, const unsigned char *buf, int len);
 long get_unit_expo(long UnitType);
 float expo(int a, int b);
@@ -87,19 +96,58 @@ float expo(int a, int b);
 
 void HIDDumpTree(HIDDevice *hd)
 {
-	int i;
-	char str[128];
-      
-	while (HIDParse(&hParser, &hData) != FALSE)
+	int 		i;
+	char 		path[128], type[10];
+	float		value;
+	HIDData 	tmpData;
+	HIDParser 	tmpParser;
+
+	while (HIDParse(&hParser, &tmpData) != FALSE)
 	{
-		str[0] = '\0';
-		for (i = 0; i < hData.Path.Size; i++)
+		/* Build the path */
+		path[0] = '\0';
+		for (i = 0; i < tmpData.Path.Size; i++)
 		{
-		  strcat(str, hid_lookup_path((hData.Path.Node[i].UPage * 0x10000) + hData.Path.Node[i].Usage));
-			if (i < (hData.Path.Size - 1))
-				strcat (str, ".");
+		  strcat(path, hid_lookup_path((tmpData.Path.Node[i].UPage * 0x10000) + tmpData.Path.Node[i].Usage));
+			if (i < (tmpData.Path.Size - 1))
+				strcat (path, ".");
 		}
-		TRACE(1, "Path: %s", str);
+
+		/* Get data type */
+		type[0] = '\0';
+		switch (tmpData.Type)
+		{
+			case ITEM_FEATURE:
+				strcat(type, "Feature");
+				break;
+			case ITEM_INPUT:
+				strcat(type, "Input");
+				break;
+			case ITEM_OUTPUT:
+				strcat(type, "Output");
+				break;
+			default:
+				strcat(type, "Unknown");
+				break;
+		}
+
+		/* FIXME: enhance this or fix/change the HID parser (see libhid project) */
+		if ( strstr(path, "000000") == NULL) {
+			/* Backup shared data */
+			memcpy(&tmpData, &hData, sizeof (hData));
+			memcpy(&tmpParser, &hParser, sizeof (hParser));
+
+			/* Get data value */
+			if (HIDGetItemValue(path, &value) > 0)
+				TRACE(1, "Path: %s, Type: %s, Value: %f", path, type, value);
+			
+			else
+				TRACE(1, "Path: %s, Type: %s", path, type);
+
+			/* Restore shared data */
+			memcpy(&hData, &tmpData, sizeof (tmpData));
+			memcpy(&hParser, &tmpParser, sizeof (tmpParser));
+		}
 	}
 }
 						
@@ -125,9 +173,10 @@ HIDDevice *HIDOpenDevice(const char *port, MatchFlags *flg, int mode)
 	}
 
 	/* get and parse descriptors (dev, cfg and report) */
-	if ((ReportSize = libusb_open(&curDevice, flg, ReportDesc, mode)) == -1) {
+	ReportSize = libusb_open(&curDevice, flg, ReportDesc, mode);
+
+	if (ReportSize == -1)
 		return NULL;
-	}
 	else
 	{
 		if ( mode == MODE_REOPEN )
@@ -143,30 +192,21 @@ HIDDevice *HIDOpenDevice(const char *port, MatchFlags *flg, int mode)
 		ResetParser(&hParser);
 		hParser.ReportDescSize = ReportSize;
 		memcpy(hParser.ReportDesc, ReportDesc, ReportSize);
-		HIDParse(&hParser, &hData);
-
-		/* CHeck for matching UsageCode (1rst collection == application == type of device) */
-		if ((hData.Path.Node[0].UPage == ((flg->UsageCode & 0xFFFF0000) / 0x10000))
-			&& (hData.Path.Node[0].Usage == (flg->UsageCode & 0x0000FFFF)))
-		{
-				TRACE(2, "Found a device matching UsageCode (0x%08x)", flg->UsageCode);
-		}
-		else
-		{
-			TRACE(2, "Found a device, but not matching UsageCode (0x%08x)", flg->UsageCode);
-			return NULL;
-		}
+		/* don't throw away first item */
+		//HIDParse(&hParser, &hData);
 	}
 	return &curDevice;
 }
 
+/* int HIDGetItem(hid_info_t *ItemInfo, HIDItem *item) */
 HIDItem *HIDGetItem(const char *ItemPath)
 {
-  return NULL;
+	/* was for libhid, not useful in our scope! */
+	return NULL;
 }
 
 /* return 1 if OK, 0 on fail, <= -1 otherwise (ie disconnect) */
-float HIDGetItemValue(const char *path, float *Value)
+float HIDGetItemValue(char *path, float *Value)
 {
 	int i, retcode;
 	float tmpValue;
@@ -174,6 +214,7 @@ float HIDGetItemValue(const char *path, float *Value)
 	/* Prepare path of HID object */
 	hData.Type = ITEM_FEATURE;
 	hData.ReportID = 0;
+	hData.Path.Size = 0;
 
 	if((retcode = lookup_path(path, &hData)) > 0)
 	{
@@ -187,19 +228,17 @@ float HIDGetItemValue(const char *path, float *Value)
 		hData.Path.Size = retcode;
 
 		/* Get info on object (reportID, offset and size) */
-		if (FindObject(&hParser,&hData) == 1)
+		if (FindObject(&hParser, &hData) == 1)
 		{
 			/* Get report with data */
-			/* if ((replen=libusb_get_report(hData.ReportID,
-			raw_buf, MAX_REPORT_SIZE)) > 0) { => doesn't work! */
 			/* Bufferize at least the last report */
 			if ( ( (prev_report == hData.ReportID) && (time(NULL) <= (prev_report_ts + MAX_TS)) )
-				|| ((replen=libusb_get_report(hData.ReportID, raw_buf, 10)) > 0) )
+				|| ((replen=libusb_get_report(hData.ReportID, raw_buf, REPORT_SIZE)) > 0) )
 			{
 				/* Extract the data value */
 				GetValue((const unsigned char *) raw_buf, &hData);
 
-				TRACE(3, "=>> Before exponent: %ld, %i/%i)", hData.Value,
+				TRACE(4, "=>> Before exponent: %ld, %i/%i)", hData.Value,
 					(int)hData.UnitExp, (int)get_unit_expo(hData.Unit) );
 
 				/* Convert Logical Min, Max and Value in Physical */
@@ -214,6 +253,9 @@ float HIDGetItemValue(const char *path, float *Value)
 
 				/* Convert Logical Min, Max and Value into Physical */
 				logical_to_physical(&hData);
+
+				TRACE(4, "=>> After conversion: %ld, %i/%i)", hData.Value,
+					(int)hData.UnitExp, (int)get_unit_expo(hData.Unit) );
 
 				dump_hex ("Report ", raw_buf, replen);
 
@@ -234,13 +276,14 @@ float HIDGetItemValue(const char *path, float *Value)
 	return 0; /* TODO: should be checked */
 }
 
-char *HIDGetItemString(const char *path)
+char *HIDGetItemString(char *path)
 {
   int i, retcode;
   
   /* Prepare path of HID object */
   hData.Type = ITEM_FEATURE;
   hData.ReportID = 0;
+  hData.Path.Size = 0;
   
   if((retcode = lookup_path(path, &hData)) > 0) {
     TRACE(4, "Path depth = %i", retcode);
@@ -254,7 +297,7 @@ char *HIDGetItemString(const char *path)
     
     /* Get info on object (reportID, offset and size) */
     if (FindObject(&hParser,&hData) == 1) {
-      if (libusb_get_report(hData.ReportID, raw_buf, 8) > 0) { /* MAX_REPORT_SIZE) > 0) { */
+      if (libusb_get_report(hData.ReportID, raw_buf, REPORT_SIZE) > 0) { 
 	GetValue((const unsigned char *) raw_buf, &hData);
 
 	/* now get string */
@@ -272,66 +315,117 @@ char *HIDGetItemString(const char *path)
   return NULL;
 }
  
-bool HIDSetItemValue(const char *path, float value)
+bool HIDSetItemValue(char *path, float value)
 {
-  float Value;
-  int retcode;
+	float Value;
+	int retcode;
+	
+	/* Begin by a standard Get to fill in com structures ... */
+	retcode = HIDGetItemValue(path, &Value);
+	
+	/* ... And play with global vars */
+	if (retcode == 1) /* Get succeed */
+	{
+		TRACE(2, "=>> SET: Before set: %.2f (%ld)", Value, (long)value);
+		
+		/* Test if Item is settable */
+		if (hData.Attribute != ATTR_DATA_CST)
+		{
+			/* Set new value for this item */
+			/* And Process exponents restoration */
+			Value = value * expo(10, get_unit_expo(hData.Unit) - (int)hData.UnitExp);
+			
+			hData.Value=(long) Value;
+			
+			TRACE(2, "=>> SET: after exp: %ld/%.2f (exp = %.2f)", hData.Value, Value,
+				expo(10, (int)get_unit_expo(hData.Unit) - (int)hData.UnitExp));
 
-  /* Begin by a standard Get to fill in com structures ... */
-  retcode = HIDGetItemValue(path, &Value);
-
-  /* ... And play with global vars */
-  if (retcode == 1) { /* Get succeed */
-
-    TRACE(2, "=>> SET: Before set: %.2f (%ld)", Value, (long)value);
-
-    /* Test if Item is settable */
-    if (hData.Attribute != ATTR_DATA_CST) {
-      /* Set new value for this item */
-      /* And Process exponents restoration */
-      Value = value * expo(10, get_unit_expo(hData.Unit) - (int)hData.UnitExp);
-
-      hData.Value=(long) Value;
-
-      TRACE(2, "=>> SET: after exp: %ld/%.2f (exp = %.2f)", hData.Value, Value,
-	     expo(10, (int)get_unit_expo(hData.Unit) - (int)hData.UnitExp));
-
-      /* Convert Physical Min, Max and Value in Logical */
-      physical_to_logical(&hData);
-      TRACE(2, "=>> SET: after PL: %ld", hData.Value);
-
-      SetValue(&hData, raw_buf);
-
-      dump_hex ("==> Report after setvalue", raw_buf, replen);
-
-      if (libusb_set_report(hData.ReportID, raw_buf, replen) > 0) {
-	TRACE(2, "Set report succeeded");
-	return TRUE;
-      } else {
-	TRACE(2, "Set report failed");
+			/* Convert Physical Min, Max and Value in Logical */
+			physical_to_logical(&hData);
+			TRACE(2, "=>> SET: after PL: %ld", hData.Value);
+			
+			SetValue(&hData, raw_buf);
+			
+			dump_hex ("==> Report after setvalue", raw_buf, replen);
+			
+			if (libusb_set_report(hData.ReportID, raw_buf, replen) > 0)
+			{
+				TRACE(2, "Set report succeeded");
+				return TRUE;
+			}
+			else
+			{
+				TRACE(2, "Set report failed");
+				return FALSE;
+			}
+			/* check if set succeed! => doesn't work on *Delay (decremented!) */
+			/*      Value = HIDGetItemValue(path);
+			
+			TRACE(2, "=>> SET: new value = %.2f (was set to %.2f)\n", 
+			Value, (float) value);
+			return TRUE;*/ /* (Value == value); */
+		}
+	}
 	return FALSE;
-      }
-      /* check if set succeed! => doesn't work on *Delay (decremented!) */
-      /*      Value = HIDGetItemValue(path);
-      
-      TRACE(2, "=>> SET: new value = %.2f (was set to %.2f)\n", 
-      Value, (float) value);
-      return TRUE;*/ /* (Value == value); */
-    }
-  }
-  return FALSE;
 }
-HIDItem *HIDGetNextEvent(HIDDevice *dev)
+
+int HIDGetEvents(HIDDevice *dev, HIDItem **eventsList)
 {
-  /*  unsigned char buf[20];
+	unsigned char buf[20];
+	char itemPath[128];
+	int size, offset = 0, itemCount = 0;
+	
+	upsdebugx(2, "Waiting for notifications...");
+	
+	/* needs libusb-0.1.8 to work => use ifdef and autoconf */
+	if ((size = libusb_get_interrupt(&buf[0], 20, 5000)) > -1)
+	{
+		dump_hex ("Notification", buf, size);
+		
+		/* Convert report size in bits */
+		size = (size - 1) * 8;
+		
+		/* Parse response Report and Set correspondant Django values */
+		hData.ReportID = buf[0];
+		hData.Type = ITEM_INPUT;
+		
+		while(offset < size)
+		{
+			/* Set Offset */
+			hData.Offset = offset;
+	
+			/* Reset HID Path but keep Report ID */
+			memset(&hData.Path, '\0', sizeof(HIDPath));
+	
+			/* Get HID Object characteristics */
+			if(FindObject(&hParser, &hData))
+			{
+				/* Get HID Object value from report */
+				GetValue(buf, &hData);
+				memset(&itemPath, 0, sizeof(128));
+				lookup_path(&itemPath[0], &hData);
+	
+				upsdebugx(3, "Object: %s = %ld", itemPath, hData.Value);
+	
+				/* FIXME: enhance this or fix/change the HID parser (see libhid project) */
+				/* if ( strstr(itemPath, "000000") == NULL) */
+				if (strcmp(itemPath, "UPS.PowerSummary.PresentStatus.") > 0)
+				{
+					eventsList[itemCount] = (HIDItem *)malloc(sizeof (HIDItem));
+					eventsList[itemCount]->Path = strdup(itemPath);
+					eventsList[itemCount]->Value = hData.Value;
+					itemCount++;
+				}
+			}
+			offset += hData.Size;
+		}
+	}
+	else
+		itemCount = size; /* propagate error code */
 
-  upsdebugx(1, "Waiting for notifications\n");*/
-
-  /* TODO: To be written */
-  /* needs libusb-0.1.8 to work => use ifdef and autoconf */
-  /* libusb_get_interrupt(&buf[0], 20, 5000); */
-  return NULL;
+	return itemCount;
 }
+
 void HIDCloseDevice(HIDDevice *dev)
 {
 	TRACE(2, "Closing device");
@@ -340,211 +434,362 @@ void HIDCloseDevice(HIDDevice *dev)
 
 
 /*******************************************************
- * support functions
+ * Support functions
  *******************************************************/
 
 #define MAX_STRING      		64
 
 void logical_to_physical(HIDData *Data)
 {
-  if(Data->PhyMax - Data->PhyMin > 0)
-    {
-      float Factor = (float)(Data->PhyMax - Data->PhyMin) / (Data->LogMax - Data->LogMin);
-      /* Convert Value */
-      Data->Value=(long)((Data->Value - Data->LogMin) * Factor) + Data->PhyMin;
-
-      if(Data->Value > Data->PhyMax)
-	Data->Value |= ~Data->PhyMax;
-    }
-  else /* => nothing to do!? */
-    {
-      /* Value.m_Value=(long)(pConvPrm->HValue); */
-      if(Data->Value > Data->LogMax)
-	Data->Value |= ~Data->LogMax;
-    }
-  
-  /* if(Data->Value > Data->Value.m_Max)
-    Value.m_Value |= ~Value.m_Max;
-  */
+	if(Data->PhyMax - Data->PhyMin > 0)
+	{
+		float Factor = (float)(Data->PhyMax - Data->PhyMin) / (Data->LogMax - Data->LogMin);
+		/* Convert Value */
+		Data->Value=(long)((Data->Value - Data->LogMin) * Factor) + Data->PhyMin;
+			
+		if(Data->Value > Data->PhyMax)
+			Data->Value |= ~Data->PhyMax;
+	}
+	else /* => nothing to do!? */
+	{
+		/* Value.m_Value=(long)(pConvPrm->HValue); */
+		if(Data->Value > Data->LogMax)
+			Data->Value |= ~Data->LogMax;
+	}
+	
+	/* if(Data->Value > Data->Value.m_Max)
+		Value.m_Value |= ~Value.m_Max;
+	*/
 }
 
 void physical_to_logical(HIDData *Data)
 {
-  TRACE(2, "PhyMax = %ld, PhyMin = %ld, LogMax = %ld, LogMin = %ld",
-	Data->PhyMax, Data->PhyMin, Data->LogMax, Data->LogMin);
-
-  if(Data->PhyMax - Data->PhyMin > 0)
-    {
-      float Factor=(float)(Data->LogMax - Data->LogMin) / (Data->PhyMax - Data->PhyMin);
-      /* Convert Value */
-      Data->Value=(long)((Data->Value - Data->PhyMin) * Factor) + Data->LogMin;
-    }
-    /* else => nothing to do!?
-       {
-       m_ConverterTab[iTab].HValue=m_ConverterTab[iTab].DValue;
-       } */
+	TRACE(2, "PhyMax = %ld, PhyMin = %ld, LogMax = %ld, LogMin = %ld",
+		Data->PhyMax, Data->PhyMin, Data->LogMax, Data->LogMin);
+	
+	if(Data->PhyMax - Data->PhyMin > 0)
+	{
+		float Factor=(float)(Data->LogMax - Data->LogMin) / (Data->PhyMax - Data->PhyMin);
+		
+		/* Convert Value */
+		Data->Value=(long)((Data->Value - Data->PhyMin) * Factor) + Data->LogMin;
+	}
+	/* else => nothing to do!?
+	{
+	m_ConverterTab[iTab].HValue=m_ConverterTab[iTab].DValue;
+	} */
 }
 
 long get_unit_expo(long UnitType)
 {
-  int i = 0, exp = -1;
-
-  while (i < NB_HID_UNITS) {
-    if (HIDUnits[i][0] == UnitType) {
-      exp = HIDUnits[i][1];
-      break;
-    }
-    i++;
-  }
-  return exp;
+	int i = 0, exp = -1;
+	
+	while (i < NB_HID_UNITS)
+	{
+		if (HIDUnits[i][0] == UnitType)
+		{
+			exp = HIDUnits[i][1];
+			break;
+		}
+		i++;
+	}
+	return exp;
 }
 
 /* exponent function: return a^b */
-/* TODO: check if needed to replace libmath->pow */
+/* FIXME: check if needed/possible to replace libmath->pow */
 float expo(int a, int b)
 {
-  if (b==0)
-    return (float) 1;
-  if (b>0)
-    return (float) a * expo(a,b-1);
-  if (b<0)
-    return (float)((float)(1/(float)a) * (float) expo(a,b+1));
-  
-  /* not reached */
-  return -1;
+	if (b==0)
+		return (float) 1;
+	if (b>0)
+		return (float) a * expo(a,b-1);
+	if (b<0)
+		return (float)((float)(1/(float)a) * (float) expo(a,b+1));
+	
+	/* not reached */
+	return -1;
 }
 
-/* translate HID string path to numeric path and return path depth */
+/* translate HID string path from/to numeric path and return path depth */
 /* TODO: use usbutils functions (need to be externalised!) */
-ushort lookup_path(const char *HIDpath, HIDData *data)
+ushort lookup_path(char *HIDpath, HIDData *data)
 {
-  ushort i = 0, cond = 1;
-  int cur_usage;
-  char buf[MAX_STRING];
-  char *start, *end; 
+	ushort i = 0, cond = 1;
+	int cur_usage;
+	char buf[MAX_STRING];
+	char *start, *end; 
+	
+	TRACE(3, "entering lookup_path()");
+	
+	/* Check the way we are called */
+	if (data->Path.Size != 0)
+	{
+	  /* FIXME: another bug? */
+	  strcat(HIDpath, "UPS.");
+
+	  // Numeric to String
+	  for (i = 1; i < hData.Path.Size; i++)
+		{
+		  /* Deal with ?bogus? */
+		  if ( ((hData.Path.Node[i].UPage * 0x10000) + hData.Path.Node[i].Usage) == 0)
+			continue;
+
+		  /* manage indexed collection */
+		  if (hData.Path.Node[i].UPage == 0x00FF)
+			{
+			  TRACE(5, "Got an indexed collection");
+			  sprintf(strrchr(HIDpath, '.'), "[%i]", hData.Path.Node[i].Usage);
+			}
+		  else
+			strcat(HIDpath, hid_lookup_path((hData.Path.Node[i].UPage * 0x10000) + hData.Path.Node[i].Usage));
+			
+		  if (i < (hData.Path.Size - 1))
+			strcat (HIDpath, ".");
+		}
+	}
+	else
+	{
+	  // String to Numeric 
+	  strncpy(buf, HIDpath, strlen(HIDpath));
+	  buf[strlen(HIDpath)] = '\0';
+	  start = end = buf;
   
-  strncpy(buf, HIDpath, strlen(HIDpath));
-  buf[strlen(HIDpath)] = '\0';
-  start = end = buf;
-  
-  TRACE(3, "entering lookup_path(%s)", buf);
-  
-  while (cond) {
+	  while (cond) {
     
-    if ((end = strchr(start, '.')) == NULL) {
-      cond = 0;			
-    }
-    else
-      *end = '\0';
+		if ((end = strchr(start, '.')) == NULL) {
+		  cond = 0;			
+		}
+		else
+		  *end = '\0';
     
-    TRACE(4, "parsing %s", start);
+		TRACE(4, "parsing %s", start);
     
-    /* lookup code */
-    if ((cur_usage = hid_lookup_usage(start)) == -1) {
-      TRACE(4, "%s wasn't found", start);
-      return 0;
-    }
-    else {
-      data->Path.Node[i].UPage = (cur_usage & 0xFFFF0000) / 0x10000;
-      data->Path.Node[i].Usage = cur_usage & 0x0000FFFF; 
-      i++; 
-    }
+		/* lookup code */
+		if ((cur_usage = hid_lookup_usage(start)) == -1) {
+		  TRACE(4, "%s wasn't found", start);
+		  return 0;
+		}
+		else {
+		  data->Path.Node[i].UPage = (cur_usage & 0xFFFF0000) / 0x10000;
+		  data->Path.Node[i].Usage = cur_usage & 0x0000FFFF; 
+		  i++; 
+		}
     
-    if(cond)
-      start = end +1 ;
-  }
-  data->Path.Size = i;
+		if(cond)
+		  start = end +1 ;
+	  }
+	  data->Path.Size = i;
+	}
+
   return i;
 }
 
 /* Lookup this usage name to find its code (page + index) */
 /* temporary usage code lookup */
+/* FIXME: put as external data, like in usb.ids (or use
+ * this last?) */
 typedef struct {
 	const char *usage_name;
-	int usage_code;
+	unsigned int usage_code;
 } usage_lkp_t;
 
 static usage_lkp_t usage_lkp[] = {
 	/* Power Device Page */
-	{  "Undefined", 0x00840000 },
-	{  "PresentStatus", 0x00840002 },
-	{  "UPS", 0x00840004 },
-	{  "BatterySystem", 0x00840010 },
-	{  "Battery", 0x00840012 },
-	{  "BatteryID", 0x00840013 },	
-	{  "PowerConverter", 0x00840016 },
-	{  "PowerConverterID", 0X00840017 },
-	{  "OutletSystem", 0x00840018 },
-	{  "OutletSystemID", 0x00840019 },
-	{  "Input", 0x0084001a },
-	{  "Output", 0x0084001c },
-	{  "Flow", 0x0084001e },
-	{  "FlowID", 0x0084001f },
-	{  "Outlet", 0x00840020 },
-	{  "OutletID", 0x00840021 },
-	{  "PowerSummary", 0x00840024 },
-	{  "PowerSummaryID", 0x00840025 },
-	{  "Voltage", 0x00840030 },
-	{  "Current", 0x00840031 },
-	{  "Frequency", 0x00840032 },
-	{  "PercentLoad", 0x00840035 },
-	{  "Temperature", 0x00840036 },
-	{  "ConfigVoltage", 0x00840040 },
-	{  "ConfigCurrent", 0x00840041 },
-	{  "ConfigFrequency", 0x00840042 },
-	{  "ConfigApparentPower", 0x00840043 },
-	{  "LowVoltageTransfer", 0x00840053 },
-	{  "HighVoltageTransfer", 0x00840054 },	
-	{  "DelayBeforeReboot", 0x00840055 },	
-	{  "DelayBeforeStartup", 0x00840056 },
-	{  "DelayBeforeShutdown", 0x00840057 },
-	{  "Test", 0x00840058 },
-	{  "AudibleAlarmControl", 0x0084005a },
-	{  "Good", 0x00840061 },
-	{  "InternalFailure", 0x00840062 },
-	{  "OverLoad", 0x00840065 }, /* mispelled in usb.ids */
-	{  "ShutdownImminent", 0x00840069 },
-	{  "SwitchOn/Off", 0x0084006b },
-	{  "Switchable", 0x0084006c },
-	{  "Boost", 0x0084006e },
-	{  "Buck", 0x0084006f },
-	{  "CommunicationLost", 0x00840073 },
-	{  "iManufacturer", 0x008400fd },
-	{  "iProduct", 0x008400fe },
-	{  "iSerialNumber", 0x008400ff },
+	{  "Undefined",				0x00840000 },
+	{  "PresentStatus",			0x00840002 },
+	{  "UPS",				0x00840004 },
+	{  "BatterySystem",			0x00840010 },
+	{  "Battery",				0x00840012 },
+	{  "BatteryID",				0x00840013 },
+	{  "PowerConverter",			0x00840016 },
+	{  "PowerConverterID",			0X00840017 },
+	{  "OutletSystem",			0x00840018 },
+	{  "OutletSystemID",			0x00840019 },
+	{  "Input",				0x0084001a },
+	{  "Output",				0x0084001c },
+	{  "Flow",				0x0084001e },
+	{  "FlowID",				0x0084001f },
+	{  "Outlet",				0x00840020 },
+	{  "OutletID",				0x00840021 },
+	{  "PowerSummary",			0x00840024 },
+	{  "PowerSummaryID",			0x00840025 },
+	{  "Voltage",				0x00840030 },
+	{  "Current",				0x00840031 },
+	{  "Frequency",				0x00840032 },
+	{  "PercentLoad",			0x00840035 },
+	{  "Temperature",			0x00840036 },
+	{  "ConfigVoltage",			0x00840040 },
+	{  "ConfigCurrent",			0x00840041 },
+	{  "ConfigFrequency",			0x00840042 },
+	{  "ConfigApparentPower",		0x00840043 },
+	{  "LowVoltageTransfer",		0x00840053 },
+	{  "HighVoltageTransfer",		0x00840054 },	
+	{  "DelayBeforeReboot",			0x00840055 },
+	{  "DelayBeforeStartup",		0x00840056 },
+	{  "DelayBeforeShutdown",		0x00840057 },
+	{  "Test",				0x00840058 },
+	{  "AudibleAlarmControl",		0x0084005a },
+	{  "Good",				0x00840061 },
+	{  "InternalFailure",			0x00840062 },
+	{  "OverLoad",				0x00840065 }, /* mispelled in usb.ids */
+	{  "OverTemperature", 			0x00840067 },
+	{  "ShutdownRequested",			0x00840068 },
+	{  "ShutdownImminent",			0x00840069 },
+	{  "SwitchOn/Off",			0x0084006b },
+	{  "Switchable",			0x0084006c },
+	{  "Used",				0x0084006d },
+	{  "Boost",				0x0084006e },
+	{  "Buck",				0x0084006f },
+	{  "CommunicationLost",			0x00840073 },
+	{  "iManufacturer",			0x008400fd },
+	{  "iProduct",				0x008400fe },
+	{  "iSerialNumber",			0x008400ff },
 	/* Battery System Page */
-	{  "Undefined", 0x00850000 },
-	{  "RemainingCapacityLimit", 0x00850029 },
-	{  "CapacityMode", 0x0085002c },
-	{  "BelowRemainingCapacityLimit", 0x00850042 },
-	{  "Charging", 0x00850044 },
-	{  "Discharging", 0x00850045 },
-	{  "NeedReplacement", 0x0085004b },
-	{  "RemainingCapacity", 0x00850066 },
-	{  "FullChargeCapacity", 0x00850067 },
-	{  "RunTimeToEmpty", 0x00850068 },
-	{  "CapacityGranularity1", 0x0085008d },
-	{  "DesignCapacity", 0x00850083 },
-	{  "iDeviceChemistry", 0x00850089 },
-	{  "ACPresent", 0x008500d0 },
+	{ "Undefined",				0x00850000 },
+	{ "RemainingCapacityLimit",		0x00850029 },
+	{ "RemainingTimeLimit",			0x0085002a },
+	{ "CapacityMode",			0x0085002c },
+	{ "BelowRemainingCapacityLimit",	0x00850042 },
+	{ "RemainingTimeLimitExpired",		0x00850043 },
+	{ "Charging",				0x00850044 },
+	{ "Discharging",			0x00850045 },
+	{ "NeedReplacement",			0x0085004b },
+	{ "RemainingCapacity",			0x00850066 },
+	{ "FullChargeCapacity",			0x00850067 },
+	{ "RunTimeToEmpty",			0x00850068 },
+	{ "ManufacturerDate",			0x00850085 },
+	{ "Rechargeable",			0x0085008b },
+	{ "WarningCapacityLimit",		0x0085008c },
+	{ "CapacityGranularity1",		0x0085008d },
+	{ "CapacityGranularity2",		0x0085008e },
+	{ "iOEMInformation",			0x0085008f },
+	{ "DesignCapacity",			0x00850083 },
+	{ "iDeviceChemistry",			0x00850089 },
+	{ "ACPresent",				0x008500d0 },
+	{ "BatteryPresent",			0x008500d1 },
+	{ "VoltageNotRegulated",		0x008500db },
 /* TODO: per MFR specific usages */
 	/* MGE UPS SYSTEMS Page */
-	{  "iModel", 0xffff00f0 },
-	{  "RemainingCapacityLimitSetting", 0xffff004d },
-	{  "TestPeriod", 0xffff0045 },
-	{  "LowVoltageBoostTransfer", 0xffff0050 },
-	{  "HighVoltageBoostTransfer", 0xffff0051 },
-	{  "LowVoltageBuckTransfer", 0xffff0052 },
-	{  "HighVoltageBuckTransfer", 0xffff0053 },
+	{ "iModel",				0xffff00f0 },
+	{ "RemainingCapacityLimitSetting",	0xffff004d },
+	{ "TestPeriod",				0xffff0045 },
+	{ "LowVoltageBoostTransfer",		0xffff0050 },
+	{ "HighVoltageBoostTransfer",		0xffff0051 },
+	{ "LowVoltageBuckTransfer",		0xffff0052 },
+	{ "HighVoltageBuckTransfer",		0xffff0053 },
+	/* APC Page */
+	{ "APCGeneralCollection",		0xff860005 },
+	{ "APCBattReplaceDate",			0xff860016 },
+	{ "APCBattCapBeforeStartup",		0xFF860019 }, /* FIXME: need to be exploited */
+	{ "APC_UPS_FirmwareRevision",		0xff860042 },
+	{ "APCStatusFlag",			0xff860060 },
+	{ "APCPanelTest",			0xff860072 }, /* FIXME: need to be exploited */
+	{ "APCShutdownAfterDelay",		0xff860076 }, /* FIXME: need to be exploited */
+	{ "APC_USB_FirmwareRevision",		0xff860079 }, /* FIXME: need to be exploited */
+	{ "APCForceShutdown",			0xff86007c },
+	{ "APCDelayBeforeShutdown",		0xff86007d },
+	{ "APCDelayBeforeStartup",		0xff86007e }, /* FIXME: need to be exploited */
+
+	/* FIXME: The below one seems to have been wrongly encoded by Belkin */
+	/* Pages 84 to 88 are reserved for official HID definition! */
+
+	{ "BELKINConfig",			0x00860026 },
+	{ "BELKINConfigVoltage",		0x00860040 }, /* (V) */
+	{ "BELKINConfigFrequency",		0x00860042 }, /* (Hz) */
+	{ "BELKINConfigApparentPower",		0x00860043 }, /* (VA) */
+	{ "BELKINConfigBatteryVoltage",		0x00860044 }, /* (V) */
+	{ "BELKINConfigOverloadTransfer",	0x00860045 }, /* (%) */
+	{ "BELKINLowVoltageTransfer",		0x00860053 }, /* R/W (V) */
+	{ "BELKINHighVoltageTransfer",		0x00860054 }, /* R/W (V)*/
+	{ "BELKINLowVoltageTransferMax",	0x0086005b }, /* (V) */
+	{ "BELKINLowVoltageTransferMin",	0x0086005c }, /* (V) */
+	{ "BELKINHighVoltageTransferMax",	0x0086005d }, /* (V) */
+	{ "BELKINHighVoltageTransferMin",	0x0086005e }, /* (V) */
+
+	{ "BELKINControls",			0x00860027 },
+	{ "BELKINLoadOn",			0x00860050 }, /* R/W: write: 1=do action. Read: 0=none, 1=started, 2=in progress, 3=complete */
+	{ "BELKINLoadOff",			0x00860051 }, /* R/W: ditto */
+	{ "BELKINLoadToggle",			0x00860052 }, /* R/W: ditto */
+	{ "BELKINDefaultShutdown",		0x00860055 }, /* R/W: write: 0=start shutdown using default delay. */
+	{ "BELKINDelayBeforeStartup",		0x00860056 }, /* R/W (minutes) */
+	{ "BELKINDelayBeforeShutdown",		0x00860057 }, /* R/W (seconds) */
+	{ "BELKINTest",				0x00860058 }, /* R/W: write: 0=no test, 1=quick test, 2=deep test, 3=abort test. Read: 0=no test, 1=passed, 2=warning, 3=error, 4=abort, 5=in progress */
+	{ "BELKINAudibleAlarmControl",		0x0086005a }, /* R/W: 1=disabled, 2=enabled, 3=muted */
+	
+	{ "BELKINDevice",			0x00860029 },
+	{ "BELKINVoltageSensitivity",		0x00860074 }, /* R/W: 0=normal, 1=reduced, 2=low */
+	{ "BELKINModelString",			0x00860075 },
+	{ "BELKINModelStringOffset",		0x00860076 }, /* offset of Model name in Model String */
+	{ "BELKINUPSType",			0x0086007c }, /* high nibble: firmware version. Low nibble: 0=online, 1=offline, 2=line-interactive, 3=simple online, 4=simple offline, 5=simple line-interactive */
+
+	{ "BELKINPowerState",			0x0086002a },
+	{ "BELKINInput",			0x0086001a },
+	{ "BELKINOutput",			0x0086001c },
+	{ "BELKINBatterySystem",		0x00860010 },
+	{ "BELKINVoltage",			0x00860030 }, /* (0.1 Volt) */
+	{ "BELKINFrequency",			0x00860032 }, /* (0.1 Hz) */
+	{ "BELKINPower",			0x00860034 }, /* (Watt) */
+	{ "BELKINPercentLoad",			0x00860035 }, /* (%) */
+	{ "BELKINTemperature",			0x00860036 }, /* (Celsius) */
+	{ "BELKINCharge",			0x00860039 }, /* (%) */
+	{ "BELKINRunTimeToEmpty",		0x0086006c }, /* (minutes) */
+
+	{ "BELKINStatus",			0x00860028 },
+	{ "BELKINBatteryStatus",		0x00860022 }, /* 1 byte: bit2=low battery, bit4=charging, bit5=discharging, bit6=battery empty, bit7=replace battery */
+	{ "BELKINPowerStatus",			0x00860021 }, /* 2 bytes: bit0=ac failure, bit4=overload, bit5=load is off, bit6=overheat, bit7=UPS fault, bit13=awaiting power, bit15=alarm status */
+
+	/* FIXME: The below one seems to have been wrongly encoded by APC */
+	/* FIXME: This also overlaps with Belkin */
+	/* FIXME: what is BUP anyway? */
+	{ "BUPHibernate",			0x00850058 }, /* FIXME: need to be exploited */
+	{ "BUPBattCapBeforeStartup",		0x00860012 }, /* FIXME: need to be exploited */
+	{ "BUPDelayBeforeStartup",		0x00860076 }, /* FIXME: need to be exploited */
+	{ "BUPSelfTest",			0x00860010 }, /* FIXME: need to be exploited */
+/*
+ * USB USAGE NOTES for APC (from Russell Kroll in the old hidups
+ *
+ * FIXME: read 0xff86.... instead of 0x(00)86....?
+ *
+ *  0x860013 == 44200155090 - capability again                   
+ *           == locale 4, 4 choices, 2 bytes, 00, 15, 50, 90     
+ *           == minimum charge to return online                  
+ *
+ *  0x860060 == "441HMLL" - looks like a 'capability' string     
+ *           == locale 4, 4 choices, 1 byte each                 
+ *           == line sensitivity (high, medium, low, low)        
+ *  NOTE! the above does not seem to correspond to my info 
+ *
+ *  0x860062 == D43133136127130                                  
+ *           == locale D, 4 choices, 3 bytes, 133, 136, 127, 130 
+ *           == high transfer voltage                            
+ *
+ *  0x860064 == D43103100097106                                  
+ *           == locale D, 4 choices, 3 bytes, 103, 100, 097, 106 
+ *           == low transfer voltage                             
+ *
+ *  0x860066 == 441HMLL (see 860060)                                   
+ *
+ *  0x860074 == 4410TLN                                          
+ *           == locale 4, 4 choices, 1 byte, 0, T, L, N          
+ *           == alarm setting (5s, 30s, low battery, none)       
+ *
+ *  0x860077 == 443060180300600                                  
+ *           == locale 4, 4 choices, 3 bytes, 060,180,300,600    
+ *           == wake-up delay (after power returns)              
+ */
+
 	/* end of structure. */
 	{  "\0", 0x0 }
 };
 
-const char *hid_lookup_path(int usage)
+const char *hid_lookup_path(unsigned int usage)
 {
 	int i;
 	static char raw_usage[10];
 	
+	TRACE(3, "Looking up %08x", usage);
+
 	for (i = 0; (usage_lkp[i].usage_name[0] != '\0'); i++)
 	{
 		if (usage_lkp[i].usage_code == usage)
@@ -558,61 +803,79 @@ const char *hid_lookup_path(int usage)
 }
 
 int hid_lookup_usage(char *name)
-{	
-  int i;
+{
+	int i;
+	int value;
+	char buf[20];
 	
-  TRACE(3, "Looking up %s", name);
+	TRACE(3, "Looking up %s", name);
 	
-  if (name[0] == '[') /* manage indexed collection */
-    return (0x00FF0000 + atoi(&name[1]));
-  else {
-    for (i = 0; (usage_lkp[i].usage_code != 0x0); i++)
-      {
-	if (!strcmp(usage_lkp[i].usage_name, name))
-	  {
-	    TRACE(4, "hid_lookup_usage: found %04x",
-		      usage_lkp[i].usage_code);
-	    return usage_lkp[i].usage_code;
-	  }
-      }
-  }
-  return -1;
+	if (name[0] == '[') /* manage indexed collection */
+		return (0x00FF0000 + atoi(&name[1]));
+	else
+	{
+		for (i = 0; (usage_lkp[i].usage_code != 0x0); i++)
+		{
+			if (!strcmp(usage_lkp[i].usage_name, name))
+			{
+				TRACE(4, "hid_lookup_usage: found %04x",
+					usage_lkp[i].usage_code);
+	
+				return usage_lkp[i].usage_code;
+			}
+		}
+	}
+	/* finally, translate unnamed path components such as
+	   "ff860024" */
+	value = strtoul(name, NULL, 16);
+	sprintf(buf, "%08x", value);
+	if (strcasecmp(buf, name) != 0) {
+	  return -1;
+	}
+	return value;
 }
 
+int get_current_data_attribute()
+{
+	return hData.Attribute;
+}
 #define NIBBLE(_i)    (((_i) < 10) ? '0' + (_i) : 'A' + (_i) - 10)
 
 void dump_hex (const char *msg, const unsigned char *buf, int len)
 {
-  int i;
-  int nlocal;
-  const unsigned char *pc;
-  char *out;
-  const unsigned char *start;
-  char c;
-  char line[100];
-  
-  start = buf;
-  out = line;
-  
-  for (i = 0, pc = buf, nlocal = len; i < 16; i++, pc++) {
-    if (nlocal > 0) {
-      c = *pc;
-      
-      *out++ = NIBBLE ((c >> 4) & 0xF);
-      *out++ = NIBBLE (c & 0xF);
-      
-      nlocal--;
-    }
-    else {
-      *out++ = ' ';
-      *out++ = ' ';
-    }				/* end else */
-    *out++ = ' ';
-  }				/* end for */
-  *out++ = 0;
-  
-  TRACE(3, "%s: (%d bytes) => %s", msg, len, line);
-  
-  buf += 16;
-  len -= 16;
-} /* end dump */
+	int i;
+	int nlocal;
+	const unsigned char *pc;
+	char *out;
+	const unsigned char *start;
+	char c;
+	char line[100];
+ 
+	start = buf;
+	out = line;
+	
+	for (i = 0, pc = buf, nlocal = len; i < 16; i++, pc++)
+	{
+		if (nlocal > 0)
+		{
+			c = *pc;
+
+			*out++ = NIBBLE ((c >> 4) & 0xF);
+			*out++ = NIBBLE (c & 0xF);
+
+			nlocal--;
+		}
+		else
+		{
+			*out++ = ' ';
+			*out++ = ' ';
+		}
+		*out++ = ' ';
+	}
+	*out++ = 0;
+
+	TRACE(3, "%s: (%d bytes) => %s", msg, len, line);
+
+	buf += 16;
+	len -= 16;
+}
