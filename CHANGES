@@ -1,3 +1,16 @@
+Thu Sep 15 01:15:49 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: Belkin now detects serial number correctly; removed
+   temporary "ups.serial.internal" variable.
+
+ - newhidups: simplified and documented HIDDevice structure; this
+   structure is used as a "fingerprint" of a USB device and is used
+   for reopening, thus must not be modified by client code. 
+
+ - newhidups: further cleaned up logic in libusb.c:libusb_open() to
+   deal with NULL strings correctly. Slight cleanup of
+   newhidups.c:identify_ups().
+
 Wed Sep 14 18:31:47 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: cleaned up logic in libusb.c:libusb_open(), in

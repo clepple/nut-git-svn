@@ -90,7 +90,7 @@ static inline int typesafe_control_msg(usb_dev_handle *dev,
 /* Check if the entire string str (minus any initial and trailing
    whitespace) matches the compiled regular expression preg. Return 1
    if it matches, 0 if not. Special cases: if preg==NULL, it matches
-   everything.  If str==NULL, then it is treated as "". */
+   everything (no contraint).  If str==NULL, then it is treated as "". */
 static int match_regex(regex_t *preg, char *str) {
   int r;
   regmatch_t pmatch[1];
@@ -138,12 +138,27 @@ static int match_regex_hex(regex_t *preg, int n) {
 	return match_regex(preg, buf);
 }
 
+/* version of strcmp that tolerates NULL pointers. NULL is considered
+ * to come before all other strings alphabetically. */
+static inline int xstrcmp(char *s1, char *s2) {
+	if (s1 == NULL && s2 == NULL) {
+		return 0;
+	}
+	if (s1 == NULL) {
+		return -1;
+	}
+	if (s2 == NULL) {
+		return 1;
+	}
+	return strcmp(s1, s2);
+}
 
 /* return report descriptor on success, NULL otherwise */
 /* mode: MODE_OPEN for the 1rst time, MODE_REOPEN to skip getting
-    report descriptor (the longer part). Return the descriptor length
-    on success, -1 on failure. Note: ReportDesc must point to a large
-    enough buffer. There's no way to know the size ahead of time. */
+    report descriptor (the longer part). On success, fill in the
+    curDevice structure and return the report descriptor length. On
+    failure, return -1. Note: ReportDesc must point to a large enough
+    buffer. There's no way to know the size ahead of time. */
 int libusb_open(HIDDevice *curDevice, MatchFlags_t *flg, unsigned char *ReportDesc, int mode)
 {
 	int found = 0;
@@ -173,7 +188,6 @@ int libusb_open(HIDDevice *curDevice, MatchFlags_t *flg, unsigned char *ReportDe
 	usb_init();
 	usb_find_busses();
 	usb_find_devices();
-
 
 	for (bus = usb_busses; bus && !found; bus = bus->next) {
 		for (dev = bus->devices; dev && !found; dev = dev->next) {
@@ -205,16 +219,14 @@ int libusb_open(HIDDevice *curDevice, MatchFlags_t *flg, unsigned char *ReportDe
 			
 			curDevice->VendorID = dev->descriptor.idVendor;
 			curDevice->ProductID = dev->descriptor.idProduct;
-			curDevice->Vendor = "None";
-			curDevice->Product = "None";
-			curDevice->Serial = "None";
-			curDevice->Name = "None";
+			curDevice->Vendor = NULL;
+			curDevice->Product = NULL;
+			curDevice->Serial = NULL;
 			
 			if (dev->descriptor.iManufacturer) {
 				ret = usb_get_string_simple(udev, dev->descriptor.iManufacturer, string, sizeof(string));
 				if (ret > 0) {
 					curDevice->Vendor = strdup(string);
-					curDevice->Name = curDevice->Vendor; /* FIXME: cat Vendor+Prod?! */
 				}
 			}
 
@@ -231,35 +243,35 @@ int libusb_open(HIDDevice *curDevice, MatchFlags_t *flg, unsigned char *ReportDe
 					curDevice->Serial = strdup(string);
 				}
 			}
-			TRACE(2, "- Manufacturer: %s", curDevice->Vendor);
-			TRACE(2, "- Product: %s", curDevice->Product);
-			TRACE(2, "- Serial Number: %s", curDevice->Serial);
+			TRACE(2, "- Manufacturer: %s", curDevice->Vendor ? curDevice->Vendor : "unknown");
+			TRACE(2, "- Product: %s", curDevice->Product ? curDevice->Product : "unknown");
+			TRACE(2, "- Serial Number: %s", curDevice->Serial ? curDevice->Serial : "unknown");
 
 			if (mode == MODE_OPEN) {
 				/* when opening, try to match what the
 				   user requested */
 				if (!match_regex_hex(flg->re_VendorID, curDevice->VendorID)) {
-					TRACE(2, "VendorID %04x does not match regular expression %s - skipping", dev->descriptor.idVendor, flg->str_VendorID);
+					TRACE(2, "VendorID %04x does not match regular expression %s - skipping", curDevice->VendorID, flg->str_VendorID);
 					usb_close(udev);
 					udev = NULL;
 					continue;
 				} else if (!match_regex_hex(flg->re_ProductID, curDevice->ProductID)) {
-					TRACE(2, "ProductID %04x does not match regular expression %s - skipping", dev->descriptor.idProduct, flg->str_ProductID);
+					TRACE(2, "ProductID %04x does not match regular expression %s - skipping", curDevice->ProductID, flg->str_ProductID);
 					usb_close(udev);
 					udev = NULL;
 					continue;
 				} else if (!match_regex(flg->re_Vendor, curDevice->Vendor)) {
-					TRACE(2, "Vendor %s does not match regular expression %s - skipping", curDevice->Vendor, flg->str_Vendor);
+					TRACE(2, "Vendor %s does not match regular expression %s - skipping", curDevice->Vendor ? curDevice->Vendor : "\"\"", flg->str_Vendor);
 					usb_close(udev);
 					udev = NULL;
 					continue; 
 				} else if (!match_regex(flg->re_Product, curDevice->Product)) {
-					TRACE(2, "Product %s does not match regular expression %s - skipping", curDevice->Product, flg->str_Product);
+					TRACE(2, "Product %s does not match regular expression %s - skipping", curDevice->Product ? curDevice->Product : "\"\"", flg->str_Product);
 					usb_close(udev);
 					udev = NULL;
 					continue; 
 				} else if (!match_regex(flg->re_Serial, curDevice->Serial)) {
-					TRACE(2, "Serial number %s does not match regular expression %s - skipping", curDevice->Serial, flg->str_Serial);
+					TRACE(2, "Serial number %s does not match regular expression %s - skipping", curDevice->Serial ? curDevice->Serial : "\"\"", flg->str_Serial);
 					usb_close(udev);
 					udev = NULL;
 					continue; 
@@ -269,9 +281,9 @@ int libusb_open(HIDDevice *curDevice, MatchFlags_t *flg, unsigned char *ReportDe
 				   same USB as before. */
 				if (dev->descriptor.idVendor != reopen_VendorID 
 				    || dev->descriptor.idProduct != reopen_ProductID
-				    || strcmp(reopen_Vendor, curDevice->Vendor) != 0
-				    || strcmp(reopen_Product, curDevice->Product) != 0
-                                    || strcmp(reopen_Serial, curDevice->Serial) != 0) {
+				    || xstrcmp(reopen_Vendor, curDevice->Vendor) != 0
+				    || xstrcmp(reopen_Product, curDevice->Product) != 0
+                                    || xstrcmp(reopen_Serial, curDevice->Serial) != 0) {
 					TRACE(2, "Not the same device as before - skipping");
 					usb_close(udev);
 					udev = NULL;
@@ -438,7 +450,7 @@ int libusb_get_interrupt(unsigned char *buf, int bufsize, int timeout)
   return ret;
 }
 
-void libusb_close(HIDDevice *curDevice)
+void libusb_close(void)
 {
 	if (udev != NULL)
 	{

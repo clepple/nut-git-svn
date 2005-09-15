@@ -176,12 +176,6 @@ info_lkp_t belkin_replacebatt_conversion[] = {
 /* HID2NUT lookup table */
 hid_info_t hid_belkin[] = {
 
-  /* FIXME: the variable ups.serial.internal should not really exist;
-     it should be ups.serial. The problem is that the Belkin UPS does
-     not announce its serial number in the device descriptor (like a
-     good HID device should), but in a report. So this info is
-     unavailable at init-time. */
-
   /* interpreted Belkin variables */
   { "battery.charge", 0, 0, "UPS.BELKINBatterySystem.BELKINCharge", NULL, "%.0f", HU_FLAG_OK, NULL },
   { "battery.charge.low", ST_FLAG_STRING, 5, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_OK, NULL },
@@ -211,7 +205,7 @@ hid_info_t hid_belkin[] = {
   { "ups.load.high", 0, 0, "UPS.BELKINConfig.BELKINConfigOverloadTransfer", NULL, "%.0f", HU_FLAG_OK, NULL },
   { "ups.mfr.date", 0, 0, "UPS.PowerSummary.ManufacturerDate", NULL, "%s", HU_FLAG_OK, date_conversion },
   { "ups.power.nominal", 0, 0, "UPS.BELKINConfig.BELKINConfigApparentPower", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "ups.serial.internal", 0, 0, "UPS.PowerSummary.iSerialNumber", NULL, "%s", HU_FLAG_OK, stringid_conversion },
+  { "ups.serial", 0, 0, "UPS.PowerSummary.iSerialNumber", NULL, "%s", HU_FLAG_OK, stringid_conversion },
   { "ups.test.result", ST_FLAG_RW, 0, "UPS.BELKINControls.BELKINTest", NULL, "%s", HU_FLAG_OK, belkin_test_info },
   { "ups.type", 0, 0, "UPS.BELKINDevice.BELKINUPSType", NULL, "%s", HU_FLAG_OK, belkin_upstype_conversion },
 

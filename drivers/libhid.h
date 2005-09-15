@@ -48,18 +48,26 @@ typedef int bool;
 /* ---------------------------------------------------------------------- */
 
 /*!
- * Describe a HID device
+ * Describe a USB device. This structure contains exactly the 5 pieces
+ * of information by which a USB device identifies itself, so it
+ * serves as a kind of "fingerprint" of the device. This information
+ * must be matched exactly when reopening a device, and therefore must
+ * not be "improved" or updated by a client program. Vendor, Product, and
+ * Serial can be NULL if the corresponding string did not exist or 
+ * could not be retrieved. 
+ *
+ * (Note: technically, there is no such thing as a "HID device", but
+ * only a "USB device", which can have zero or one or more HID and
+ * non-HID interfaces. The HIDDevice structure describes a device, not
+ * an interface, and it should really be called USBDevice).
  */
 typedef struct
 {
-	char*     Name;		/*!< HID Device name */
-	char*     Vendor; /*!< Device's Vendor Name */
 	u_int16_t VendorID; /*!< Device's Vendor ID */
-	char*     Product; /*!< Device's Product Name */
 	u_int16_t ProductID; /*!< Device's Product ID */
-	int       Application; /*!< match Usage for HIDOpenDevice(Usage)) */
+	char*     Vendor; /*!< Device's Vendor Name */
+	char*     Product; /*!< Device's Product Name */
 	char*     Serial; /* Product serial number */
-	int       fd; /* "internal" file descriptor */
 } HIDDevice;
 
 /*!

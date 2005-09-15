@@ -155,19 +155,7 @@ HIDDevice *HIDOpenDevice(const char *port, MatchFlags_t *flg, int mode)
 {
 	int ReportSize;
 
-	if ( mode == MODE_OPEN )
-	{
-		/* Init structure */
-		curDevice.Name = NULL;
-		curDevice.Vendor = NULL;
-		curDevice.VendorID = -1;
-		curDevice.Product = NULL;
-		curDevice.ProductID = -1;
-		curDevice.Serial = NULL;
-		curDevice.Application = -1;
-		curDevice.fd = -1;
-	}
-	else
+	if ( mode == MODE_REOPEN )
 	{
 		TRACE(2, "Reopening device");
 	}
@@ -429,7 +417,7 @@ int HIDGetEvents(HIDDevice *dev, HIDItem **eventsList)
 void HIDCloseDevice(HIDDevice *dev)
 {
 	TRACE(2, "Closing device");
-	libusb_close(&curDevice);
+	libusb_close();
 }
 
 

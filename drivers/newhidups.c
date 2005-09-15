@@ -54,7 +54,7 @@ static hid_info_t *find_nut_info(const char *varname);
 static hid_info_t *find_nut_info_valid(const char *varname);
 static hid_info_t *find_hid_info(const char *hidname);
 static char *hu_find_infoval(info_lkp_t *hid2info, long value);
-static char *get_model_name(char *iProduct, char *iModel);
+static char *get_model_name(const char *iProduct, char *iModel);
 static void process_status_info(char *nutvalue);
 static void ups_status_set(void);
 static void identify_ups ();
@@ -447,7 +447,7 @@ void upsdrv_initups(void)
 	if ((hd = HIDOpenDevice(device_path, &match, MODE_OPEN)) == NULL)
 		fatalx("No matching USB/HID UPS found");
 	else
-		upslogx(1, "Detected an UPS: %s/%s\n", hd->Vendor, hd->Product);
+		upslogx(1, "Detected a UPS: %s/%s\n", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
 
 	/* free the regular expressions */
 	if (match.re_Vendor) {
@@ -519,7 +519,10 @@ void identify_ups ()
 {
 	char *string;
 	char *ptr1, *ptr2, *str;
-	char *finalname = NULL;
+	char *model = NULL;
+	char *mfr = NULL;
+	char *serial = NULL;
+	char *product;
 	float appPower;
 
 	upsdebugx (2, "entering identify_ups(0x%04x, 0x%04x)\n", 
@@ -528,64 +531,80 @@ void identify_ups ()
 
 	switch (hd->VendorID)
 	{
-		case MGE_UPS_SYSTEMS:
-			/* Get iModel and iProduct strings */
-			if ((string = HIDGetItemString("UPS.PowerSummary.iModel")) != NULL)
-				finalname = get_model_name(hd->Product, string);
+	case MGE_UPS_SYSTEMS:
+		/* Get iModel and iProduct strings */
+		product = hd->Product ? hd->Product : "unknown";
+		if ((string = HIDGetItemString("UPS.PowerSummary.iModel")) != NULL)
+			model = get_model_name(product, string);
+		else
+		{
+			/* Try with ConfigApparentPower */
+			if (HIDGetItemValue("UPS.Flow.[4].ConfigApparentPower", &appPower) != 0 )
+			{
+				string = xmalloc(16);
+				sprintf(string, "%i", (int)appPower);
+				model = get_model_name(product, string);
+				free (string);
+			}
 			else
-			{
-				/* Try with ConfigApparentPower */
-				if (HIDGetItemValue("UPS.Flow.[4].ConfigApparentPower", &appPower) != 0 )
-				{
-					string = xmalloc(16);
-					sprintf(string, "%i", (int)appPower);
-					finalname = get_model_name(hd->Product, string);
-					free (string);
-				}
-				else
-				finalname = hd->Product;
-			}
+				model = product;
+		}
+		mfr = hd->Vendor ? hd->Vendor : "MGE";
+		serial = hd->Serial;
 		break;
-		case APC:
-			/* FIXME?: what is the path "UPS.APC_UPS_FirmwareRevision"? */
-			str = hd->Product;
-			ptr1 = strstr(str, "FW:");
-			if (ptr1)
+	case APC:
+		/* FIXME?: what is the path "UPS.APC_UPS_FirmwareRevision"? */
+		str = hd->Product ? hd->Product : "unknown";
+		ptr1 = strstr(str, "FW:");
+		if (ptr1)
+		{
+			*(ptr1 - 1) = '\0';
+			ptr1 += strlen("FW:");
+			ptr2 = strstr(ptr1, "USB FW:");
+			if (ptr2)
 			{
-				*(ptr1 - 1) = '\0';
-				ptr1 += strlen("FW:");
-				ptr2 = strstr(ptr1, "USB FW:");
-				if (ptr2)
-				{
-					*(ptr2 - 1) = '\0';
-					ptr2 += strlen("USB FW:");
-					dstate_setinfo("ups.firmware.aux", "%s", ptr2);
-				}
-				dstate_setinfo("ups.firmware", "%s", ptr1);
+				*(ptr2 - 1) = '\0';
+				ptr2 += strlen("USB FW:");
+				dstate_setinfo("ups.firmware.aux", "%s", ptr2);
 			}
-			finalname = str;
-			break;
-		case BELKIN:
-		        finalname = hd->Product;
-			/* trim leading whitespace */
-			while (*hd->Vendor == ' ') {
-				hd->Vendor++;
+			dstate_setinfo("ups.firmware", "%s", ptr1);
+		}
+		model = str;
+		mfr = hd->Vendor ? hd->Vendor : "APC";
+		serial = hd->Serial;
+		break;
+	case BELKIN:
+		model = hd->Product ? hd->Product : "unknown";
+		mfr = hd->Vendor ? hd->Vendor : "Belkin";
+		/* trim leading whitespace */
+		while (*mfr == ' ') {
+			mfr++;
+		}
+		if (strlen(mfr) == 0) {
+			mfr = "Belkin";
+		}
+		if (strlen(model) == 0) {
+			model = "unknown";
+		}
+		serial = hd->Serial;
+		if (serial == NULL) {
+			/* try UPS.PowerSummary.iSerialNumber */
+			string = HIDGetItemString("UPS.PowerSummary.iSerialNumber");
+			if (string != NULL) {
+				serial = strdup(string);
 			}
-		        if (strlen(hd->Vendor) == 0) {
-			        hd->Vendor = "Belkin";
-			}
-			if (strlen(hd->Product) == 0) {
-			        finalname = "unknown";
-                        }
-			break;
-		default: /* Nothing to do */
+		}
+		break;
+	default: /* Nothing to do */
 		break;
 	}
-
+	
 	/* Actual information setting */
-	dstate_setinfo("ups.mfr", "%s", hd->Vendor);
-	dstate_setinfo("ups.model", "%s", finalname);
-	dstate_setinfo("ups.serial", "%s", (hd->Serial != NULL)?hd->Serial:"unknown");
+	dstate_setinfo("ups.mfr", "%s", mfr);
+	dstate_setinfo("ups.model", "%s", model);
+	if (serial != NULL) {
+		dstate_setinfo("ups.serial", "%s", serial);
+	}
 }
 
 /* walk ups variables and set elements of the info array. */
@@ -929,7 +948,7 @@ static char *hu_find_infoval(info_lkp_t *hid2info, long value)
 }
 
 /* All the logic for formatting finely the UPS model name */
-char *get_model_name(char *iProduct, char *iModel)
+char *get_model_name(const char *iProduct, char *iModel)
 {
   models_name_t *model = NULL;
 
