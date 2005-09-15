@@ -414,7 +414,7 @@ void HIDDumpTree(HIDDevice *hd)
 	}
 }
 						
-HIDDevice *HIDOpenDevice(const char *port, HIDDeviceMatcher_t *matcher, int mode)
+HIDDevice *HIDOpenDevice(HIDDeviceMatcher_t *matcher, int mode)
 {
 	int ReportSize;
 
@@ -677,7 +677,7 @@ int HIDGetEvents(HIDDevice *dev, HIDItem **eventsList)
 	return itemCount;
 }
 
-void HIDCloseDevice(HIDDevice *dev)
+void HIDCloseDevice()
 {
 	TRACE(2, "Closing device");
 	libusb_close();

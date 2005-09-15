@@ -142,7 +142,7 @@ typedef struct MatchFlags_s MatchFlags_t;
 /*
  * HIDOpenDevice
  * -------------------------------------------------------------------------- */
-HIDDevice *HIDOpenDevice(const char *port, HIDDeviceMatcher_t *matcher, int mode);
+HIDDevice *HIDOpenDevice(HIDDeviceMatcher_t *matcher, int mode);
 
 /*
  * HIDGetItem
@@ -172,7 +172,7 @@ int HIDGetEvents(HIDDevice *dev, HIDItem **eventsList);
 /*
  * HIDCloseDevice
  * -------------------------------------------------------------------------- */
-void HIDCloseDevice(HIDDevice *dev);
+void HIDCloseDevice(void);
 
 /*
  * Support functions

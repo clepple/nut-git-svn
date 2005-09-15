@@ -418,7 +418,7 @@ void upsdrv_initups(void)
 		fatalx("invalid regular expression: %s", regex_array[r]);
 	}
 	/* Search for the first supported UPS, no matter Mfr or exact product */
-	if ((hd = HIDOpenDevice(device_path, matcher, MODE_OPEN)) == NULL)
+	if ((hd = HIDOpenDevice(matcher, MODE_OPEN)) == NULL)
 		fatalx("No matching USB/HID UPS found");
 	else
 		upslogx(1, "Detected a UPS: %s/%s\n", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
@@ -463,7 +463,7 @@ void upsdrv_initups(void)
 void upsdrv_cleanup(void)
 {
 	if (hd != NULL)
-		HIDCloseDevice(hd);
+		HIDCloseDevice();
 }
 
 /**********************************************************************
@@ -754,9 +754,9 @@ static void reconnect_ups(void)
 	  upsdebugx(2, "==================================================");
 	  
 	  /* Not really useful as the device is no more reachable */
-	  HIDCloseDevice(NULL);
+	  HIDCloseDevice();
 	  
-	  if ((hd = HIDOpenDevice(device_path, NULL, MODE_REOPEN)) == NULL)
+	  if ((hd = HIDOpenDevice(NULL, MODE_REOPEN)) == NULL)
 		dstate_datastale();
 	}
 }
