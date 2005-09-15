@@ -1,3 +1,15 @@
+Thu Sep 15 03:37:28 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: changed implementation of regular expression device
+   matching to use a callback function called a "matcher" (similar,
+   but not identical, to libhid's matchers). The public matcher
+   interface is documented in libhid.h. Two sample matchers are
+   provided: an exact matcher, used for reconnecting, and a regular
+   expression matcher, used to connect to a user-defined UPS.
+
+ - newhidups: replaced error numbers by cleartext error messages in
+   some debug output.
+
 Thu Sep 15 01:15:49 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: Belkin now detects serial number correctly; removed

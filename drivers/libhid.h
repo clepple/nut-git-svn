@@ -48,13 +48,13 @@ typedef int bool;
 /* ---------------------------------------------------------------------- */
 
 /*!
- * Describe a USB device. This structure contains exactly the 5 pieces
- * of information by which a USB device identifies itself, so it
- * serves as a kind of "fingerprint" of the device. This information
- * must be matched exactly when reopening a device, and therefore must
- * not be "improved" or updated by a client program. Vendor, Product, and
- * Serial can be NULL if the corresponding string did not exist or 
- * could not be retrieved. 
+ * HIDDevice: Describe a USB device. This structure contains exactly
+ * the 5 pieces of information by which a USB device identifies
+ * itself, so it serves as a kind of "fingerprint" of the device. This
+ * information must be matched exactly when reopening a device, and
+ * therefore must not be "improved" or updated by a client
+ * program. Vendor, Product, and Serial can be NULL if the
+ * corresponding string did not exist or could not be retrieved.
  *
  * (Note: technically, there is no such thing as a "HID device", but
  * only a "USB device", which can have zero or one or more HID and
@@ -69,6 +69,36 @@ typedef struct
 	char*     Product; /*!< Device's Product Name */
 	char*     Serial; /* Product serial number */
 } HIDDevice;
+
+/* A "USB matcher" is a callback function that inputs a HIDDevice
+   structure, and returns 1 for a match and 0 for a non-match.  Thus,
+   a matcher provides a criterion for selecting a USB device.  The
+   callback function further is expected to return -1 on error with
+   errno set, and -2 on other errors. */
+
+struct HIDDeviceMatcher_s {
+	int (*match_function)(HIDDevice *d, void *privdata);
+	void *privdata;
+};
+typedef struct HIDDeviceMatcher_s HIDDeviceMatcher_t;
+
+/* invoke matcher against device */
+static inline int matches(HIDDeviceMatcher_t *matcher, HIDDevice *device) {
+	if (!matcher) {
+		return 1;
+	}
+	return matcher->match_function(device, matcher->privdata);
+}
+
+/* constructors and destructors for specific types of matchers. An
+   exact matcher matches a specific HIDDevice structure. A regex
+   matcher matches devices based on a set of regular expressions. The
+   new_* functions return a matcher on success, or NULL on error with
+   errno set. */
+HIDDeviceMatcher_t *new_exact_matcher(HIDDevice *d);
+int new_regex_matcher(HIDDeviceMatcher_t **matcher, char *regex_array[], int cflags);
+void free_exact_matcher(HIDDeviceMatcher_t *matcher);
+void free_regex_matcher(HIDDeviceMatcher_t *matcher);
 
 /*!
  * Describe a HID Item (a node in the HID tree)
@@ -112,7 +142,7 @@ typedef struct MatchFlags_s MatchFlags_t;
 /*
  * HIDOpenDevice
  * -------------------------------------------------------------------------- */
-HIDDevice *HIDOpenDevice(const char *port, MatchFlags_t *flg, int mode);
+HIDDevice *HIDOpenDevice(const char *port, HIDDeviceMatcher_t *matcher, int mode);
 
 /*
  * HIDGetItem

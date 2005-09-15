@@ -21,10 +21,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/* for regular expressions: */
-#include <sys/types.h>
-#include <regex.h>
-
 #include "main.h"
 #include "libhid.h"
 #include "newhidups.h"
@@ -402,74 +398,33 @@ void upsdrv_initinfo(void)
 	upsh.instcmd = instcmd;
 }
 
-/* Compile an extended, case insensitive regular expression. On
-   success, return an allocated regex_t item. On failure, log an error
-   message and return NULL. Returned regex_t must first be freed with
-   regfree(), then free(), see regex(3). As a special case, if
-   regex==NULL, return NULL (this allows the user to specify no
-   regular expression at all). */
-static inline regex_t *compile_regex(char *regex) {
-	int r;
-	regex_t *preg;
-	char errbuf[256];
-
-	if (regex == NULL) {
-		return NULL;
-	}
-	preg = (regex_t *)xmalloc(sizeof(regex_t));
-
-	r = regcomp(preg, regex, REG_ICASE | REG_EXTENDED);
-	if (r) {
-		regerror(r, preg, errbuf, sizeof(errbuf));
-		fatalx("Unable to parse regular expression %s: %s\n", regex, errbuf);
-		return NULL;
-	}
-	return preg;
-}
-
 void upsdrv_initups(void)
 {
-	MatchFlags_t match;
+	HIDDeviceMatcher_t *matcher;
+	char *regex_array[5];
+	int r;
 
-        /* parse the UPS selection options */
-	match.re_Vendor = compile_regex(getval("vendor"));
-	match.re_VendorID = compile_regex(getval("vendorid"));
-	match.re_Product = compile_regex(getval("product"));
-	match.re_ProductID = compile_regex(getval("productid"));
-	match.re_Serial = compile_regex(getval("serial"));
-	match.str_Vendor = getval("vendor");
-	match.str_VendorID = getval("vendorid");
-	match.str_Product = getval("product");
-	match.str_ProductID = getval("productid");
-	match.str_Serial = getval("serial");
+        /* process the UPS selection options */
+	regex_array[0] = getval("vendorid");
+	regex_array[1] = getval("productid");
+	regex_array[2] = getval("vendor");
+	regex_array[3] = getval("product");
+	regex_array[4] = getval("serial");
 
+	r = new_regex_matcher(&matcher, regex_array, REG_ICASE | REG_EXTENDED);
+	if (r==-1) {
+		fatalx("new_regex_matcher: %s", strerror(errno));
+	} else if (r) {
+		fatalx("invalid regular expression: %s", regex_array[r]);
+	}
 	/* Search for the first supported UPS, no matter Mfr or exact product */
-	if ((hd = HIDOpenDevice(device_path, &match, MODE_OPEN)) == NULL)
+	if ((hd = HIDOpenDevice(device_path, matcher, MODE_OPEN)) == NULL)
 		fatalx("No matching USB/HID UPS found");
 	else
 		upslogx(1, "Detected a UPS: %s/%s\n", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
 
-	/* free the regular expressions */
-	if (match.re_Vendor) {
-		regfree(match.re_Vendor);
-		free(match.re_Vendor);
-	}
-	if (match.re_VendorID) {
-		regfree(match.re_VendorID);
-		free(match.re_VendorID);
-	}
-	if (match.re_Product) {
-		regfree(match.re_Product);
-		free(match.re_Product);
-	}
-	if (match.re_ProductID) {
-		regfree(match.re_ProductID);
-		free(match.re_ProductID);
-	}
-	if (match.re_Serial) {
-		regfree(match.re_Serial);
-		free(match.re_Serial);
-	}
+	/* free the matcher */
+	free_regex_matcher(matcher);
 	
 	/* See initinfo for WARNING */
 	switch (hd->VendorID)

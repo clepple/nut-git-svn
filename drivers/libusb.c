@@ -87,79 +87,13 @@ static inline int typesafe_control_msg(usb_dev_handle *dev,
 
 #define usb_control_msg         typesafe_control_msg
 
-/* Check if the entire string str (minus any initial and trailing
-   whitespace) matches the compiled regular expression preg. Return 1
-   if it matches, 0 if not. Special cases: if preg==NULL, it matches
-   everything (no contraint).  If str==NULL, then it is treated as "". */
-static int match_regex(regex_t *preg, char *str) {
-  int r;
-  regmatch_t pmatch[1];
-  char *p, *q;
-  int len;
-
-  if (preg == NULL) {
-    return 1;
-  }
-  if (str == NULL) {
-    str = "";
-  }
-
-  /* make a copy of str with whitespace stripped */
-  for (q=str; *q==' ' || *q=='\t' || *q=='\n'; q++) {
-    /* empty */
-  }
-  len = strlen(q);
-  p = (char *)xmalloc(len+1);
-  memcpy(p, q, len+1);
-  while (len>0 && (p[len-1]==' ' || p[len-1]=='\t' || p[len-1]=='\n')) {
-    len--;
-  }
-  p[len] = 0;
-
-  /* test the regular expression */
-  r = regexec(preg, p, 1, pmatch, 0);
-  free(p);
-  if (r) {
-    return 0;
-  }
-  /* check that the match is the entire string */
-  if (pmatch[0].rm_so != 0 || pmatch[0].rm_eo != len) {
-    return 0;
-  }
-  return 1;
-}
-
-/* similar to match_regex, but the argument being matched is a
- * (hexadecimal) number, rather than a string. It is converted to a
- * 4-digit hexadecimal string. */
-static int match_regex_hex(regex_t *preg, int n) {
-	char buf[10];
-	sprintf(buf, "%04x", n);
-	return match_regex(preg, buf);
-}
-
-/* version of strcmp that tolerates NULL pointers. NULL is considered
- * to come before all other strings alphabetically. */
-static inline int xstrcmp(char *s1, char *s2) {
-	if (s1 == NULL && s2 == NULL) {
-		return 0;
-	}
-	if (s1 == NULL) {
-		return -1;
-	}
-	if (s2 == NULL) {
-		return 1;
-	}
-	return strcmp(s1, s2);
-}
-
 /* return report descriptor on success, NULL otherwise */
 /* mode: MODE_OPEN for the 1rst time, MODE_REOPEN to skip getting
     report descriptor (the longer part). On success, fill in the
     curDevice structure and return the report descriptor length. On
     failure, return -1. Note: ReportDesc must point to a large enough
     buffer. There's no way to know the size ahead of time. */
-int libusb_open(HIDDevice *curDevice, MatchFlags_t *flg, unsigned char *ReportDesc, int mode)
+int libusb_open(HIDDevice *curDevice, HIDDeviceMatcher_t *matcher, unsigned char *ReportDesc, int mode)
 {
 	int found = 0;
 #if LIBUSB_HAS_DETACH_KRNL_DRV
@@ -170,19 +104,6 @@ int libusb_open(HIDDevice *curDevice, MatchFlags_t *flg, unsigned char *ReportDe
 	int ret, res; 
 	unsigned char buf[20];
 	char string[256];
-	u_int16_t reopen_VendorID = 0;  /* Device's Vendor ID */
-        u_int16_t reopen_ProductID = 0; /* Product ID */
-        char*     reopen_Vendor = NULL; /* Product serial number */
-        char*     reopen_Product = NULL; /* Product serial number */
-        char*     reopen_Serial = NULL; /* Product serial number */
-
-	if (mode == MODE_REOPEN) {
-	  reopen_VendorID = curDevice->VendorID;
-	  reopen_ProductID = curDevice->ProductID;
-	  reopen_Vendor = curDevice->Vendor;
-	  reopen_Product = curDevice->Product;
-	  reopen_Serial = curDevice->Serial;
-	}
 
 	/* libusb base init */
 	usb_init();
@@ -247,48 +168,20 @@ int libusb_open(HIDDevice *curDevice, MatchFlags_t *flg, unsigned char *ReportDe
 			TRACE(2, "- Product: %s", curDevice->Product ? curDevice->Product : "unknown");
 			TRACE(2, "- Serial Number: %s", curDevice->Serial ? curDevice->Serial : "unknown");
 
-			if (mode == MODE_OPEN) {
-				/* when opening, try to match what the
-				   user requested */
-				if (!match_regex_hex(flg->re_VendorID, curDevice->VendorID)) {
-					TRACE(2, "VendorID %04x does not match regular expression %s - skipping", curDevice->VendorID, flg->str_VendorID);
-					usb_close(udev);
-					udev = NULL;
-					continue;
-				} else if (!match_regex_hex(flg->re_ProductID, curDevice->ProductID)) {
-					TRACE(2, "ProductID %04x does not match regular expression %s - skipping", curDevice->ProductID, flg->str_ProductID);
-					usb_close(udev);
-					udev = NULL;
-					continue;
-				} else if (!match_regex(flg->re_Vendor, curDevice->Vendor)) {
-					TRACE(2, "Vendor %s does not match regular expression %s - skipping", curDevice->Vendor ? curDevice->Vendor : "\"\"", flg->str_Vendor);
-					usb_close(udev);
-					udev = NULL;
-					continue; 
-				} else if (!match_regex(flg->re_Product, curDevice->Product)) {
-					TRACE(2, "Product %s does not match regular expression %s - skipping", curDevice->Product ? curDevice->Product : "\"\"", flg->str_Product);
-					usb_close(udev);
-					udev = NULL;
-					continue; 
-				} else if (!match_regex(flg->re_Serial, curDevice->Serial)) {
-					TRACE(2, "Serial number %s does not match regular expression %s - skipping", curDevice->Serial ? curDevice->Serial : "\"\"", flg->str_Serial);
-					usb_close(udev);
-					udev = NULL;
-					continue; 
-				}
-			} else if (mode == MODE_REOPEN) {
-				/* when reopening, try to find the
-				   same USB as before. */
-				if (dev->descriptor.idVendor != reopen_VendorID 
-				    || dev->descriptor.idProduct != reopen_ProductID
-				    || xstrcmp(reopen_Vendor, curDevice->Vendor) != 0
-				    || xstrcmp(reopen_Product, curDevice->Product) != 0
-                                    || xstrcmp(reopen_Serial, curDevice->Serial) != 0) {
-					TRACE(2, "Not the same device as before - skipping");
-					usb_close(udev);
-					udev = NULL;
-					continue;
-				}
+			ret = matches(matcher, curDevice);
+			if (ret==0 && mode == MODE_OPEN) {
+				TRACE(2, "Device does not match criteria - skipping");
+			} else if (ret==0) {
+				TRACE(2, "Not the same device as before - skipping");
+			} else if (ret==-1) {
+				fatalx("matcher: %s", strerror(errno));
+			} else if (ret==-2) {
+				TRACE(2, "matcher: unspecified error");
+			}
+			if (ret != 1) {
+				usb_close(udev);
+				udev = NULL;
+				continue;
 			}
 			
 			/* Now we have matched the device we wanted. Claim it. */

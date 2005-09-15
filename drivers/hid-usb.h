@@ -4,7 +4,7 @@
 /* try to open the next available device matching the given MatchFlags
  * (in case mode=MODE_OPEN), or try to open the exact same device as
  * before (in case mode=MODE_REOPEN). */
-extern int libusb_open(HIDDevice *curDevice, MatchFlags_t *flg, unsigned char *ReportDesc, int mode);
+extern int libusb_open(HIDDevice *curDevice, HIDDeviceMatcher_t *matcher, unsigned char *ReportDesc, int mode);
 void libusb_close(void);
 
 extern usb_dev_handle *udev;
