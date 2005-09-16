@@ -168,20 +168,24 @@ int libusb_open(HIDDevice *curDevice, HIDDeviceMatcher_t *matcher, unsigned char
 			TRACE(2, "- Product: %s", curDevice->Product ? curDevice->Product : "unknown");
 			TRACE(2, "- Serial Number: %s", curDevice->Serial ? curDevice->Serial : "unknown");
 
-			ret = matches(matcher, curDevice);
-			if (ret==0 && mode == MODE_OPEN) {
-				TRACE(2, "Device does not match criteria - skipping");
-			} else if (ret==0) {
-				TRACE(2, "Not the same device as before - skipping");
-			} else if (ret==-1) {
-				fatalx("matcher: %s", strerror(errno));
-			} else if (ret==-2) {
-				TRACE(2, "matcher: unspecified error");
-			}
-			if (ret != 1) {
-				usb_close(udev);
-				udev = NULL;
-				continue;
+			if (matcher) {
+				TRACE(2, "Trying to match device");
+				ret = matches(matcher, curDevice);
+				if (ret==0 && mode == MODE_OPEN) {
+					TRACE(2, "Device does not match criteria - skipping");
+				} else if (ret==0) {
+					TRACE(2, "Not the same device as before - skipping");
+				} else if (ret==-1) {
+					fatalx("matcher: %s", strerror(errno));
+				} else if (ret==-2) {
+					TRACE(2, "matcher: unspecified error");
+				}
+				if (ret != 1) {
+					usb_close(udev);
+					udev = NULL;
+					continue;
+				}
+				TRACE(2, "Device matches");
 			}
 			
 			/* Now we have matched the device we wanted. Claim it. */

@@ -36,6 +36,7 @@ static models_name_t *model_names;
 
 /* Global vars */
 static HIDDevice *hd;
+static HIDDeviceMatcher_t *reopen_matcher = NULL;
 static int offdelay = DEFAULT_OFFDELAY;
 static int ondelay = DEFAULT_ONDELAY;
 static int pollfreq = DEFAULT_POLLFREQ;
@@ -426,6 +427,12 @@ void upsdrv_initups(void)
 	/* free the matcher */
 	free_regex_matcher(matcher);
 	
+	/* create a new matcher for later reopening */
+	reopen_matcher = new_exact_matcher(hd);
+	if (!reopen_matcher) {
+		upsdebugx(2, "new_exact_matcher: %s", strerror(errno));
+	}
+
 	/* See initinfo for WARNING */
 	switch (hd->VendorID)
 	{
@@ -732,7 +739,7 @@ static bool hid_ups_walk(int mode)
 	/* Reserved values: -1/-10 for nul delay, -2 can't get value */
 	/* device has been disconnected, try to reconnect */
 	if ( (retcode == -EPERM) || (retcode == -EPIPE)
-		 || (retcode == -ENODEV) || (retcode == -EACCES) )
+		 || (retcode == -ENODEV) || (retcode == -EACCES))
 	  {
 		hd = NULL;
 		reconnect_ups();
@@ -756,7 +763,7 @@ static void reconnect_ups(void)
 	  /* Not really useful as the device is no more reachable */
 	  HIDCloseDevice();
 	  
-	  if ((hd = HIDOpenDevice(NULL, MODE_REOPEN)) == NULL)
+	  if ((hd = HIDOpenDevice(reopen_matcher, MODE_REOPEN)) == NULL)
 		dstate_datastale();
 	}
 }
