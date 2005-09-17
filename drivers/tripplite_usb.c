@@ -730,7 +730,12 @@ void upsdrv_updateinfo(void)
 			break;
 		case '2': /* "charge-only" mode, no AC in or out... the PC
 			     shouldn't see this, because there is no power in
-			     that case */
+			     that case (OMNIVS) */
+			/* Also battery-test mode on SMARTPRO */
+			if(tl_model == TRIPP_LITE_SMARTPRO) {
+				status_set("CAL");
+				break;
+			}
 		case '3': /* I have seen this once when switching from off+LB to charging */
 			upslogx(LOG_WARNING, "Unknown value for s[2]: 0x%02x", s_value[2]);
 			break;
