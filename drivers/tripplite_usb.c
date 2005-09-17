@@ -527,21 +527,23 @@ static int hard_shutdown(void)
  */
 static int instcmd(const char *cmdname, const char *extra)
 {
-#if 0
 	char buf[256];
 
-	if (!strcasecmp(cmdname, "test.battery.start")) {
-		send_cmd(":A\r", buf, sizeof buf);
-		return STAT_INSTCMD_HANDLED;
+	if(tl_model == TRIPP_LITE_SMARTPRO) {
+		if (!strcasecmp(cmdname, "test.battery.start")) {
+			send_cmd("A", 2, buf, sizeof buf);
+			return STAT_INSTCMD_HANDLED;
+		}
+		if (!strcasecmp(cmdname, "load.off")) {
+			send_cmd("K0", 3, buf, sizeof buf);
+			return STAT_INSTCMD_HANDLED;
+		}
+		if (!strcasecmp(cmdname, "load.on")) {
+			send_cmd("K1", 3, buf, sizeof buf);
+			return STAT_INSTCMD_HANDLED;
+		}
 	}
-	if (!strcasecmp(cmdname, "load.off")) {
-		send_cmd(":K0\r", buf, sizeof buf);
-		return STAT_INSTCMD_HANDLED;
-	}
-	if (!strcasecmp(cmdname, "load.on")) {
-		send_cmd(":K1\r", buf, sizeof buf);
-		return STAT_INSTCMD_HANDLED;
-	}
+#if 0
 	if (!strcasecmp(cmdname, "shutdown.reboot")) {
 		do_reboot_now();
 		return STAT_INSTCMD_HANDLED;
@@ -666,6 +668,12 @@ void upsdrv_initinfo(void)
 	dstate_setaux("ups.delay.reboot", 3);
 #endif
 
+	if(tl_model == TRIPP_LITE_SMARTPRO) {
+		dstate_addcmd("test.battery.start");
+		dstate_addcmd("load.on");
+		dstate_addcmd("load.off");
+	}
+
 	dstate_addcmd("shutdown.return");
 
 #if 0
@@ -766,6 +774,7 @@ void upsdrv_updateinfo(void)
 
 	dstate_setinfo("output.voltage", "%.1f", hex2d(l_value+1, 4)/2.0);
 
+	/* Not sure how the SMARTPRO sends back battery level */
 	if(tl_model != TRIPP_LITE_SMARTPRO) {
 		bv = hex2d(b_value+5, 2)/16.0;
 
@@ -816,6 +825,15 @@ void upsdrv_banner(void)
 	experimental_driver = 1;
 }
 
+/*!@brief Find and open the UPS
+ *
+ * This function can be called either at startup, or when trying to reconnect
+ * to an UPS that was found earlier.
+ *
+ * @return 0 if a Tripp Lite UPS was detected
+ * @return -1 if HIDOpenDevice() returned NULL
+ * @return -2 if the UPS was not a Tripp Lite UPS
+ */
 int find_tripplite_ups(void)
 {
         /* Search for the first supported UPS, no matter Mfr or exact product */
@@ -826,15 +844,14 @@ int find_tripplite_ups(void)
 
 	HIDDumpTree(NULL);
 
-        if (hd->VendorID != USB_VID_TRIPP_LITE)
-        {
-		upslogx(LOG_ERR, "This driver only supports Tripp Lite Omni UPSes. Try the newhidups driver instead.");
+        if (hd->VendorID != USB_VID_TRIPP_LITE) {
+		upslogx(LOG_ERR, "This driver only supports Tripp Lite UPSes. Try the newhidups driver instead.");
 		return -2;
 	}
 	return 0;
 }
 
-/*!@brief Find USB UPS, and open it
+/*!@brief Initialize UPS and variables from ups.conf
  *
  * @todo Allow binding based on firmware version (which seems to vary wildly
  * from unit to unit)
