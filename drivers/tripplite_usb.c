@@ -261,6 +261,22 @@ static float V_interval[2] = {MIN_VOLT, MAX_VOLT};
 static unsigned int offdelay = DEFAULT_OFFDELAY;
 /* static unsigned int bootdelay = DEFAULT_BOOTDELAY; */
 
+/*!@brief Convert a string to printable characters (in-place)
+ *
+ * @param[in,out] str	String to convert
+ * @param[in] len	Maximum number of characters to convert, or <= 0 to
+ * convert all.
+ *
+ * Uses toprint() macro defined above.
+ */
+void toprint_str(char *str, int len)
+{
+	int i;
+	if(len <= 0) len = strlen(str);
+	for(i=0; i < len; i++)
+		str[i] = toprint(i);
+}
+
 /*!@brief Convert N characters from hex to decimal
  *
  * @param start		Beginning of string to convert
@@ -572,12 +588,11 @@ void upsdrv_initinfo(void)
 	     f_value[9], p_value[9], s_value[9], v_value[9], w_value[9], buf[256];
 	int  va, ret, i;
 
-	tl_model = TRIPP_LITE_UNKNOWN;
-
 	/* Reset watchdog: */
 	ret = send_cmd(w_msg, sizeof(w_msg), w_value, sizeof(w_value)-1);
 	if(ret <= 0) {
-		upslogx(3, "Could not reset watchdog... is this an OMNIVS model?");
+		upslogx(3, "Could not reset watchdog. Please send model "
+				"information to nut-upsdev mailing list");
 	}
 
 
@@ -612,9 +627,10 @@ void upsdrv_initinfo(void)
 
 	ret = send_cmd(f_msg, sizeof(f_msg), f_value, sizeof(f_value)-1);
 
-	dstate_setinfo("ups.firmware", "F%c%c%c%c %c",
-			toprint(f_value[1]), toprint(f_value[2]), toprint(f_value[3]),
-			toprint(f_value[4]), toprint(f_value[6]));
+	toprint_str(f_value+1, 6);
+	f_value[7] = 0;
+
+	dstate_setinfo("ups.firmware", "F%s", f_value+1);
 
 	ret = send_cmd(v_msg, sizeof(v_msg), v_value, sizeof(v_value)-1);
 
