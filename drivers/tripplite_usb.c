@@ -274,7 +274,7 @@ void toprint_str(char *str, int len)
 	int i;
 	if(len <= 0) len = strlen(str);
 	for(i=0; i < len; i++)
-		str[i] = toprint(i);
+		str[i] = toprint(str[i]);
 }
 
 /*!@brief Convert N characters from hex to decimal
@@ -325,11 +325,17 @@ static const char *hexascdump(char *msg, size_t len)
 
 enum tl_model_t decode_firmware_version(const char *fw)
 {
-	if(!strcmp(fw, "V102XX"))
+	if(!strncmp(fw, "V102", 4)) {
+		upslogx(3, "Using OMNIVS protocol (V102)");
 		return TRIPP_LITE_OMNIVS;
-	if(!strcmp(fw, "V1062XX"))
-		return TRIPP_LITE_SMARTPRO;
+	}
 
+	if(!strncmp(fw, "V1062", 5)) {
+		upslogx(3, "Using SMARTPRO protocol (V1062)");
+		return TRIPP_LITE_SMARTPRO;
+	}
+
+	printf("Unknown protocol (%s)", fw);
 	return TRIPP_LITE_UNKNOWN;
 }
 
@@ -639,7 +645,7 @@ void upsdrv_initinfo(void)
 	}
 	if(i>0) v_value[i-1] = 0;
 
-	dstate_setinfo("ups.firmware.aux", "V%s", v_value);
+	dstate_setinfo("ups.firmware.aux", "%s", v_value);
 
 	tl_model = decode_firmware_version(v_value);
 
