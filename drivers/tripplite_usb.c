@@ -25,7 +25,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define DRV_VERSION "0.4"
+#define DRV_VERSION "0.5"
 
 /* % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
  *
@@ -181,6 +181,19 @@ Charles Lepple E<lt>clepple+nut@ghz.ccE<gt>, based on the tripplite driver by
 Rickard E. (Rik) Faith E<lt>faith@alephnull.comE<gt> and Nicholas Kain
 E<lt>nicholas@kain.usE<gt>.
 
+A Tripp Lite OMNIVS1000 was graciously donated to the NUT project by:
+
+
+=over
+
+Relevant Evidence, LLC.
+
+http://www.relevantevidence.com
+
+Email: info@relevantevidence.com
+
+=back
+
 =head1 SEE ALSO
 
 =head2 The core driver:
@@ -200,6 +213,9 @@ The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 #include "hid-usb.h"
 #include <math.h>
 #include <ctype.h>
+
+static enum tl_model_t { TRIPP_LITE_UNKNOWN = 0, TRIPP_LITE_OMNIVS, TRIPP_LITE_SMARTPRO }
+tl_model = TRIPP_LITE_UNKNOWN;
 
 /*!@brief If a character is not printable, return a dot. */
 #define toprint(x) (isprint(x) ? (x) : '.')
@@ -289,6 +305,16 @@ static const char *hexascdump(char *msg, size_t len)
 	*bufp++ = '\0';
 
 	return buf;
+}
+
+enum tl_model_t decode_firmware_version(const char *fw)
+{
+	if(!strcmp(fw, "V102XX"))
+		return TRIPP_LITE_OMNIVS;
+	if(!strcmp(fw, "V1062XX"))
+		return TRIPP_LITE_SMARTPRO;
+
+	return TRIPP_LITE_UNKNOWN;
 }
 
 int find_tripplite_ups(void);
@@ -544,13 +570,16 @@ void upsdrv_initinfo(void)
 		s_msg[] = "S", v_msg[] = "V", w_msg[] = "W\0";
 	char *model, *model_end, 
 	     f_value[9], p_value[9], s_value[9], v_value[9], w_value[9], buf[256];
-	int  va, ret;
+	int  va, ret, i;
+
+	tl_model = TRIPP_LITE_UNKNOWN;
 
 	/* Reset watchdog: */
 	ret = send_cmd(w_msg, sizeof(w_msg), w_value, sizeof(w_value)-1);
 	if(ret <= 0) {
-		fatalx("Could not reset watchdog... is this an OMNIVS model?");
+		upslogx(3, "Could not reset watchdog... is this an OMNIVS model?");
 	}
+
 
 	ret = send_cmd(s_msg, sizeof(s_msg), s_value, sizeof(s_value)-1);
 	if(ret <= 0) {
@@ -589,8 +618,14 @@ void upsdrv_initinfo(void)
 
 	ret = send_cmd(v_msg, sizeof(v_msg), v_value, sizeof(v_value)-1);
 
-	dstate_setinfo("ups.firmware.aux", "V%c%c%c",
-			toprint(v_value[1]), toprint(v_value[2]), toprint(v_value[3]));
+	for(i=0; (i<8) && v_value[i]; i++) {
+		v_value[i] = toprint(v_value[i]);
+	}
+	if(i>0) v_value[i-1] = 0;
+
+	dstate_setinfo("ups.firmware.aux", "V%s", v_value);
+
+	tl_model = decode_firmware_version(v_value);
 
 	snprintf(buf, sizeof buf, "%d", offdelay);
 	dstate_setinfo("ups.delay.shutdown", buf);
@@ -689,14 +724,16 @@ void upsdrv_updateinfo(void)
 
 	status_commit();
 
-	ret = send_cmd(b_msg, sizeof(b_msg), b_value, sizeof(b_value));
-	if(ret <= 0) {
-		dstate_datastale();
-		usb_comm_fail(ret, "Error reading B value");
-		return;
-	}
+	if(tl_model != TRIPP_LITE_SMARTPRO) {
+		ret = send_cmd(b_msg, sizeof(b_msg), b_value, sizeof(b_value));
+		if(ret <= 0) {
+			dstate_datastale();
+			usb_comm_fail(ret, "Error reading B value");
+			return;
+		}
 
-	dstate_setinfo("input.voltage", "%.2f", hex2d(b_value+1, 4)/30.0);
+		dstate_setinfo("input.voltage", "%.2f", hex2d(b_value+1, 4)/30.0);
+	}
 
 	ret = send_cmd(l_msg, sizeof(l_msg), l_value, sizeof(l_value));
 	if(ret <= 0) {
@@ -707,21 +744,23 @@ void upsdrv_updateinfo(void)
 
 	dstate_setinfo("output.voltage", "%.1f", hex2d(l_value+1, 4)/2.0);
 
-	bv = hex2d(b_value+5, 2)/16.0;
+	if(tl_model != TRIPP_LITE_SMARTPRO) {
+		bv = hex2d(b_value+5, 2)/16.0;
 
-	/* dq ~= sqrt(dV) is a reasonable approximation
-	 * Results fit well against the discrete function used in the Tripp Lite
-	 * source, but give a continuous result. */
-	if (bv >= V_interval[1])
-		bp = 100;
-	else if (bv <= V_interval[0])
-		bp = 10;
-	else
-		bp = (int)(100*sqrt((bv - V_interval[0])
-					/ (V_interval[1] - V_interval[0])));
+		/* dq ~= sqrt(dV) is a reasonable approximation
+		 * Results fit well against the discrete function used in the Tripp Lite
+		 * source, but give a continuous result. */
+		if (bv >= V_interval[1])
+			bp = 100;
+		else if (bv <= V_interval[0])
+			bp = 10;
+		else
+			bp = (int)(100*sqrt((bv - V_interval[0])
+						/ (V_interval[1] - V_interval[0])));
 
-	dstate_setinfo("battery.voltage", "%.2f", (float)bv);
-	dstate_setinfo("battery.charge",  "%3d", bp);
+		dstate_setinfo("battery.voltage", "%.2f", (float)bv);
+		dstate_setinfo("battery.charge",  "%3d", bp);
+	}
 
 	dstate_dataok();
 }
