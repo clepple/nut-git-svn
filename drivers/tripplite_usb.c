@@ -728,12 +728,20 @@ void upsdrv_updateinfo(void)
 		case '1':
 			status_set("OB");
 			break;
-		case '2': /* "charge-only" mode, no AC in or out... the PC
-			     shouldn't see this, because there is no power in
-			     that case (OMNIVS) */
-			/* Also battery-test mode on SMARTPRO */
+		case '2':
+			/* battery-test mode on SMARTPRO */
 			if(tl_model == TRIPP_LITE_SMARTPRO) {
 				status_set("CAL");
+				break;
+			}
+			/* "charge-only" mode, no AC in or out... the PC
+			 * shouldn't see this, because there is no power in
+			 * that case (OMNIVS), but it's here for testing.
+			 *
+			 * Entered by holding down the power button.
+			 */
+			if(tl_model == TRIPP_LITE_OMNIVS) {
+				status_set("BYPASS");
 				break;
 			}
 		case '3': /* I have seen this once when switching from off+LB to charging */
@@ -749,7 +757,7 @@ void upsdrv_updateinfo(void)
 		case '0':
 			status_set("LB");
 			break;
-		case '1':
+		case '1': /* Depends on s_value[2] */
 			break;
 		default:
 			upslogx(LOG_ERR, "Unknown value for s[1]: 0x%02x", s_value[1]);
@@ -777,7 +785,11 @@ void upsdrv_updateinfo(void)
 		return;
 	}
 
-	dstate_setinfo("output.voltage", "%.1f", hex2d(l_value+1, 4)/2.0);
+	if(tl_model == TRIPP_LITE_OMNIVS) {
+		dstate_setinfo("output.voltage", "%.1f", hex2d(l_value+1, 4)/2.0);
+	} else {
+		dstate_setinfo("debug.L","%s",l_value+1);
+	}
 
 	/* Not sure how the SMARTPRO sends back battery level */
 	if(tl_model != TRIPP_LITE_SMARTPRO) {
