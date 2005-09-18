@@ -218,7 +218,7 @@ static enum tl_model_t { TRIPP_LITE_UNKNOWN = 0, TRIPP_LITE_OMNIVS, TRIPP_LITE_S
 tl_model = TRIPP_LITE_UNKNOWN;
 
 /*!@brief If a character is not printable, return a dot. */
-#define toprint(x) (isprint(x) ? (x) : '.')
+#define toprint(x) (isalnum((unsigned)x) ? (x) : '.')
 
 #define ENDCHAR 13
 
@@ -310,14 +310,17 @@ static const char *hexascdump(unsigned char *msg, size_t len)
 	static unsigned char buf[256], *bufp;
 
 	bufp = buf;
+	buf[0] = 0;
 	for(i=0; i<len; i++) {
 		bufp += sprintf(bufp, "%02x ", msg[i]);
 	}
-	*bufp++ = '"';
+#if 1
+	*bufp++ = '\'';
 	for(i=0; i<len; i++) {
 		*bufp++ = toprint(msg[i]);
 	}
-	*bufp++ = '"';
+	*bufp++ = '\'';
+#endif
 	*bufp++ = '\0';
 
 	return buf;
@@ -721,7 +724,7 @@ void debug_message(const char *msg, int len)
 		usb_comm_fail(ret, err_msg);
 		return;
 	}
-	dstate_setinfo(var_name,"%s", hexascdump(tmp_value+1, 6));
+	dstate_setinfo(var_name, "%s", hexascdump(tmp_value+1, 7));
 }
 
 void upsdrv_updateinfo(void)
@@ -810,7 +813,7 @@ void upsdrv_updateinfo(void)
 	if(tl_model == TRIPP_LITE_OMNIVS) {
 		dstate_setinfo("output.voltage", "%.1f", hex2d(l_value+1, 4)/2.0);
 	} else {
-		dstate_setinfo("ups.debug.L","%s", hexascdump(l_value+1, 6));
+		dstate_setinfo("ups.debug.L","%s", hexascdump(l_value+1, 7));
 	}
 
 	/* Not sure how the SMARTPRO sends back battery level */
@@ -837,7 +840,7 @@ void upsdrv_updateinfo(void)
 		debug_message("M", 2);
 		debug_message("T", 2);
 		debug_message("U", 2);
-		debug_message("Z", 2);
+		/* debug_message("Z", 2); */
 	}
 
 	dstate_dataok();
