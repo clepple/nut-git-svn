@@ -304,10 +304,10 @@ static int hex2d(char *start, unsigned int len)
  *
  * @return		Pointer to static buffer with decoded message
  */
-static const char *hexascdump(char *msg, size_t len)
+static const char *hexascdump(unsigned char *msg, size_t len)
 {
 	size_t i;
-	static char buf[256], *bufp;
+	static unsigned char buf[256], *bufp;
 
 	bufp = buf;
 	for(i=0; i<len; i++) {
@@ -702,6 +702,28 @@ void upsdrv_shutdown(void)
 	soft_shutdown();
 }
 
+/*!@brief Send an unknown command to the UPS, and store response in a variable
+ *
+ * The variables are of the form "ups.debug.X" where "X" is the command
+ * character.
+ */
+void debug_message(const char *msg, int len)
+{
+	int ret;
+	unsigned char tmp_value[9];
+	char var_name[20], err_msg[80];
+
+	sprintf(var_name, "ups.debug.%c", *msg);
+
+	ret = send_cmd(msg, len, (char *)tmp_value, sizeof(tmp_value));
+	if(ret <= 0) {
+		sprintf(err_msg, "Error reading '%c' value", *msg);
+		usb_comm_fail(ret, err_msg);
+		return;
+	}
+	dstate_setinfo(var_name,"%s", hexascdump(tmp_value+1, 6));
+}
+
 void upsdrv_updateinfo(void)
 {
 	char b_msg[] = "B", l_msg[] = "L", s_msg[] = "S";
@@ -788,7 +810,7 @@ void upsdrv_updateinfo(void)
 	if(tl_model == TRIPP_LITE_OMNIVS) {
 		dstate_setinfo("output.voltage", "%.1f", hex2d(l_value+1, 4)/2.0);
 	} else {
-		dstate_setinfo("debug.L","%s",l_value+1);
+		dstate_setinfo("ups.debug.L","%s", hexascdump(l_value+1, 6));
 	}
 
 	/* Not sure how the SMARTPRO sends back battery level */
@@ -808,6 +830,14 @@ void upsdrv_updateinfo(void)
 
 		dstate_setinfo("battery.voltage", "%.2f", (float)bv);
 		dstate_setinfo("battery.charge",  "%3d", bp);
+	}
+
+	if(tl_model == TRIPP_LITE_SMARTPRO) {
+		debug_message("D", 2);
+		debug_message("M", 2);
+		debug_message("T", 2);
+		debug_message("U", 2);
+		debug_message("Z", 2);
 	}
 
 	dstate_dataok();
