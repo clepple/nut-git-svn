@@ -37,6 +37,7 @@ static models_name_t *model_names;
 /* Global vars */
 static HIDDevice *hd;
 static HIDDeviceMatcher_t *reopen_matcher = NULL;
+static HIDDeviceMatcher_t *regex_matcher = NULL;
 static int offdelay = DEFAULT_OFFDELAY;
 static int ondelay = DEFAULT_ONDELAY;
 static int pollfreq = DEFAULT_POLLFREQ;
@@ -242,6 +243,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "serial", "Regular expression to match UPS Serial number");
 	addvar(VAR_VALUE, "vendorid", "Regular expression to match UPS Manufacturer numerical ID (4 digits hexadecimal)");
 	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
+	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
 }
 
 void upsdrv_banner(void)
@@ -401,7 +403,6 @@ void upsdrv_initinfo(void)
 
 void upsdrv_initups(void)
 {
-	HIDDeviceMatcher_t *matcher;
 	char *regex_array[5];
 	int r;
 
@@ -411,27 +412,27 @@ void upsdrv_initups(void)
 	regex_array[2] = getval("vendor");
 	regex_array[3] = getval("product");
 	regex_array[4] = getval("serial");
+	regex_array[5] = getval("bus");
 
-	r = new_regex_matcher(&matcher, regex_array, REG_ICASE | REG_EXTENDED);
+	r = new_regex_matcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
 	if (r==-1) {
 		fatalx("new_regex_matcher: %s", strerror(errno));
 	} else if (r) {
 		fatalx("invalid regular expression: %s", regex_array[r]);
 	}
 	/* Search for the first supported UPS, no matter Mfr or exact product */
-	if ((hd = HIDOpenDevice(matcher, MODE_OPEN)) == NULL)
+	if ((hd = HIDOpenDevice(regex_matcher, MODE_OPEN)) == NULL)
 		fatalx("No matching USB/HID UPS found");
 	else
 		upslogx(1, "Detected a UPS: %s/%s\n", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
 
-	/* free the matcher */
-	free_regex_matcher(matcher);
-	
 	/* create a new matcher for later reopening */
 	reopen_matcher = new_exact_matcher(hd);
 	if (!reopen_matcher) {
 		upsdebugx(2, "new_exact_matcher: %s", strerror(errno));
 	}
+	/* link the two matchers */
+	reopen_matcher->next = regex_matcher;
 
 	/* See initinfo for WARNING */
 	switch (hd->VendorID)
@@ -739,7 +740,7 @@ static bool hid_ups_walk(int mode)
 	/* Reserved values: -1/-10 for nul delay, -2 can't get value */
 	/* device has been disconnected, try to reconnect */
 	if ( (retcode == -EPERM) || (retcode == -EPIPE)
-		 || (retcode == -ENODEV) || (retcode == -EACCES))
+	     || (retcode == -ENODEV) || (retcode == -EACCES))
 	  {
 		hd = NULL;
 		reconnect_ups();

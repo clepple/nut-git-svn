@@ -131,6 +131,8 @@ static int match_function_exact(HIDDevice *d, void *privdata) {
 	if (strcmp_null(d->Serial, data->Serial) != 0) {
 		return 0;
 	}
+	/* note: the exact matcher ignores the "Bus" field, because
+	   it can change during a reconnect. */
 	return 1;
 }
 
@@ -157,6 +159,7 @@ HIDDeviceMatcher_t *new_exact_matcher(HIDDevice *d) {
 
 	m->match_function = &match_function_exact;
 	m->privdata = (void *)data;
+	m->next = NULL;
 	return m;
 }
 
@@ -263,7 +266,7 @@ static inline int match_regex_hex(regex_t *preg, int n) {
 
 /* private data type: hold a set of compiled regular expressions. */
 struct regex_matcher_data_s {
-	regex_t *regex[5];
+	regex_t *regex[6];
 };
 typedef struct regex_matcher_data_s regex_matcher_data_t;
 
@@ -292,20 +295,25 @@ static int match_function_regex(HIDDevice *d, void *privdata) {
 	if (r != 1) {
 		return r;
 	}
+	r = match_regex(data->regex[5], d->Bus);
+	if (r != 1) {
+		return r;
+	}
 	return 1;
 }
 
 /* constructor: create a regular expression matcher. This matcher is
-   based on five regular expression strings in regex_array[0..4],
-   corresponding to: vendorid, productid, vendor, product, serial. Any
-   of these strings can be NULL, which matches everything. Cflags are
-   as in regcomp(3). Typical values for cflags are REG_ICASE (case
-   insensitive matching) and REG_EXTENDED (use extended regular
-   expressions).  On success, return 0 and store the matcher in
-   *matcher. On error, return -1 with errno set, or return i=1--5 to
-   indicate that the regular expression regex_array[i] was ill-formed
-   (an error message can then be retrieved with regerror(3)). */
-int new_regex_matcher(HIDDeviceMatcher_t **matcher, char *regex_array[], int cflags) {
+   based on six regular expression strings in regex_array[0..5],
+   corresponding to: vendorid, productid, vendor, product, serial,
+   bus. Any of these strings can be NULL, which matches
+   everything. Cflags are as in regcomp(3). Typical values for cflags
+   are REG_ICASE (case insensitive matching) and REG_EXTENDED (use
+   extended regular expressions).  On success, return 0 and store the
+   matcher in *matcher. On error, return -1 with errno set, or return
+   i=1--5 to indicate that the regular expression regex_array[i] was
+   ill-formed (an error message can then be retrieved with
+   regerror(3)). */
+int new_regex_matcher(HIDDeviceMatcher_t **matcher, char *regex_array[6], int cflags) {
 	HIDDeviceMatcher_t *m = NULL;
 	regex_matcher_data_t *data = NULL;
 	int r, i;
@@ -319,7 +327,7 @@ int new_regex_matcher(HIDDeviceMatcher_t **matcher, char *regex_array[], int cfl
 		free(m);
 		return -1;
 	}
-	for (i=0; i<5; i++) {
+	for (i=0; i<6; i++) {
 		r = compile_regex(&data->regex[i], regex_array[i], cflags);
 		if (r==-2) {
 			r = i;
@@ -333,6 +341,7 @@ int new_regex_matcher(HIDDeviceMatcher_t **matcher, char *regex_array[], int cfl
 
 	m->match_function = &match_function_regex;
 	m->privdata = (void *)data;
+	m->next = NULL;
 	*matcher = m;
 	return 0;
 }
@@ -343,7 +352,7 @@ void free_regex_matcher(HIDDeviceMatcher_t *matcher) {
 	
 	if (matcher) {
 		data = (regex_matcher_data_t *)matcher->privdata;
-		for (i=0; i<5; i++) {
+		for (i=0; i<6; i++) {
 			if (data->regex[i]) {
 				regfree(data->regex[i]);
 				free(data->regex[i]);
@@ -413,7 +422,9 @@ void HIDDumpTree(HIDDevice *hd)
 		}
 	}
 }
-						
+
+/* Matcher is a linked list of matchers (see libhid.h), and the opened
+    device must match all of them. */
 HIDDevice *HIDOpenDevice(HIDDeviceMatcher_t *matcher, int mode)
 {
 	int ReportSize;

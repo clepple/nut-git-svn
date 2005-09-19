@@ -68,17 +68,21 @@ typedef struct
 	char*     Vendor; /*!< Device's Vendor Name */
 	char*     Product; /*!< Device's Product Name */
 	char*     Serial; /* Product serial number */
+	char*     Bus;    /* Bus name, e.g. "003" */
 } HIDDevice;
 
 /* A "USB matcher" is a callback function that inputs a HIDDevice
    structure, and returns 1 for a match and 0 for a non-match.  Thus,
    a matcher provides a criterion for selecting a USB device.  The
    callback function further is expected to return -1 on error with
-   errno set, and -2 on other errors. */
+   errno set, and -2 on other errors. Matchers can be connected in a
+   linked list via the "next" field. This is used e.g. in
+   libusb_open() and HIDOpenDevice(). */
 
 struct HIDDeviceMatcher_s {
 	int (*match_function)(HIDDevice *d, void *privdata);
 	void *privdata;
+	struct HIDDeviceMatcher_s *next;
 };
 typedef struct HIDDeviceMatcher_s HIDDeviceMatcher_t;
 
@@ -91,12 +95,14 @@ static inline int matches(HIDDeviceMatcher_t *matcher, HIDDevice *device) {
 }
 
 /* constructors and destructors for specific types of matchers. An
-   exact matcher matches a specific HIDDevice structure. A regex
-   matcher matches devices based on a set of regular expressions. The
-   new_* functions return a matcher on success, or NULL on error with
-   errno set. */
+   exact matcher matches a specific HIDDevice structure (except for
+   the Bus component, which is ignored). A regex matcher matches
+   devices based on a set of regular expressions. The new_* functions
+   return a matcher on success, or NULL on error with errno set. Note
+   that the "free_*" functions only free the current matcher, not any
+   others that are linked via "next" fields. */
 HIDDeviceMatcher_t *new_exact_matcher(HIDDevice *d);
-int new_regex_matcher(HIDDeviceMatcher_t **matcher, char *regex_array[], int cflags);
+int new_regex_matcher(HIDDeviceMatcher_t **matcher, char *regex_array[6], int cflags);
 void free_exact_matcher(HIDDeviceMatcher_t *matcher);
 void free_regex_matcher(HIDDeviceMatcher_t *matcher);
 
@@ -129,11 +135,6 @@ struct MatchFlags_s {
 	regex_t *re_Product;
 	regex_t *re_ProductID;
 	regex_t *re_Serial;
-	char *str_Vendor;
-	char *str_VendorID;
-	char *str_Product;
-	char *str_ProductID;
-	char *str_Serial;
 };
 typedef struct MatchFlags_s MatchFlags_t;
 

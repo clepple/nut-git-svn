@@ -1,3 +1,16 @@
+Mon Sep 19 17:50:21 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: added -x bus=X option to open a device on a specific USB
+   bus. Here X is a regular expression. When reconnecting to a
+   previously opened device, the policy is that the bus name of the
+   reopened device must match the regular expression previously
+   specified, but need not be the exact same bus as when the device
+   was initially opened. Thus, e.g., -x bus='00[23]' allows the device
+   to be moved between busses 002 and 003. (This is different from how
+   e.g. a device serial number is treated, which must match the
+   regular expression when the device is initially opened, but must
+   match exactly when the device is reopened).
+
 Fri Sep 16 01:04:57 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: make sure correct matcher is used for reopenings. 
