@@ -746,6 +746,10 @@ void upsdrv_updateinfo(void)
 		return;
 	}
 
+	if(tl_model != TRIPP_LITE_OMNIVS) {
+		dstate_setinfo("ups.debug.S","%s", hexascdump(s_value+1, 7));
+	}
+
 	switch(s_value[2]) {
 		case '0':
 			status_set("OL");
