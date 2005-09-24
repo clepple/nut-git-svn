@@ -326,19 +326,20 @@ static const char *hexascdump(unsigned char *msg, size_t len)
 	return buf;
 }
 
-enum tl_model_t decode_firmware_version(const char *fw)
+enum tl_model_t decode_protocol(unsigned int proto)
 {
-	if(!strncmp(fw, "V102", 4)) {
-		upslogx(3, "Using OMNIVS protocol (V102)");
-		return TRIPP_LITE_OMNIVS;
+	switch(proto) {
+		case 0x1001:
+			upslogx(3, "Using OMNIVS protocol (%x)", proto);
+			return TRIPP_LITE_OMNIVS;
+		case 0x3003:
+			upslogx(3, "Using SMARTPRO protocol (%x)", proto);
+			return TRIPP_LITE_SMARTPRO;
+		default:
+			printf("Unknown protocol (%x)", proto);
+			break;
 	}
 
-	if(!strncmp(fw, "V1062", 5)) {
-		upslogx(3, "Using SMARTPRO protocol (V1062)");
-		return TRIPP_LITE_SMARTPRO;
-	}
-
-	printf("Unknown protocol (%s)", fw);
 	return TRIPP_LITE_UNKNOWN;
 }
 
@@ -593,9 +594,9 @@ static int setvar(const char *varname, const char *val)
 
 void upsdrv_initinfo(void)
 {
-	const char f_msg[] = "F", p_msg[] = "P",
+	const char proto_msg[] = "\0", f_msg[] = "F", p_msg[] = "P",
 		s_msg[] = "S", v_msg[] = "V", w_msg[] = "W\0";
-	char *model, *model_end, 
+	char *model, *model_end, proto_value[9],
 	     f_value[9], p_value[9], s_value[9], v_value[9], w_value[9], buf[256];
 	int  va, ret, i;
 
@@ -606,6 +607,11 @@ void upsdrv_initinfo(void)
 				"information to nut-upsdev mailing list");
 	}
 
+	ret = send_cmd(proto_msg, sizeof(proto_msg), proto_value, sizeof(proto_value)-1);
+	if(ret <= 0) {
+		fatalx("Error reading protocol");
+	}
+	dstate_setinfo("ups.debug.0", hexascdump(proto_value+1, 7));
 
 	ret = send_cmd(s_msg, sizeof(s_msg), s_value, sizeof(s_value)-1);
 	if(ret <= 0) {
@@ -652,7 +658,7 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("ups.firmware.aux", "%s", v_value);
 
-	tl_model = decode_firmware_version(v_value);
+	tl_model = decode_protocol(((unsigned)(proto_value[1]) << 8) | (unsigned)(proto_value[2]));
 
 	snprintf(buf, sizeof buf, "%d", offdelay);
 	dstate_setinfo("ups.delay.shutdown", buf);
