@@ -1,4 +1,4 @@
-.TH GENERICUPS 8 "Tue May  4 2004" "" "Network UPS Tools (NUT)"
+.TH GENERICUPS 8 "Thu Aug 11 2005" "" "Network UPS Tools (NUT)"
 .SH NAME
 genericups \- Driver for contact\(hyclosure UPS equipment
 
@@ -198,7 +198,15 @@ the battery is OK when that line is held high.
 20 = Powerware 5119 RM
      [CP=DTR] [OL=\-CTS] [LB=DCD] [SD=ST]
 
-     http://lists.exploits.org/ups/Oct2003/00052.html
+     Check docs/cables/powerware.txt
+
+21 = Generic RUPS 2000 (Megatec M2501 cable)
+     [CP=RTS] [OL=CTS] [LB=\-DCD] [SD=RTS+DTR]
+
+     http://lists.exploits.org/upsdev/Oct2004/00004.html
+
+22 = Gamatronic All models with alarm interface 
+     [CP=RTS] [OL=CTS] [LB=\-DCD] [SD=DTR]
 
 .SH SIMILAR MODELS
 

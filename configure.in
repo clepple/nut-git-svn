@@ -33,6 +33,7 @@ STATEPATH="/var/state/ups"
 
 DRVPATH='${prefix}/bin'
 CGIPATH='${prefix}/cgi-bin'
+HTMLPATH='${prefix}/html'
 
 RUN_AS_USER="nobody"
 PIDPATH="/var/run"
@@ -352,6 +353,8 @@ then
 	AC_MSG_RESULT(not found)
 else
 	AC_MSG_RESULT($LIBUSB_CFLAGS)
+	USB_DRIVER_LIST="newhidups bcmxcp_usb tripplite_usb"
+	USBPAGES=newhidups.8
 fi
 
 AC_MSG_CHECKING(for libusb libs)
@@ -382,6 +385,8 @@ AC_ARG_WITH(linux-hiddev,
 			AC_DEFINE_UNQUOTED(LINUX_HIDDEV, "/usr/include/linux/hiddev.h",
 				[Complete path for Linux hiddev.h])
 			LINUX_HIDDEV=/usr/include/linux/hiddev.h
+			USB_DRIVER_LIST="$USB_DRIVER_LIST hidups energizerups"
+			USBPAGES="$USBPAGES hidups.8 energizerups.8"
 		fi
 		;;
 	no)
@@ -394,6 +399,8 @@ AC_ARG_WITH(linux-hiddev,
 			AC_DEFINE_UNQUOTED(LINUX_HIDDEV, "$withval",
 				[Complete path for Linux hiddev.h])
 			LINUX_HIDDEV=$withval
+			USB_DRIVER_LIST="$USB_DRIVER_LIST hidups energizerups"
+			USBPAGES="$USBPAGES hidups.8 energizerups.8"
 		else
 			AC_MSG_RESULT($withval not found)
 		fi
@@ -406,6 +413,8 @@ AC_ARG_WITH(linux-hiddev,
 		AC_DEFINE_UNQUOTED(LINUX_HIDDEV, "/usr/include/linux/hiddev.h",
 			[Complete path for Linux hiddev.h])
 		LINUX_HIDDEV=/usr/include/linux/hiddev.h
+		USB_DRIVER_LIST="$USB_DRIVER_LIST hidups energizerups"
+		USBPAGES="$USBPAGES hidups.8 energizerups.8"
 	else
 		AC_MSG_RESULT(no)
 	fi
@@ -510,6 +519,30 @@ AC_ARG_WITH(cgipath,
 	eval conftemp=${CGIPATH}
 	AC_DEFINE_UNQUOTED(CGIPATH, "$conftemp",
 			[Default path for CGI programs])
+	)
+
+AC_MSG_CHECKING(html path)
+AC_ARG_WITH(htmlpath,
+[ --with-htmlpath=PATH		Path for HTML files           [<prefix>/html]],
+[	case "$withval" in
+	yes|no)
+		AC_MSG_RESULT(using default)
+		eval conftemp=${HTMLPATH}
+		AC_DEFINE_UNQUOTED(HTMLPATH, "$conftemp",
+			[Default path for HTML files])
+		;;
+	*)
+		AC_MSG_RESULT($withval)
+		eval conftemp=${withval}
+		AC_DEFINE_UNQUOTED(HTMLPATH, "$conftemp",
+			[Default path for HTML files])
+		HTMLPATH=$withval
+		;;
+	esac],
+	AC_MSG_RESULT(using default)
+	eval conftemp=${HTMLPATH}
+	AC_DEFINE_UNQUOTED(HTMLPATH, "$conftemp",
+			[Default path for HTML files])
 	)
 
 AC_MSG_CHECKING(pidpath)
@@ -713,6 +746,8 @@ AC_SUBST(NETSNMP_LIBS)
 AC_SUBST(LIBUSB_CFLAGS)
 AC_SUBST(LIBUSB_LIBS)
 AC_SUBST(DRIVER_BUILD_LIST)
+AC_SUBST(USB_DRIVER_LIST)
+AC_SUBST(USBPAGES)
 AC_SUBST(DRIVER_INSTALL_TARGET)
 AC_SUBST(STRLCPY)
 AC_SUBST(LIBOBJ)
@@ -722,10 +757,11 @@ AC_SUBST(SERLIBS)
 AC_SUBST(STATEPATH)
 AC_SUBST(DRVPATH)
 AC_SUBST(CGIPATH)
+AC_SUBST(HTMLPATH)
 AC_SUBST(RUN_AS_USER)
 AC_SUBST(LINUX_HIDDEV)
 AC_SUBST(WORDS_BIGENDIAN)
 AC_SUBST(PKG_CFG_DIR)
 AC_SUBST(USE_PKG_CFG)
 
-AC_OUTPUT(clients/Makefile conf/Makefile data/Makefile drivers/Makefile server/Makefile Makefile common/Makefile man/Makefile lib/Makefile lib/libupsclient-config lib/libupsclient.pc scripts/hotplug/libhidups)
+AC_OUTPUT(clients/Makefile conf/Makefile data/Makefile data/html/Makefile data/html/header.html drivers/Makefile server/Makefile Makefile common/Makefile man/Makefile lib/Makefile lib/libupsclient-config lib/libupsclient.pc scripts/hotplug/libhidups)
