@@ -257,6 +257,13 @@ static MatchFlags flg = { USB_VID_TRIPP_LITE, USB_PID_TRIPP_LITE, };
 /* Interval notation for Q% = 10% <= [minV, maxV] <= 100%  */
 static float V_interval[2] = {MIN_VOLT, MAX_VOLT};
 
+static int battery_voltage_nominal = 12,
+	   input_voltage_nominal = 120,
+	   input_voltage_scaled = 120,
+	   input_voltage_maximum = -1,
+	   input_voltage_minimum = -1,
+	   switchable_load_banks = 0;
+
 /*! Time in seconds to delay before shutting down. */
 static unsigned int offdelay = DEFAULT_OFFDELAY;
 /* static unsigned int bootdelay = DEFAULT_BOOTDELAY; */
@@ -287,9 +294,9 @@ void toprint_str(char *str, int len)
  *
  * @return See strtol(3)
  */
-static int hex2d(char *start, unsigned int len)
+static int hex2d(const unsigned char *start, unsigned int len)
 {
-	char buf[32];
+	unsigned char buf[32];
 	buf[32] = '\0';
 
 	strncpy(buf, start, (len < (sizeof buf) ? len : (sizeof buf - 1)));
@@ -341,6 +348,50 @@ enum tl_model_t decode_protocol(unsigned int proto)
 	}
 
 	return TRIPP_LITE_UNKNOWN;
+}
+
+void decode_v(const unsigned char *value)
+{
+	unsigned char ivn = value[1], lb = value[4];
+	int bv = hex2d(value+2, 2);
+
+	switch(ivn) {
+		case '0': input_voltage_nominal = 
+			  input_voltage_scaled  = 100;
+			  break;
+
+		case '1': input_voltage_nominal = 
+			  input_voltage_scaled  = 120;
+			  break;
+
+		case '2': input_voltage_nominal = 
+			  input_voltage_scaled  = 230;
+			  break;
+
+		case '3': input_voltage_nominal = 208;
+			  input_voltage_scaled  = 230;
+			  break;
+
+		default:
+			  upslogx(2, "Unknown input voltage: 0x%02x", (unsigned int)ivn);
+			  break;
+	}
+
+	if( (bv >= '2') && (bv <= '6') ) {
+		battery_voltage_nominal = (bv - '0') * 6;
+	} else {
+		upslogx(2, "Unknown battery voltage: 0x%02x%02x",
+				(unsigned int)(value[2]), (unsigned int)(value[3]));
+	}
+		
+	if( (lb >= '0') && (lb <= '9') ) {
+		switchable_load_banks = lb - '0';
+	} else {
+		if( lb != 'X' ) {
+			upslogx(2, "Unknown number of switchable load banks: 0x%02x",
+					(unsigned int)lb);
+		}
+	}
 }
 
 int find_tripplite_ups(void);
@@ -400,9 +451,9 @@ void usb_comm_fail(int res, const char *msg)
  * @return number of chars in reply, excluding terminating NUL
  * @return 0 if command was not accepted
  */
-static int send_cmd(const char *msg, size_t msg_len, char *reply, size_t reply_len)
+static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *reply, size_t reply_len)
 {
-	char buffer_out[8];
+	unsigned char buffer_out[8];
 	unsigned char csum = 0;
 	int ret = 0, send_try, recv_try=0, done = 0;
 	size_t i = 0;
@@ -488,7 +539,7 @@ static void do_reboot(void)
 static int soft_shutdown(void)
 {
 	int ret;
-	char buf[256], cmd_N[]="N\0x", cmd_G[] = "G";
+	unsigned char buf[256], cmd_N[]="N\0x", cmd_G[] = "G";
 
 	cmd_N[2] = offdelay;
 	cmd_N[1] = offdelay >> 8;
@@ -531,7 +582,7 @@ static int hard_shutdown(void)
  */
 static int instcmd(const char *cmdname, const char *extra)
 {
-	char buf[256];
+	unsigned char buf[256];
 
 	if(tl_model == TRIPP_LITE_SMARTPRO) {
 		if (!strcasecmp(cmdname, "test.battery.start")) {
@@ -594,10 +645,11 @@ static int setvar(const char *varname, const char *val)
 
 void upsdrv_initinfo(void)
 {
-	const char proto_msg[] = "\0", f_msg[] = "F", p_msg[] = "P",
+	const unsigned char proto_msg[] = "\0", f_msg[] = "F", p_msg[] = "P",
 		s_msg[] = "S", v_msg[] = "V", w_msg[] = "W\0";
-	char *model, *model_end, proto_value[9],
-	     f_value[9], p_value[9], s_value[9], v_value[9], w_value[9], buf[256];
+	char *model, *model_end;
+	unsigned char proto_value[9], f_value[9], p_value[9], s_value[9], v_value[9],
+		      w_value[9], buf[256];
 	int  va, ret, i;
 
 	/* Reset watchdog: */
@@ -613,6 +665,9 @@ void upsdrv_initinfo(void)
 	}
 	dstate_setinfo("ups.debug.0", hexascdump(proto_value+1, 7));
 
+	tl_model = decode_protocol(((unsigned)(proto_value[1]) << 8) 
+			          | (unsigned)(proto_value[2]));
+
 	ret = send_cmd(s_msg, sizeof(s_msg), s_value, sizeof(s_value)-1);
 	if(ret <= 0) {
 		fatalx("Could not retrieve status ... is this an OMNIVS model?");
@@ -620,6 +675,7 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("ups.mfr", "%s", "Tripp Lite");
 
+	/* Get nominal power: */
 	ret = send_cmd(p_msg, sizeof(p_msg), p_value, sizeof(p_value)-1);
 	va = strtol(p_value+1, NULL, 10);
 
@@ -629,6 +685,7 @@ void upsdrv_initinfo(void)
 		model += strlen(hd->Vendor);
 	}
 
+	/* trim leading spaces: */
 	for(; *model == ' '; model++);
 
 	/* Trim trailing spaces */
@@ -656,9 +713,7 @@ void upsdrv_initinfo(void)
 	}
 	if(i>0) v_value[i-1] = 0;
 
-	dstate_setinfo("ups.firmware.aux", "%s", v_value);
-
-	tl_model = decode_protocol(((unsigned)(proto_value[1]) << 8) | (unsigned)(proto_value[2]));
+	decode_v(v_value);
 
 	snprintf(buf, sizeof buf, "%d", offdelay);
 	dstate_setinfo("ups.delay.shutdown", buf);
@@ -735,8 +790,8 @@ void debug_message(const char *msg, int len)
 
 void upsdrv_updateinfo(void)
 {
-	char b_msg[] = "B", l_msg[] = "L", s_msg[] = "S";
-	char b_value[9], l_value[9], s_value[9];
+	unsigned char b_msg[] = "B", d_msg[] = "D", l_msg[] = "L", s_msg[] = "S";
+	unsigned char b_value[9], d_value[9], l_value[9], s_value[9];
 	int bp;
 	double bv;
 
@@ -779,8 +834,13 @@ void upsdrv_updateinfo(void)
 				status_set("BYPASS");
 				break;
 			}
-		case '3': /* I have seen this once when switching from off+LB to charging */
-			upslogx(LOG_WARNING, "Unknown value for s[2]: 0x%02x", s_value[2]);
+		case '3':
+			if( tl_model == TRIPP_LITE_SMARTPRO ) {
+				status_set("OVER");
+			} else {
+				/* I have seen this once when switching from off+LB to charging */
+				upslogx(LOG_WARNING, "Unknown value for s[2]: 0x%02x", s_value[2]);
+			}
 			break;
 		default:
 			upslogx(LOG_ERR, "Unknown value for s[2]: 0x%02x", s_value[2]);
@@ -794,6 +854,11 @@ void upsdrv_updateinfo(void)
 			break;
 		case '1': /* Depends on s_value[2] */
 			break;
+		case '2':
+			if( tl_model == TRIPP_LITE_SMARTPRO ) {
+				status_set("RB");
+				break;
+			} /* else fall through: */
 		default:
 			upslogx(LOG_ERR, "Unknown value for s[1]: 0x%02x", s_value[1]);
 			dstate_datastale();
@@ -802,7 +867,7 @@ void upsdrv_updateinfo(void)
 
 	status_commit();
 
-	if(tl_model != TRIPP_LITE_SMARTPRO) {
+	if( tl_model == TRIPP_LITE_OMNIVS ) {
 		ret = send_cmd(b_msg, sizeof(b_msg), b_value, sizeof(b_value));
 		if(ret <= 0) {
 			dstate_datastale();
@@ -811,23 +876,7 @@ void upsdrv_updateinfo(void)
 		}
 
 		dstate_setinfo("input.voltage", "%.2f", hex2d(b_value+1, 4)/30.0);
-	}
 
-	ret = send_cmd(l_msg, sizeof(l_msg), l_value, sizeof(l_value));
-	if(ret <= 0) {
-		dstate_datastale();
-		usb_comm_fail(ret, "Error reading L value");
-		return;
-	}
-
-	if(tl_model == TRIPP_LITE_OMNIVS) {
-		dstate_setinfo("output.voltage", "%.1f", hex2d(l_value+1, 4)/2.0);
-	} else {
-		dstate_setinfo("ups.debug.L","%s", hexascdump(l_value+1, 7));
-	}
-
-	/* Not sure how the SMARTPRO sends back battery level */
-	if(tl_model != TRIPP_LITE_SMARTPRO) {
 		bv = hex2d(b_value+5, 2)/16.0;
 
 		/* dq ~= sqrt(dV) is a reasonable approximation
@@ -845,11 +894,47 @@ void upsdrv_updateinfo(void)
 		dstate_setinfo("battery.charge",  "%3d", bp);
 	}
 
-	if(tl_model == TRIPP_LITE_SMARTPRO) {
+	if( tl_model == TRIPP_LITE_SMARTPRO ) {
+		ret = send_cmd(d_msg, sizeof(d_msg), d_value, sizeof(d_value));
+		if(ret <= 0) {
+			dstate_datastale();
+			usb_comm_fail(ret, "Error reading D value");
+			return;
+		}
+
+		dstate_setinfo("input.voltage", "%d",
+				hex2d(d_value+1, 2) * input_voltage_scaled / 120);
+
+		dstate_setinfo("battery.voltage", "%.2f", 
+				(float)(hex2d(d_value+3, 2) * battery_voltage_nominal / 10.0 * 12 ) );
+
+		/* battery charge state is left as an exercise for the reader */
+	}
+
+	ret = send_cmd(l_msg, sizeof(l_msg), l_value, sizeof(l_value));
+	if(ret <= 0) {
+		dstate_datastale();
+		usb_comm_fail(ret, "Error reading L value");
+		return;
+	}
+
+	switch(tl_model) {
+		case TRIPP_LITE_OMNIVS:
+			dstate_setinfo("output.voltage", "%.1f", hex2d(l_value+1, 4)/2.0);
+			break;
+		case TRIPP_LITE_SMARTPRO:
+			dstate_setinfo("ups.load", "%d", hex2d(l_value+1, 2));
+			break;
+		default:
+			dstate_setinfo("ups.debug.L","%s", hexascdump(l_value+1, 7));
+			break;
+	}
+
+	if(tl_model != TRIPP_LITE_OMNIVS) {
 		debug_message("D", 2);
 		debug_message("M", 2);
 		debug_message("T", 2);
-		debug_message("U", 2);
+		/* debug_message("U", 2); */
 		/* debug_message("Z", 2); */
 	}
 
