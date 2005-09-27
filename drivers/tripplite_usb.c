@@ -260,8 +260,8 @@ static float V_interval[2] = {MIN_VOLT, MAX_VOLT};
 static int battery_voltage_nominal = 12,
 	   input_voltage_nominal = 120,
 	   input_voltage_scaled = 120,
-	   input_voltage_maximum = -1,
-	   input_voltage_minimum = -1,
+	/* input_voltage_maximum = -1,
+	   input_voltage_minimum = -1, */
 	   switchable_load_banks = 0;
 
 /*! Time in seconds to delay before shutting down. */
@@ -352,8 +352,11 @@ enum tl_model_t decode_protocol(unsigned int proto)
 
 void decode_v(const unsigned char *value)
 {
-	unsigned char ivn = value[1], lb = value[4];
+	unsigned char ivn, lb;
 	int bv = hex2d(value+2, 2);
+
+ 	ivn = value[1];
+	lb = value[4];
 
 	switch(ivn) {
 		case '0': input_voltage_nominal = 
@@ -377,8 +380,8 @@ void decode_v(const unsigned char *value)
 			  break;
 	}
 
-	if( (bv >= '2') && (bv <= '6') ) {
-		battery_voltage_nominal = (bv - '0') * 6;
+	if( (bv >= 2) && (bv <= 6) ) {
+		battery_voltage_nominal = bv * 6;
 	} else {
 		upslogx(2, "Unknown battery voltage: 0x%02x%02x",
 				(unsigned int)(value[2]), (unsigned int)(value[3]));
@@ -708,12 +711,10 @@ void upsdrv_initinfo(void)
 
 	ret = send_cmd(v_msg, sizeof(v_msg), v_value, sizeof(v_value)-1);
 
-	for(i=0; (i<8) && v_value[i]; i++) {
-		v_value[i] = toprint(v_value[i]);
-	}
-	if(i>0) v_value[i-1] = 0;
-
 	decode_v(v_value);
+
+	dstate_setinfo("input.voltage.nominal", "%d", input_voltage_nominal);
+	dstate_setinfo("battery.voltage.nominal", "%d", battery_voltage_nominal);
 
 	snprintf(buf, sizeof buf, "%d", offdelay);
 	dstate_setinfo("ups.delay.shutdown", buf);
@@ -906,7 +907,7 @@ void upsdrv_updateinfo(void)
 				hex2d(d_value+1, 2) * input_voltage_scaled / 120);
 
 		dstate_setinfo("battery.voltage", "%.2f", 
-				(float)(hex2d(d_value+3, 2) * battery_voltage_nominal / 10.0 * 12 ) );
+				(float)(hex2d(d_value+3, 2) * battery_voltage_nominal / 120.0 ) );
 
 		/* battery charge state is left as an exercise for the reader */
 	}
