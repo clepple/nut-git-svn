@@ -6,8 +6,8 @@
  * Header GPL 
  * -------------------------------------------------------------------------- */
 
-#ifndef TYPE_H
-#define TYPE_H
+#ifndef HIDTYPES_H
+#define HIDTYPES_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,7 +36,7 @@ extern "C" {
 #define TYPE_MAIN					0x00
 #define TYPE_GLOBAL				0x04
 #define TYPE_LOCAL				0x08
-#define TYPE_MASK					0xC0
+#define TYPE_MASK					0x0C
 
 /* Main items */
 #define ITEM_COLLECTION			0xA0
@@ -60,6 +60,9 @@ extern "C" {
 /* Local items */
 #define ITEM_USAGE				0x08
 #define ITEM_STRING				0x78
+
+/* Long item */
+#define ITEM_LONG                               0xFC
 
 #define ITEM_MASK					0xFC
 
@@ -115,33 +118,19 @@ typedef struct
 	long    PhyMax;		/* Physical Max							*/
 } HIDData;
 
-/*
- * HIDParser struct
+/* 
+ * HIDDesc struct
+ *
+ * Holds a parsed report descriptor
  * -------------------------------------------------------------------------- */
 typedef struct
 {
-	u_char   ReportDesc[REPORT_DSC_SIZE];	/* Store Report Descriptor					*/
-	u_short  ReportDescSize;					/* Size of Report Descriptor					*/
-	u_short  Pos;							/* Store current pos in descriptor				*/
-	u_char   Item;							/* Store current Item							*/
-	long    Value;							/* Store current Value						*/
-
-	HIDData Data;							/* Store current environment					*/
-
-	u_char   OffsetTab[MAX_REPORT][4];		/* Store ID, Type, offset & timestamp of report	*/
-	u_char   ReportCount;					/* Store Report Count						*/
-	u_char   Count;							/* Store local report count					*/
-
-	u_short  UPage;							/* Global UPage								*/
-	HIDNode UsageTab[USAGE_TAB_SIZE];	/* Usage stack								*/
-	u_char   UsageSize;						/* Design number of usage used				*/
-
-	u_char   nObject;						/* Count Objects in Report Descriptor			*/
-	u_char   nReport;						/* Count Reports in Report Descriptor			*/
-} HIDParser;
+	int len;        /* number of items in descriptor */
+	HIDData *item;  /* list of items */
+} HIDDesc;
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif /* __cplusplus */
 
-#endif
+#endif /* HIDTYPES_H */

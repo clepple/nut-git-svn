@@ -20,12 +20,11 @@
 
 #include "main.h"
 #include "serial.h"
+#include "cyberpower.h"
 
 #include <sys/ioctl.h>
 
 #include "timehead.h"
-
-#define DRV_VERSION "1.00"
 
 /* window for repeating dangerous command (shutdown.stayoff) */
 #define MINCMDTIME	3
@@ -106,6 +105,7 @@ struct {
 	{ 51, 49, "OP800", "800AVR"	},	/* O31 */
 	{ 50, 57, "OP500", "500AVR"	},	/* O29 */
 	{ 50, 55, "OP320", "320AVR"	},	/* O27 */
+	{ 49, 48, "OP1000", "1000AVR"	},	/* O10 */
 	{  0,  0, (char*) NULL, (char *) NULL }
 };
 

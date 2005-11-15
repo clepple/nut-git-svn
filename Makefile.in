@@ -74,7 +74,7 @@ build-cgi-fake:
 build-cgi:
 	@cd clients; $(MAKE) cgi; cd ..;
 
-install-cgi: cgi install-cgi-dir install-dirs install-cgi-bin install-cgi-man
+install-cgi: cgi install-cgi-dir install-dirs install-cgi-bin install-cgi-man install-cgi-html
 
 install-cgi-dir:
 	if (test ! -d $(CGIPATH)) then \
@@ -90,6 +90,9 @@ install-cgi-man:
 install-cgi-conf:
 	@cd conf; $(MAKE) install-cgi-conf; cd ..;
 
+install-cgi-html:
+	@cd data/html; $(MAKE) install-cgi-html; cd ../..;
+
 install-lib:
 	@cd clients; $(MAKE) install-lib; cd ..;
 	@cd man; $(MAKE) install-lib-man; cd ..;
@@ -98,9 +101,7 @@ install-lib:
 usb: build-usb
 
 build-usb:
-	@cd drivers; $(MAKE) hidups; cd ..;
-	@cd drivers; $(MAKE) newhidups; cd ..;
-	@cd drivers; $(MAKE) energizerups; cd ..;
+	@cd drivers; $(MAKE) build-usb; cd ..;
 
 install-usb:
 	@cd drivers; $(MAKE) install-usb; cd ..;

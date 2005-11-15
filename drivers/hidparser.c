@@ -23,6 +23,7 @@
  * -------------------------------------------------------------------------- */
 
 #include <string.h>
+#include <stdlib.h>
 #include "config.h"
 #include "hidparser.h"
 
@@ -30,14 +31,39 @@
 /* previously: #define ERROR(x) if(x) __asm { int 3 }; */
 #define ERROR(x)
 
-const char ItemSize[4]={0,1,2,4};
+static const char ItemSize[4]={0,1,2,4};
+
+/*
+ * HIDParser struct
+ * -------------------------------------------------------------------------- */
+typedef struct
+{
+	u_char   ReportDesc[REPORT_DSC_SIZE];	/* Store Report Descriptor */
+	u_short  ReportDescSize;					/* Size of Report Descriptor */
+	u_short  Pos;							/* Store current pos in descriptor */
+	u_char   Item;							/* Store current Item */
+	long    Value;							/* Store current Value */
+
+	HIDData Data;							/* Store current environment */
+
+	u_char   OffsetTab[MAX_REPORT][4];	/* Store ID, Type, offset & timestamp of report	*/
+	u_char   ReportCount;					/* Store Report Count */
+	u_char   Count;							/* Store local report count */
+
+	u_short  UPage;							/* Global UPage */
+	HIDNode UsageTab[USAGE_TAB_SIZE];	/* Usage stack */
+	u_char   UsageSize;						/* Design number of usage used */
+
+	u_char   nObject;						/* Count Objects in Report Descriptor */
+	u_char   nReport;						/* Count Reports in Report Descriptor */
+} HIDParser;
 
 /*
  * ResetParser
  * Reset HIDParser structure for new parsing
  * Keep Report descriptor data
  * -------------------------------------------------------------------------- */
-void ResetParser(HIDParser* pParser)
+static void ResetParser(HIDParser* pParser)
 {
   pParser->Pos=0;
   pParser->Count=0;
@@ -49,6 +75,21 @@ void ResetParser(HIDParser* pParser)
 
   memset(pParser->OffsetTab,0,sizeof(pParser->OffsetTab));
   memset(&pParser->Data,0,sizeof(pParser->Data));
+}
+
+/* Note: The USB HID specification states that Local items do not
+   carry over to the next Main item (version 1.11, section
+   6.2.2.8). Therefore the local state must be reset after each main
+   item. In particular, any unused usages on the Usage tabs must be
+   discarded and must not carry over to the next Main item. Some APC
+   equipment actually sends multiple redundant "usage" commands for a
+   single control, so resetting the local state is important. */
+/* Also note: UsageTab[0] is used as the usage of the next control,
+   even if UsageSize=0. Therefore, this must be initialized */
+static void ResetLocalState(HIDParser* pParser)
+{
+  pParser->UsageSize = 0;
+  memset(pParser->UsageTab,0,sizeof(pParser->UsageTab));
 }
 
 /*
@@ -103,7 +144,7 @@ static long FormatValue(long Value, u_char Size)
  * Return in pData the last object found.
  * Return TRUE when there is other Item to parse.
  * -------------------------------------------------------------------------- */
-int HIDParse(HIDParser* pParser, HIDData* pData)
+static int HIDParse(HIDParser* pParser, HIDData* pData)
 {
   int Found=0;
 
@@ -184,7 +225,7 @@ int HIDParse(HIDParser* pParser, HIDData* pData)
           pParser->Data.Path.Node[pParser->Data.Path.Size].Usage=pParser->Value & 0x7F;
           pParser->Data.Path.Size++;
         }
-
+	ResetLocalState(pParser);
         break;
       }
       case ITEM_END_COLLECTION :
@@ -193,6 +234,7 @@ int HIDParse(HIDParser* pParser, HIDData* pData)
         /* Remove Index if any */
         if(pParser->Data.Path.Node[pParser->Data.Path.Size].UPage==0xFF)
           pParser->Data.Path.Size--;
+	ResetLocalState(pParser);
         break;
       }
       case ITEM_FEATURE :
@@ -252,6 +294,9 @@ int HIDParse(HIDParser* pParser, HIDData* pData)
 
         /* Decrement count */
         pParser->Count--;
+	if (pParser->Count == 0) {
+	  ResetLocalState(pParser);
+	}
         break;
       }
       case ITEM_REP_ID :
@@ -301,6 +346,11 @@ int HIDParse(HIDParser* pParser, HIDData* pData)
         pParser->Data.PhyMax=FormatValue(pParser->Value, ItemSize[pParser->Item & SIZE_MASK]);
         break;
       }
+      case ITEM_LONG :
+      {
+	/* can't handle long items, but should at least skip them */
+	pParser->Pos+=(u_char)(pParser->Value & 0xff);
+      }
     }
   } /* while(!Found && pParser->Pos<pParser->ReportDescSize) */
 
@@ -317,25 +367,27 @@ int HIDParse(HIDParser* pParser, HIDData* pData)
  * Get pData characteristics from pData->Path or from pData->ReportID/Offset
  * Return TRUE if object was found
  * -------------------------------------------------------------------------- */
-int FindObject(HIDParser* pParser, HIDData* pData)
+int FindObject(HIDDesc *pDesc, HIDData* pData)
 {
-  HIDData FoundData;
-  ResetParser(pParser);
-  while(HIDParse(pParser, &FoundData))
+  HIDData *pFoundData;
+  int i;
+
+  for (i=0; i<pDesc->len; i++)
   {
+    pFoundData = &pDesc->item[i];
     if(pData->Path.Size>0 && 
-      FoundData.Type==pData->Type &&
-      memcmp(FoundData.Path.Node, pData->Path.Node, (pData->Path.Size)*sizeof(HIDNode))==0)
+      pFoundData->Type==pData->Type &&
+      memcmp(pFoundData->Path.Node, pData->Path.Node, (pData->Path.Size)*sizeof(HIDNode))==0)
     {
-      memcpy(pData, &FoundData, sizeof(HIDData));
+      memcpy(pData, pFoundData, sizeof(HIDData));
       return 1;
     }
     /* Found by ReportID/Offset */
-    else if(FoundData.ReportID==pData->ReportID && 
-      FoundData.Type==pData->Type &&
-      FoundData.Offset==pData->Offset)
+    else if(pFoundData->ReportID==pData->ReportID && 
+      pFoundData->Type==pData->Type &&
+      pFoundData->Offset==pData->Offset)
     {
-      memcpy(pData, &FoundData, sizeof(HIDData));
+      memcpy(pData, pFoundData, sizeof(HIDData));
       return 1;
     }
   }
@@ -367,6 +419,7 @@ void GetValue(const u_char* Buf, HIDData* pData)
 /*  if(pData->Value > pData->LogMax)
     pData->Value=FormatValue(pData->Value, (u_char)((pData->Size-1)/8+1));
 */
+  /* FIXME: this won't work if LogMax isn't a power of 2 */
   if (pData->Value > pData->LogMax)
     pData->Value |= ~pData->LogMax;
 }
@@ -396,3 +449,36 @@ void SetValue(const HIDData* pData, u_char* Buf)
     Bit++;
   }
 }
+
+/* ---------------------------------------------------------------------- */
+
+/* parse HID Report Descriptor. Input: byte array ReportDesc[n].
+   Output: parsed data structure. Returns 0 on success, -1 on failure
+   with errno set. */
+int Parse_ReportDesc(u_char *ReportDesc, int n, HIDDesc *pDesc) {
+	HIDParser parser;
+	HIDData FoundData;
+	HIDData *item = NULL;
+	HIDData *r;
+	int i;
+
+	ResetParser(&parser);
+	memcpy(parser.ReportDesc, ReportDesc, n);
+	parser.ReportDescSize = n;
+
+	i=0;
+	while (HIDParse(&parser, &FoundData)) {
+		i++;
+		r = realloc(item, i*sizeof(HIDData));
+		if (!r) {
+			free(item);
+			return -1;
+		}
+		item = r;
+		memcpy(&item[i-1], &FoundData, sizeof(HIDData));
+	}
+	pDesc->len = i;
+	pDesc->item = item;
+	return 0;
+}
+
