@@ -1,6 +1,6 @@
 /*  mge-shut.c - monitor MGE UPS for NUT with SHUT protocol
  * 
- *  Copyright (C) 2002-2004
+ *  Copyright (C) 2002 - 2005
  *     Arnaud Quette <arnaud.quette@free.fr> & <arnaud.quette@mgeups.com>
  *     Philippe Marzouk <philm@users.sourceforge.net>
  *     Russell Kroll <rkroll@exploits.org>
@@ -73,7 +73,7 @@ static void align_request(hid_packet_t *sd)
 hid_desc_data_u    	hid_descriptor;
 device_desc_data_u 	device_descriptor;
 static HIDData   	hData;
-static HIDParser 	hParser;
+static HIDDesc  	hDesc; /* parsed Report Descriptor */
 u_char 			raw_buf[4096];
 
 /* --------------------------------------------------------------- */
@@ -81,8 +81,8 @@ u_char 			raw_buf[4096];
 /* --------------------------------------------------------------- */
 
 float expo(int a, int b);
-void format_model_name(char *iProduct, char *iModel);
 extern long FormatValue(long Value, u_char Size);
+static char *hu_find_infoval(info_lkp_t *hid2info, long value);
 
 /* --------------------------------------------------------------- */
 /*                    UPS Driver Functions                         */
@@ -97,17 +97,43 @@ void upsdrv_initinfo (void)
 	/* Get complete Model information */
 	shut_identify_ups ();
 
+	printf("Detected %s [%s] on %s\n", dstate_getinfo("ups.model"),
+			dstate_getinfo("ups.serial"), device_path);
+
 	/* Device capabilities enumeration ----------------------------- */
 	for ( item = mge_info ; item->type != NULL ; item++ ) {
 		
+		/* Check if we are asked to stop (reactivity++) */
+		if (exit_flag != 0)
+		  return;
+
 		/* avoid redundancy when multiple defines (RO/RW) */
 		if (dstate_getinfo(item->type) != NULL)
 			continue;
 		
 		/* Special case for handling server side variables */
 		if (item->shut_flags & SHUT_FLAG_ABSENT) {
+			/* Check if exists (if necessary) before creation */
+			if (item->item_path != NULL)
+			  {
+				if (hid_get_value(item->item_path) != 1 )
+				  continue;
+			  }
+			else
+			{
+			  /* Simply set the default value */
+			  dstate_setinfo(item->type, "%s", item->dfl);
+			  dstate_setflags(item->type, item->flags);
+			  continue;
+			}
+			
 			dstate_setinfo(item->type, "%s", item->dfl);
 			dstate_setflags(item->type, item->flags);
+
+			/* Set max length for strings, if needed */
+			if (item->flags & ST_FLAG_STRING)
+				dstate_setaux(item->type, item->length);
+			
 			/* disable reading now 
 			item->shut_flags &= ~SHUT_FLAG_OK;*/
 		} else {
@@ -145,6 +171,7 @@ void upsdrv_initinfo (void)
 void upsdrv_updateinfo (void)
 {
 	mge_info_item *item;
+	char *nutvalue;
 	
 	upsdebugx(2, "entering upsdrv_updateinfo()");
 	
@@ -163,6 +190,10 @@ void upsdrv_updateinfo (void)
 	/* Device data walk ----------------------------- */
 	for ( item = mge_info ; item->type != NULL; item++ ) {
 
+	  /* Check if we are asked to stop (reactivity++) */
+	  if (exit_flag != 0)
+		return;
+
     if (item->shut_flags & SHUT_FLAG_ABSENT)
 			continue;
 
@@ -172,7 +203,18 @@ void upsdrv_updateinfo (void)
 				upsdebugx(3, "%s: hData.Value = %ld (%ld)",
 					item->item_path, hData.Value, hData.LogMax);
 				
-				dstate_setinfo(item->type, item->fmt, hData.Value);
+				/* need lookup'ed translation */
+				if (item->hid2info != NULL)
+				  {
+					nutvalue = hu_find_infoval(item->hid2info, (long)hData.Value);
+					if (nutvalue != NULL)
+					  dstate_setinfo(item->type, "%s", nutvalue);
+					else
+					  dstate_setinfo(item->type, item->fmt, hData.Value);
+				  }
+				else
+				  dstate_setinfo(item->type, item->fmt, hData.Value);
+
 				dstate_dataok();
 			} else {
 				if (shut_ups_start () != 0)
@@ -394,7 +436,8 @@ int shut_identify_ups ()
 {
 	char string[MAX_STRING];
 	char model[MAX_STRING];
-	int retcode;
+	char *finalname = NULL;
+	int retcode, tries=MAX_TRY;
 	
 	if (commstatus == 0)
 		return -1;
@@ -404,19 +447,29 @@ int shut_identify_ups ()
 				device_descriptor.dev_desc.iProduct);
 		     
 	/* Get strings iModel and iProduct */
-	if((shut_get_string(device_descriptor.dev_desc.iProduct, string, 0x25)) > 0) {
+	while ( ((shut_get_string(device_descriptor.dev_desc.iProduct, string, 0x25)) <= 0)
+		       && ((tries--) > 0) )	{
 		
 		strcpy(model, string);
 		
-		if(hid_get_value("UPS.PowerSummary.iModel") != 0 ) {
+		if(hid_get_value("UPS.PowerSummary.iModel") != 0 )
+		  {
 			if((shut_get_string(hData.Value, string, 0x25)) > 0)
-				format_model_name(model, string);
-		}
+			  finalname = get_model_name(model, string);
+		  }
 		else
-			format_model_name(model, NULL);
+		  {
+			/* Try with "UPS.Flow.[4].ConfigApparentPower" */
+			if(hid_get_value("UPS.Flow.[4].ConfigApparentPower") != 0 )
+			  {
+				sprintf(&string[0], "%i", (int)hData.Value);
+				finalname = get_model_name(model, string);
+			  }
+			else
+			  finalname = get_model_name(model, NULL);
+		  }
 
-		dstate_setinfo("ups.model", "%s", model);
-		upsdebugx (1, "Detected: %s", model);
+		dstate_setinfo("ups.model", "%s", finalname);
 	}
 		
 	/* Get strings iSerialNumber */
@@ -428,7 +481,8 @@ int shut_identify_ups ()
 	else
 		dstate_setinfo("ups.serial", "unknown");
 
-	return 0;
+	/* all went fine */
+	return 1;
 }
 
 /**********************************************************************
@@ -611,7 +665,7 @@ void  shut_ups_status(void)
 			status_set("LB");
 	}
 
-	if(hid_get_value("UPS.PowerSummary.PresentStatus.OverLoad") != 0 ) {
+	if(hid_get_value("UPS.PowerSummary.PresentStatus.Overload") != 0 ) {
 		if(hData.Value == 1)
 			status_set("OVER");
 	}
@@ -620,6 +674,24 @@ void  shut_ups_status(void)
 		if(hData.Value == 1)
 			status_set("RB");
 	}
+  
+	if(hid_get_value("UPS.PowerSummary.PresentStatus.Good") != 0 ) {
+		if(hData.Value == 0)
+			status_set("OFF");
+	}
+
+	/* FIXME: extend ups.status for BYPASS: */
+	/* Manual bypass */
+	if(hid_get_value("UPS.PowerConverter.Input.[4].PresentStatus.Used") != 0 ) {
+		if(hData.Value == 1)
+			status_set("BYPASS");
+	}
+	/* Automatic bypass */
+	if(hid_get_value("UPS.PowerConverter.Input.[2].PresentStatus.Used") != 0 ) {
+		if(hData.Value == 1)
+			status_set("BYPASS");
+	}
+
 	status_commit();
 }
 
@@ -971,6 +1043,7 @@ int shut_set_report(int id, u_char *pkt, int reportlen)
 int hid_init_device()
 {
 	int retcode;
+	int r;
 	
 	/* Get HID descriptor */
 	if((retcode = shut_get_descriptor(HID_DESCRIPTOR, hid_descriptor.raw_desc, 0x09)) > 0)
@@ -1026,15 +1099,11 @@ int hid_init_device()
 
 				dump_hex("shut_get_descriptor(report)", raw_buf, retcode);
 				
-				/* HID Parser Init */
-				ResetParser(&hParser);
-				hParser.ReportDescSize = retcode;
-				memcpy(hParser.ReportDesc, raw_buf, retcode);
-				HIDParse(&hParser, &hData);
-				upsdebugx(3, "UPage = %02x, Usage = %02x, Data.ReportID = %d", 
-					hData.Path.Node[0].UPage,
-					hData.Path.Node[0].Usage,
-					hData.ReportID);
+				/* Parse Report Descriptor */
+				r = Parse_ReportDesc(raw_buf, retcode, &hDesc);
+				if (r) {
+					fatalx("Failed to parse report descriptor: %s", strerror(errno));
+				}
 			}
 			else
 				fatalx("Unable to get Report Descriptor");
@@ -1135,7 +1204,7 @@ int hid_get_value(const char *item_path)
 		hData.Path.Size = retcode;
     
 		/* Get info on object (reportID, offset and size) */
-		if (FindObject(&hParser,&hData) == 1) {
+		if (FindObject(&hDesc,&hData) == 1) {
 			if (shut_get_report(hData.ReportID, raw_buf, MAX_REPORT_SIZE) > 0) {
 				GetValue((const u_char *) raw_buf, &hData);
 				dump_hex("Object's report", raw_buf, 10);
@@ -1274,38 +1343,28 @@ float expo(int a, int b)
 	return -1;
 }
 
-/*  Formatmodel names */
-void format_model_name(char *iProduct, char *iModel)
+/*  Format model names */
+char *get_model_name(char *iProduct, char *iModel)
 {
-	/* Evolution model range */
-	if(!strncmp(iProduct, "Evolution", 9)) {
-		if(iModel != NULL)
-			sprintf(iProduct, "evolution %d", atoi(iModel));
-			
-		return;
-	}
+  models_name_t *model = NULL;
 
-	/* Ellipse Premium model range */
-	if(!strncmp(iProduct, "ellipse", 7)) {
-		if(iModel != NULL)
-			/* Note: we skip "PRxxxx" for the value */
-			sprintf(iProduct, "ellipse premium %d", atoi(iModel+2));
-		else
-			sprintf(iProduct, "ellipse premium");
-		
-		return;
-	}
+  upsdebugx(2, "get_model_name(%s, %s)\n", iProduct, iModel);
 
-	/* Ellipse model range */
-	if(!strncmp(iProduct, "ELLIPSE", 7)) {
-		/* This gives 500 for Ellipse 500 ... */
-		if(hid_get_value("UPS.Flow.[4].ConfigApparentPower") != 0 )
-			sprintf(iProduct, "ellipse %ld", hData.Value);
-		else
-			sprintf(iProduct, "ellipse");
-
-		return;
+  /* Search for formatting rules */
+  for ( model = models_names ; model->iProduct != NULL ; model++ )
+	{
+	  upsdebugx(2, "comparing with: %s", model->finalname);
+	  if ( (!strncmp(iProduct, model->iProduct, strlen(model->iProduct)))
+		   && (!strncmp(iModel, model->iModel, strlen(model->iModel))) )
+		{
+		  upsdebugx(2, "Found %s\n", model->finalname);
+		  break;
+		}
 	}
+  /* FIXME: if we end up with model->iProduct == NULL
+   * then process name in a generic way (not yet supported models!)
+   */
+  return model->finalname;
 }
 
 /* set r/w INFO_ element to a value. */
@@ -1360,7 +1419,7 @@ int hid_set_value(const char *varname, const char *val)
 		hData.Path.Size = retcode;
     
 		/* Get info on object (reportID, offset and size) */
-		if (FindObject(&hParser,&hData) == 1) {
+		if (FindObject(&hDesc,&hData) == 1) {
 			replen = shut_get_report(hData.ReportID, raw_buf, MAX_REPORT_SIZE);
 			
 			GetValue((const u_char *) raw_buf, &hData);
@@ -1385,7 +1444,9 @@ int hid_set_value(const char *varname, const char *val)
 					upsdebugx(3, "FAILED");
 				*/				
 				return STAT_SET_HANDLED;
-			}			
+			}
+			else
+				upsdebugx(3, "Object is constant");
 		}
 		else
 			upsdebugx(3, "Can't find object");
@@ -1407,4 +1468,25 @@ mge_info_item *shut_find_info(const char *varname)
 		
 	fatalx("shut_find_info: unknown info type: %s", varname);
 	return NULL;
+}
+
+/* find the NUT value matching that HID Item value */
+static char *hu_find_infoval(info_lkp_t *hid2info, long value)
+{
+  info_lkp_t *info_lkp;
+  
+  upsdebugx(3, "hu_find_infoval: searching for value = %ld\n", value);
+  
+  for (info_lkp = hid2info; (info_lkp != NULL) &&
+	 (strcmp(info_lkp->nut_value, "NULL")); info_lkp++) {
+    
+    if (info_lkp->hid_value == value) {
+      upsdebugx(3, "hu_find_infoval: found %s (value: %ld)\n",
+		info_lkp->nut_value, value);
+      
+      return info_lkp->nut_value;
+    }
+  }
+  upsdebugx(3, "hu_find_infoval: no matching INFO_* value for this HID value (%ld)\n", value);
+  return NULL;
 }
