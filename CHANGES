@@ -1,3 +1,23 @@
+Thu Nov 24 03:36:14 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: redesigned report retrieval system. All reports read
+   from the UPS are now buffered. Reports are now also read into
+   arrays of the correct size, rather than of fixed size.
+
+ - newhidups: re-added UPS.PowerSummary.ACPresent to ups.status in
+   Belkin subdriver.
+
+ - newhidups: fixed logic in hidparser.c:SetValue() (don't assume all
+   report items start on byte boundaries).
+
+ - newhidups: changed implementation of HIDNode: store usage page and
+   code in a single 32-bit integer, for efficient access.
+
+ - newhidups: removed non-constant items from HIDData structure; a
+   HIDData object is now immutable. 
+
+ - newhidups: reduced global variables in libhid.c
+
 Tue Nov 15 17:35:00 CEST 2005 / Kjell Claesson <kjell.claesson@telia.com>
 
  * driver.list:

@@ -160,14 +160,9 @@ typedef struct MatchFlags_s MatchFlags_t;
 HIDDevice *HIDOpenDevice(usb_dev_handle **udevp, HIDDevice *hd, HIDDeviceMatcher_t *matcher, int mode);
 
 /*
- * HIDGetItem
- * -------------------------------------------------------------------------- */
-HIDItem *HIDGetItem(const char *ItemPath);
-
-/*
  * HIDGetItemValue
  * -------------------------------------------------------------------------- */
-float HIDGetItemValue(usb_dev_handle *udev, char *path, float *Value, usage_tables_t *utab);
+int HIDGetItemValue(usb_dev_handle *udev, char *path, float *Value, usage_tables_t *utab);
 
 /*
  * HIDGetItemString
@@ -192,7 +187,6 @@ void HIDCloseDevice(usb_dev_handle *udev);
 /*
  * Support functions
  * -------------------------------------------------------------------------- */
-int get_current_data_attribute();
 void HIDDumpTree(usb_dev_handle *udev, usage_tables_t *utab);
 
 #endif /* _LIBHID_H */
