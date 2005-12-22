@@ -352,6 +352,8 @@ then
 	AC_MSG_RESULT(not found)
 else
 	AC_MSG_RESULT($LIBUSB_CFLAGS)
+        USB_DRIVER_LIST="newhidups bcmxcp_usb tripplite_usb"
+	USBPAGES="newhidups.8 bcmxcp_usb.8 tripplite_usb.8"
 fi
 
 AC_MSG_CHECKING(for libusb libs)
@@ -371,6 +373,27 @@ AC_CHECK_LIB(usb, usb_detach_kernel_driver_np, [
 			[Define to 1 if libusb support `usb_detach_kernel_driver_np' function.])
 	], [], [])
 
+dnl Check Linux Hotplug systems
+dnl Check for old style hotplug (will be deprecated after Linux 2.6.14)
+AC_MSG_CHECKING(for old style hotplug)
+if (test -d /etc/hotplug)
+then
+	HOTPLUG_SYSTEMS="hotplug"
+	AC_MSG_RESULT(found)
+else
+	AC_MSG_RESULT(not found)
+fi
+
+dnl Check for new style hotplug 
+AC_MSG_CHECKING(for new style hotplug and udev)
+if (test -d /etc/udev)
+then
+	HOTPLUG_SYSTEMS="$HOTPLUG_SYSTEMS hotplug-ng"
+	AC_MSG_RESULT(found)
+else
+	AC_MSG_RESULT(not found)
+fi
+
 AC_MSG_CHECKING(for Linux hiddev.h)
 AC_ARG_WITH(linux-hiddev,
 [ --with-linux-hiddev=FILE	Linux hiddev.h     [/usr/include/linux/hiddev.h]],
@@ -382,6 +405,8 @@ AC_ARG_WITH(linux-hiddev,
 			AC_DEFINE_UNQUOTED(LINUX_HIDDEV, "/usr/include/linux/hiddev.h",
 				[Complete path for Linux hiddev.h])
 			LINUX_HIDDEV=/usr/include/linux/hiddev.h
+			USB_DRIVER_LIST="$USB_DRIVER_LIST hidups energizerups"
+			USBPAGES="$USBPAGES hidups.8 energizerups.8"
 		fi
 		;;
 	no)
@@ -394,6 +419,8 @@ AC_ARG_WITH(linux-hiddev,
 			AC_DEFINE_UNQUOTED(LINUX_HIDDEV, "$withval",
 				[Complete path for Linux hiddev.h])
 			LINUX_HIDDEV=$withval
+			USB_DRIVER_LIST="$USB_DRIVER_LIST hidups energizerups"
+			USBPAGES="$USBPAGES hidups.8 energizerups.8"
 		else
 			AC_MSG_RESULT($withval not found)
 		fi
@@ -406,6 +433,8 @@ AC_ARG_WITH(linux-hiddev,
 		AC_DEFINE_UNQUOTED(LINUX_HIDDEV, "/usr/include/linux/hiddev.h",
 			[Complete path for Linux hiddev.h])
 		LINUX_HIDDEV=/usr/include/linux/hiddev.h
+		USB_DRIVER_LIST="$USB_DRIVER_LIST hidups energizerups"
+		USBPAGES="$USBPAGES hidups.8 energizerups.8"
 	else
 		AC_MSG_RESULT(no)
 	fi
@@ -712,7 +741,10 @@ AC_SUBST(NETSNMP_CFLAGS)
 AC_SUBST(NETSNMP_LIBS)
 AC_SUBST(LIBUSB_CFLAGS)
 AC_SUBST(LIBUSB_LIBS)
+AC_SUBST(HOTPLUG_SYSTEMS)
 AC_SUBST(DRIVER_BUILD_LIST)
+AC_SUBST(USB_DRIVER_LIST)
+AC_SUBST(USBPAGES)
 AC_SUBST(DRIVER_INSTALL_TARGET)
 AC_SUBST(STRLCPY)
 AC_SUBST(LIBOBJ)
@@ -728,4 +760,4 @@ AC_SUBST(WORDS_BIGENDIAN)
 AC_SUBST(PKG_CFG_DIR)
 AC_SUBST(USE_PKG_CFG)
 
-AC_OUTPUT(clients/Makefile conf/Makefile data/Makefile drivers/Makefile server/Makefile Makefile common/Makefile man/Makefile lib/Makefile lib/libupsclient-config lib/libupsclient.pc scripts/hotplug/libhidups)
+AC_OUTPUT(clients/Makefile conf/Makefile data/Makefile drivers/Makefile server/Makefile Makefile common/Makefile man/Makefile lib/Makefile lib/libupsclient-config lib/libupsclient.pc scripts/hotplug/libhidups scripts/hotplug-ng/nut-usbups.hotplug scripts/hotplug-ng/nut-usbups.rules)
