@@ -24,7 +24,6 @@
  */
 
 #include <sys/ioctl.h>
-#include <sys/termios.h>
 #include <string.h>
 
 #include "config.h"
@@ -32,6 +31,8 @@
 #include "serial.h"
 #include "timehead.h"
 #include "mge-shut.h"
+#include "hidparser.h"
+#include "hidtypes.h"
 
 /* --------------------------------------------------------------- */
 /*                  Define "technical" constants                   */
@@ -72,7 +73,6 @@ static void align_request(hid_packet_t *sd)
 
 hid_desc_data_u    	hid_descriptor;
 device_desc_data_u 	device_descriptor;
-static HIDData   	hData;
 static long             hValue;
 static HIDDesc  	*pDesc = NULL; /* parsed Report Descriptor */
 u_char 			raw_buf[4096];
@@ -201,8 +201,9 @@ void upsdrv_updateinfo (void)
     if (item->shut_flags & SHUT_FLAG_OK) {
 
 			if(hid_get_value(item->item_path) != 0 ) {				
-				upsdebugx(3, "%s: hValue = %ld (%ld)",
-					item->item_path, hValue, hData.LogMax);
+				upsdebugx(3, "%s: hValue = %ld",	item->item_path, hValue);
+				/* upsdebugx(3, "%s: hValue = %ld (%ld)",
+					item->item_path, hValue, hData.LogMax); */
 				
 				/* need lookup'ed translation */
 				if (item->hid2info != NULL)
@@ -1186,6 +1187,8 @@ int hid_lookup_usage(char *name)
 int hid_get_value(const char *item_path)
 {
 	int i, retcode;
+   HIDData hData;
+   HIDData *pData;
 	
 	upsdebugx(3, "entering hid_get_value(%s)", item_path);
 	
@@ -1370,6 +1373,7 @@ int hid_set_value(const char *varname, const char *val)
 {
 	int retcode, i, replen;
 	mge_info_item *shut_info_p;
+   HIDData hData;
 		
 	upsdebugx(2, "============== entering hid_set_value(%s, %s) ==============", varname, val);
 	

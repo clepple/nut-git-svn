@@ -1,3 +1,158 @@
+Sat Feb  4 21:22:00 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/upsdrvctl.c: minor changes (coding style)
+
+Sat Feb  4 20:22:00 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/genericups.c: check for invalid overrides for signals
+   (don't accept output signal if an input is expected or vice-versa)
+
+Fri Feb  3 20:41:00 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - Update to upsdrvctl:
+   * Use 'old' style names first, when looking for the pid of drivers
+     and then the 'new' style names. This allows the new driver to
+     stop old drivers too and thus upgrading to a new version is
+     simplified.
+   * Consolidate the code to walk trough the UPS tree. All commands
+     use the same code until the actual command is performed on a
+     single driver (easier to add new commands, since the UPS tree
+     walking code is now shared).
+
+Thu Feb  2 21:23:00 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - upsdrvctl:
+   * Added 'status' command
+   * Drivers read the port from 'ups.conf' directly, so including the
+     port has been unneccessary for quite a while already (removed now)
+
+Wed Feb  1 10:32:30 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: fixed battery manufacturing date conversion for APC
+   Back-UPS 500 and Back-UPS ES/CyberFort 500.
+
+Tue Jan 31 21:34:00 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - Safenet driver:
+   * put all UPS commands in header file (for easy retrieval)
+   * remove log errors when instant commands can't be handled
+     (doesn't work reliably on at least one flavor of this UPS
+     and wasn't very useful anyway)
+
+Mon Jan 30 19:52:00 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ -  Fixes bug #302338 (genericups: custom configuration through ups.conf
+    not working)
+
+Sat Jan 28 14:38:58 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - Fix bug with upsd declaring driver stale when the system resumes
+   after suspend-to-disk
+ - Improve readability of the code by removing non-functional call to
+   subroutine update_time and moving decision whether or not a ping
+   must be sent to the driver to the routine calling it
+
+Fri Jan 27 17:15:00 UTC 2006 / Kjell Claesson <kjell.claesson@telia.com>
+
+ - Update to snmp.
+ - Comment from Niklas
+   Updates the following in snmp-ups:
+   * Added more OID:s to apccmib (battery.current and more), tried to
+      group the values better in the table to get overview.
+   * Added support for the notion that negative values means that it's
+      not supported (used by apccmib).
+   * Added support to disable the "competition" for some variables, handy
+      when there are multiple OID:s supplying the same value depending on
+      how fancy your UPS SNMP support is (used by apccmib).
+
+Fri Jan 27 15:01:20 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: added usage paths for APC Back-UPS 500.
+
+Thu Jan 26 16:22:00 UTC	2005 / Kjell Claesson <kjell.claesson@telia.com>
+
+ - Commit patch for snmp and 3phase from Niklas Edmundsson
+ - Comment from Niklas
+    Attached is a patch that does the following:
+    * Changes snmp-ups to use SNMP_MSG_GET instead of SNMP_MSG_GETNEXT.
+    * Rips out the kludges caused by using getnext instead of get.
+    * Fixes a couple of bugs and missing features in snmp-ups.
+    * Updates the APC mib to work and report 3phase values.
+    * Updates the other mibs to hopefully work, needs testing by people
+      with hardware.
+
+Tue Jan 24 20:40:34 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - safenet: improve robustness, add minimal hardware detection and
+   improve the error handling
+ - bestfcom, tripplite: fix the "array subscript out of range" bug
+   (https://bugzilla.novell.com/show_bug.cgi?id=133610)
+
+   (Arjen de Korte)
+
+Mon Jan 23 08:48:13 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - README, INSTALL, NEWS: more update on USB, remove hidups references
+   and other minor update.
+ - FAQ: update a bit more USB support and SNMP information
+ - CREDITS: add Kirill Smelkov for al175
+
+Sat Jan 21 16:22:33 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - optiups: resurected to support Opti-UPS and Viewsonic PowerES models
+
+   (Scott Heavner) [Alioth Patch #302891]
+
+Fri Jan 20 18:51:53 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - FAQ: update a bit more USB support and SNMP information
+
+Fri Jan 20 15:25:00 UTC 2006 / Kjell Claesson <kjell.claesson@telia.com>
+
+ - Fix include of termios. Some drivers include termios instead of including
+   serial.h. Patch from Niklas Edmundsson to correct this.
+ - Patch comment from Niklas.
+   * Fixes all drivers to include serial.h instead of sys/termios.h
+   * serial.h fallbacks to include termios.h if sys/termios.h doesn't
+      exist (needed to build on AIX).
+   * Some drivers use alloca, add pragma to make it available on AIX.
+   * Make sure definition of TRUE/FALSE doesn't clash with previous
+      definition in some drivers.
+
+Sat Jan 18 23:58:43 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - added "Tecnoware Easy Power 1200" to "megatec.8" and driver.list
+ - point "Megatec Protocol" to "megatec" in driver.list
+
+Sat Jan 14 16:21:11 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - megatec: minor changes to the manpage
+ - added "Trust UPS 1000 Management PW-4105" to driver.list
+
+Tue Jan  3 02:09:27 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - megatec: new "lowbatt" parameter (overrides the hardware low battery level)
+
+Fri Dec 16 20:21:43 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - newhidups.8, mge-shut.8, mge-utalk.8, driver.list: various update
+ - FAQ: update USB support information
+
+Tue Dec  6 04:03:11 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - added Belkin F6C800-UNV to scripts/hotplug/libhid.usermap (thanks drew.kay)
+ - added Belkin F6C1500-TW-RK to data/driver.list (thanks "Big Wave Dave")
+
+Fri Nov 25 10:02:15 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - fentonups: correct the INELT Monolith 1000LT definition
+
+   (Yuri V. Kurenkov)
+
+Thu Nov 24 05:50:59 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - updated newhidups man page to reflect multi-unit capability
+
 Thu Nov 24 03:36:14 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: redesigned report retrieval system. All reports read
@@ -407,7 +562,7 @@ Tue Aug 16 20:51:27 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
 Tue Aug 16 11:53:44 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - gamatronic: revive the sec driver as gamatronic to support officialy
-   the Gamatronic models MP110/210, MS-T, MS and µPS3/1.
+   the Gamatronic models MP110/210, MS-T, MS and ?PS3/1.
 
    (Gamatronic, Nadav Moskovitch)
 
@@ -513,7 +668,7 @@ Fri Jul  1 08:15:56 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 Thu Jun 30 13:13:02 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - solis: fix a naming colision on Solaris, bump the driver release to
-   0.41 (thanks to Paweł Kierdelewicz)
+   0.41 (thanks to Pawe?? Kierdelewicz)
 
 Tue Jun 28 16:41:14 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
@@ -700,7 +855,7 @@ Fri Apr 22 11:42:22 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
  - driver.list: update according to the tested units
    http://web.telia.com/~u50205618/compatibility.html
 
-   (Tore �petveit, Kjell Claesson) [Alioth Patch #301290]
+   (Tore ?petveit, Kjell Claesson) [Alioth Patch #301290]
 
 Thu Apr 15 11:04:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 

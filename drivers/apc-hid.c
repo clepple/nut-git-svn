@@ -50,6 +50,37 @@ static info_lkp_t watts_to_av_conversion[] = {
 	{ 0, NULL, watts_to_av_conversion_fun }
 };
 
+/* returns statically allocated string - must not use it again before
+   done with result! */
+static char *apc_date_conversion_fun(long value) {
+  static char buf[20];
+  int year, month, day;
+
+  if (value == 0) {
+    return "not set";
+  }
+
+  /* APC apparently uses a hexadecimal-as-decimal format, e.g.,
+  0x102202 = October 22, 2002 */
+  year = (value & 0xf) + 10 * ((value>>4) & 0xf);
+  month = ((value>>16) & 0xf) + 10 * ((value>>20) & 0xf);
+  day = ((value>>8) & 0xf) + 10 * ((value>>12) & 0xf);
+
+  /* Y2K conversion - hope that this format will be retired before 2070 :) */
+  if (year >= 70) {
+    year += 1900;
+  } else {
+    year += 2000;
+  }
+
+  sprintf(buf, "%04d/%02d/%02d", year, month, day);
+  return buf;
+}
+
+info_lkp_t apc_date_conversion[] = {
+  { 0, NULL, apc_date_conversion_fun }
+};
+
 /* APC has two non-NUT-standard status items: "time limit expired" and
    "battery present". The newhidups driver currently ignores
    batterypresent, and maps timelimitexp to LB. CyberPower has the
@@ -158,11 +189,12 @@ static hid_info_t apc_hid2nut[] = {
   { "battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.RemainingTimeLimit", NULL, "%.0f", HU_FLAG_OK, NULL },
   { "battery.voltage",  0, 0, "UPS.PowerSummary.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
   { "battery.voltage.nominal", 0, 0, "UPS.Battery.ConfigVoltage", NULL, "%.1f", HU_FLAG_OK, NULL },
-  { "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.1f", HU_FLAG_OK, NULL }, /* CyberPower */
+  { "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.1f", HU_FLAG_OK, NULL }, /* CyberPower, Back-UPS 500 */
   { "battery.temperature", 0, 0, "UPS.Battery.Temperature", NULL, "%.1f", HU_FLAG_OK, NULL },
   { "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_OK, stringid_conversion },
   { "battery.mfr.date", 0, 0, "UPS.Battery.ManufacturerDate", NULL, "%s", HU_FLAG_OK, &date_conversion[0] },
-  { "battery.date", 0, 0, "UPS.Battery.APCBattReplaceDate", NULL, "%s", HU_FLAG_OK, &date_conversion[0] },
+  { "battery.mfr.date", 0, 0, "UPS.PowerSummary.APCBattReplaceDate", NULL, "%s", HU_FLAG_OK, &apc_date_conversion[0] }, /* Back-UPS 500, Back-UPS ES/CyberFort 500 */
+  { "battery.date", 0, 0, "UPS.Battery.APCBattReplaceDate", NULL, "%s", HU_FLAG_OK, &date_conversion[0] }, /* Back-UPS ES 650, actual value not observed. Perhaps use apc_date_conversion. */
 
   /* UPS page */
   { "ups.load", 0, 1, "UPS.Output.PercentLoad", NULL, "%.1f", HU_FLAG_OK, NULL },
@@ -175,6 +207,7 @@ static hid_info_t apc_hid2nut[] = {
   { "ups.temperature", 0, 0, "UPS.Battery.Temperature", NULL, "%.1f", HU_FLAG_OK, NULL },
   { "ups.beeper.status", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", HU_FLAG_OK, &beeper_info[0] },
   { "ups.mfr.date", 0, 0, "UPS.ManufacturerDate", NULL, "%s", HU_FLAG_OK, &date_conversion[0] },
+  { "ups.mfr.date", 0, 0, "UPS.PowerSummary.ManufacturerDate", NULL, "%s", HU_FLAG_OK, &date_conversion[0] }, /* Back-UPS 500 */
   { "ups.power.nominal", 0, 0, "UPS.Output.ConfigActivePower", NULL, "%s", HU_FLAG_OK, watts_to_av_conversion }, /* CyberPower */
 
 
@@ -192,6 +225,13 @@ static hid_info_t apc_hid2nut[] = {
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, "%.0f", HU_FLAG_OK, &replacebatt_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.RemainingTimeLimitExpired", NULL, "%.0f", HU_FLAG_OK, &timelimitexpired_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.BatteryPresent", NULL, "%.0f", HU_FLAG_OK, &batterypresent_info[0] },
+
+  { "ups.status", 0, 1, "UPS.PowerSummary.Charging", NULL, "%.0f", HU_FLAG_OK, &charging_info[0] }, /* Back-UPS 500 */
+  { "ups.status", 0, 1, "UPS.PowerSummary.Discharging", NULL, "%.0f", HU_FLAG_OK, &discharging_info[0] }, /* Back-UPS 500 */
+  { "ups.status", 0, 1, "UPS.PowerSummary.ACPresent", NULL, "%.0f", HU_FLAG_OK, &online_info[0] }, /* Back-UPS 500 */
+  { "ups.status", 0, 1, "UPS.PowerSummary.BelowRemainingCapacityLimit", NULL, "%.0f", HU_FLAG_OK, &lowbatt_info[0] }, /* Back-UPS 500 */
+  { "ups.status", 0, 1, "UPS.PowerSummary.ShutdownImminent", NULL, "%.0f", HU_FLAG_OK, &shutdownimm_info[0] },
+
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.FullyCharged", NULL, "%.0f", HU_FLAG_OK, &fullycharged_info[0] }, /* CyberPower */
   { "ups.status", 0, 1, "UPS.Output.Overload", NULL, "%.0f", HU_FLAG_OK, &overload_info[0] }, /* CyberPower */
   { "ups.status", 0, 1, "UPS.Output.Boost", NULL, "%.0f", HU_FLAG_OK, &boost_info[0] }, /* CyberPower */
@@ -215,6 +255,8 @@ static hid_info_t apc_hid2nut[] = {
   { "test.battery.stop", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "3", HU_TYPE_CMD | HU_FLAG_OK, &test_write_info[0] },
   { "test.panel.start", 0, 0, "UPS.APCPanelTest", NULL, "1", HU_TYPE_CMD | HU_FLAG_OK, NULL },
   { "test.panel.stop", 0, 0, "UPS.APCPanelTest", NULL, "0", HU_TYPE_CMD | HU_FLAG_OK, NULL },
+  { "test.panel.start", 0, 0, "UPS.PowerSummary.APCPanelTest", NULL, "1", HU_TYPE_CMD | HU_FLAG_OK, NULL }, /* Back-UPS 500 */
+  { "test.panel.stop", 0, 0, "UPS.PowerSummary.APCPanelTest", NULL, "0", HU_TYPE_CMD | HU_FLAG_OK, NULL }, /* Back-UPS 500 */
 
   { "load.off", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "0", HU_TYPE_CMD | HU_FLAG_OK, NULL },
   { "load.off", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, "0", HU_TYPE_CMD | HU_FLAG_OK, NULL }, /* APC Backups ES */

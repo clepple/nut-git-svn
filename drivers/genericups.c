@@ -17,10 +17,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define DRV_VERSION "1.31"
+#define DRV_VERSION "1.32"
 
 #include <sys/ioctl.h>
-#include <sys/termios.h>
 
 #include "main.h"
 #include "serial.h"
@@ -45,6 +44,15 @@ static void parse_output_signals(const char *value, int *line)
  
 	if (strstr(value, "ST")) 
 		*line |= TIOCM_ST; 
+
+	if (strstr(value, "CTS"))
+		fatalx("Can't override output with CTS (not an output)");
+
+	if (strstr(value, "DCD"))
+		fatalx("Can't override output with DCD (not an output)");
+
+	if (strstr(value, "RNG"))
+		fatalx("Can't override output with RNG (not an output)");
 } 
  
 static void parse_input_signals(const char *value, int *line, int *val) 
@@ -54,20 +62,32 @@ static void parse_input_signals(const char *value, int *line, int *val)
 	*line = 0; 
 	*val = 0; 
  
-	if (strstr(value, "CTS")) 
+	if (strstr(value, "CTS")) {
 		*line |= TIOCM_CTS; 
-	if (!strstr(value, "-CTS")) 
-		*val |= TIOCM_CTS; 
- 
-	if (strstr(value, "DCD")) 
+		if (!strstr(value, "-CTS")) 
+			*val |= TIOCM_CTS; 
+ 	}
+
+	if (strstr(value, "DCD")) {
 		*line |= TIOCM_CD; 
-	if (!strstr(value, "-DCD")) 
-		*val |= TIOCM_CD; 
- 
-	if (strstr(value, "RNG")) 
+		if (!strstr(value, "-DCD")) 
+			*val |= TIOCM_CD; 
+ 	}
+
+	if (strstr(value, "RNG")) {
 		*line |= TIOCM_RNG; 
-	if (!strstr(value, "-RNG")) 
-		*val |= TIOCM_RNG; 
+		if (!strstr(value, "-RNG")) 
+			*val |= TIOCM_RNG; 
+	}
+
+	if (strstr(value, "DTR"))
+		fatalx("Can't override input with DTR (not an input)");
+
+	if (strstr(value, "RTS"))
+		fatalx("Can't override input with RTS (not an input)");
+
+	if (strstr(value, "ST"))
+		fatalx("Can't override input with ST (not an input)");
 }
 
 void upsdrv_initinfo(void)
@@ -187,7 +207,7 @@ static void set_ups_type(void)
 /* power down the attached load immediately */
 void upsdrv_shutdown(void)
 {
-	int	flags, ret;;
+	int	flags, ret;
 
 	if (upstype == -1)
 		fatalx("No upstype set - see help text / man page!");
@@ -265,3 +285,4 @@ void upsdrv_cleanup(void)
 {
 	ser_close(upsfd, device_path);
 }
+

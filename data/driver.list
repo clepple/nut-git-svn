@@ -25,11 +25,11 @@
 "APC"	"Matrix-UPS"		""	"apcsmart"
 "APC"	"Smart-UPS"		""	"apcsmart"
 
-"APC"	"Back-UPS Pro USB"	""	"hidups or newhidups (experimental USB drivers for Linux)"
-"APC"	"Back-UPS USB"		""	"hidups or newhidups (experimental USB drivers for Linux)"
-"APC"	"Back-UPS LS USB"	""	"hidups or newhidups (experimental USB drivers for Linux)"
-"APC"	"Back-UPS ES/CyberFort 350"	""	"hidups or newhidups (experimental USB drivers for Linux)"
-"APC"	"Smart-UPS USB"		""	"hidups or newhidups (experimental USB drivers for Linux)"
+"APC"	"Back-UPS Pro USB"	""	"newhidups or hidups"
+"APC"	"Back-UPS USB"		""	"newhidups or hidups"
+"APC"	"Back-UPS LS USB"	""	"newhidups or hidups"
+"APC"	"Back-UPS ES/CyberFort 350"	""	"newhidups or hidups"
+"APC"	"Smart-UPS USB"		""	"newhidups or hidups"
 
 "APC"	"Back-UPS"	"940-0095A/C cables"	"genericups upstype=1"
 "APC"	"Back-UPS"	"940-0020B/C cables"	"genericups upstype=2"
@@ -44,6 +44,7 @@
 "APC"	"(various)"	"SNMP monitoring card"	"snmp-ups (experimental driver)"
 
 "Belkin"	"Regulator Pro"	"serial"	"belkin"
+"Belkin"	"Small Enterprise"	"F6C1500-TW-RK"	"belkin"
 "Belkin"	"Resource"	""		"genericups upstype=4"
 "Belkin"	"Home Office"	"F6H350-SER, F6H500-SER, F6H650-SER"	"genericups upstype=7"
 "Belkin"	"Universal UPS" "F6C800-UNV, F6C120-UNV, F6C1100-UNV"	"belkinunv"
@@ -213,7 +214,8 @@
 "MGE UPS SYSTEMS"	"Pulsar EXL"			""	"mge-utalk"
 "MGE UPS SYSTEMS"	"Pulsar PSX"			""	"mge-utalk"
 "MGE UPS SYSTEMS"	"Pulsar SX"			""	"mge-utalk"
-"MGE UPS SYSTEMS"	"Pulsar / Comet EXtreme"	""	"mge-utalk"
+"MGE UPS SYSTEMS"	"Pulsar EXtreme"	""	"mge-utalk"
+"MGE UPS SYSTEMS"	"Comet EXtreme"	""	"mge-utalk"
 "MGE UPS SYSTEMS"	"Comet / Galaxy (Serial)"		"Utalk Serial Card (ref 66060)"	"mge-utalk"
 "MGE UPS SYSTEMS"	"Comet / Galaxy (Serial)"		"HID COM Serial Card (ref 66066)"	"mge-shut"
 "MGE UPS SYSTEMS"	"Pulsar / Comet / Galaxy (SNMP)"	"SNMP/Web Transverse card (ref 66074)"	"snmp-ups (experimental)"
@@ -249,6 +251,8 @@
 "Online"	"P-Series"	""	"genericups upstype=14"
 
 "OnLite"	"AQUA"		"50"	"megatec"
+
+"Opti-UPS"	"PowerES"	"420E"	"optiups"
 
 "Orvaldi Power Protection"	"various"	"not 400 or 600"	"fentonups"
 
@@ -312,12 +316,16 @@
 
 "Sysgration"	"UPGUARDS Pro650"	""	"fentonups"
 
+"Tecnoware"	"Easy Power 1200"	""	"megatec"
+
 "Tripp-Lite"	"OMNIVS1000"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"OMNIVS1500XL"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"SMART1500RM2U"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"SmartUPS"	""	"tripplite"
 "Tripp-Lite"	"SmartOnline"	""	"tripplitesu"
 "Tripp-Lite"	"(various)"	"Lan 2.2 interface - black 73-0844 cable"	"genericups upstype=5"
+
+"Trust"		"UPS 1000 Management PW-4105"	""	"megatec"
 
 "UNITEK"	"ALPHA 500 IC"		""	"fentonups"
 "UNITEK"	"Alpha 1000is"		""	"fentonups"
@@ -328,7 +336,7 @@
 "Various"	"(various)"	"SEC protocol"		"gamatronic"
 "Various"	"(various)"	"Generic RUPS model"	"genericups upstype=4"
 "Various"	"(various)"	"Generic RUPS 2000 (Megatec M2501 cable)"	"genericups upstype=21"
-"Various"	"(various)"	"Megatec protocol"	"fentonups"
+"Various"	"(various)"	"Megatec protocol"	"megatec"
 "Various"	"(various)"	"PhoenixTec protocol"	"bestups"
 "Various"	"(various)"	"SNMP - RFC 1628"	"snmp-ups (experimental)"
 "Various"	"(various)"	"Safenet software"	"safenet"
@@ -336,3 +344,4 @@
 "Victron/IMV"	"(various)"	""		"victronups"
 "Victron/IMV"	"Lite"		"crack cable"	"genericups upstype=10"
 
+"Viewsonic"	"PowerES"	"420E"	"optiups"
