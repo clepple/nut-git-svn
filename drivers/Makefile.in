@@ -12,8 +12,9 @@ CFLAGS	= -I../include @CFLAGS@
 PROGS	= bestups fentonups apcsmart everups belkin masterguard powercom \
 	  cyberpower tripplite victronups genericups mge-utalk bestuferrups \
 	  isbmex etapro liebert sms esupssmart tripplitesu blazer safenet \
-	  belkinunv oneac ippon cpsups mustek metasys bestfcom powermust
-
+	  belkinunv oneac ippon cpsups mustek metasys bestfcom powermust \
+	  bcmxcp upscode2 solis gamatronic
+LDFLAGS = @LDFLAGS@
 LIBDEP	= @LIBOBJ@
 LIBOBJ	= $(LIBDEP) @NETLIBS@ @SERLIBS@
 
@@ -28,7 +29,7 @@ SNMP_DRIVER_LIST = snmp-ups
 NETSNMP_CFLAGS = @NETSNMP_CFLAGS@
 NETSNMP_LIBS = @NETSNMP_LIBS@
 
-USB_DRIVER_LIST = hidups newhidups energizerups
+USB_DRIVER_LIST = @USB_DRIVER_LIST@
 
 LIBUSB_CFLAGS = @LIBUSB_CFLAGS@
 LIBUSB_LIBS = @LIBUSB_LIBS@
@@ -37,10 +38,12 @@ all: @DRIVER_BUILD_LIST@ upsdrvctl dummycons
 
 all-drivers: $(PROGS) mge-shut
 
+build-usb: $(USB_DRIVER_LIST)
+
 # ==========================================================================
 # Driver build details
 #
-# The rules are regenerated during 'make clean' with gendb.
+# The rules are regenerated during 'make depend' with gendb.
 
 include Makefile.drvbuild
 
@@ -49,13 +52,13 @@ include Makefile.drvbuild
 
 upsdrvctl: upsdrvctl.c ../common/upsconf.o ../common/parseconf.o $(LIBDEP)
 	$(CC) $(CFLAGS) -o upsdrvctl upsdrvctl.c ../common/upsconf.o \
-		../common/parseconf.o $(LIBOBJ)
+		../common/parseconf.o $(LIBOBJ) $(LDFLAGS)
 
 # ==========================================================================
 # Testing driver for doing things without real UPS hardware attached
 
 dummycons: dummycons.c dstate.o ../common/state.o ../common/parseconf.o $(LIBDEP)
-	$(CC) $(CFLAGS) -o $@ $@.c dstate.o ../common/state.o ../common/parseconf.o $(LIBOBJ)
+	$(CC) $(CFLAGS) -o $@ $@.c dstate.o ../common/state.o ../common/parseconf.o $(LIBOBJ) $(LDFLAGS)
 
 # ==========================================================================
 # Special cases: drivers which need Linux includes
@@ -67,9 +70,9 @@ hidups: hidups.o main.o dstate.o ../common/state.o \
 		../common/parseconf.o $(LIBDEP)
 	$(CC) $(CFLAGS) -o hidups hidups.o main.o dstate.o \
 		../common/state.o ../common/upsconf.o ../common/parseconf.o \
-		$(LIBOBJ)
+		$(LIBOBJ) $(LDFLAGS)
 
-hidups.o: hidups.c
+hidups.o:
 	$(CC) $(CFLAGS) -c hidups.c
 
 energizerups: energizerups.o main.o dstate.o ../common/state.o \
@@ -77,30 +80,62 @@ energizerups: energizerups.o main.o dstate.o ../common/state.o \
 		../common/parseconf.o $(LIBDEP)
 	$(CC) $(CFLAGS) -o energizerups energizerups.o main.o dstate.o \
 		../common/state.o ../common/upsconf.o ../common/parseconf.o \
-		$(LIBOBJ)
+		$(LIBOBJ) $(LDFLAGS)
 
-energizerups.o: energizerups.c
+energizerups.o:
 	$(CC) $(CFLAGS) -c energizerups.c
 
 
 # ==========================================================================
-# Special case: newhidups driver - development version (early beta)
+# Special case: newhidups driver - development version
 
 newhidups: newhidups.o main.o dstate.o ../common/state.o \
+		../common/upsconf.o ../common/parseconf.o $(LIBDEP) \
+		$(STRLCPY) libhid.o libusb.o hidparser.o \
+		mge-hid.o apc-hid.o belkin-hid.o
+	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o $@ $@.o main.o dstate.o \
+		../common/state.o ../common/upsconf.o ../common/parseconf.o \
+		$(LIBOBJ) $(LIBUSB_LIBS) $(LDFLAGS) libhid.o libusb.o hidparser.o \
+		mge-hid.o apc-hid.o belkin-hid.o
+
+newhidups.o:
+	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -c newhidups.c
+
+libhid.o:
+	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o libhid.o -c libhid.c
+
+libusb.o:
+	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o libusb.o -c libusb.c
+
+# ==========================================================================
+# Special case: tripplite_usb driver - development version (early beta)
+
+tripplite_usb: tripplite_usb.o main.o dstate.o ../common/state.o \
 		../common/upsconf.o ../common/parseconf.o $(LIBDEP) \
 		$(STRLCPY) libhid.o libusb.o hidparser.o
 	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o $@ $@.o main.o dstate.o \
 		../common/state.o ../common/upsconf.o ../common/parseconf.o \
-		$(LIBOBJ) $(STRLCPY) $(LIBUSB_LIBS) libhid.o libusb.o hidparser.o
+		$(LIBOBJ) $(LIBUSB_LIBS) $(LDFLAGS) -lm libhid.o libusb.o hidparser.o
 
-newhidups.o: newhidups.c newhidups.h
-	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -c newhidups.c
+tripplite_usb.o: tripplite_usb.c libhid.h libusb.h
+	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -c tripplite_usb.c
 
-libhid.o: libhid.c libhid.h
-	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o libhid.o -c libhid.c
+# ==========================================================================
+# Special case: bcmxcp_usb.c driver - development version (early beta)
 
-libusb.o: libusb.c hid-usb.h
-	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o libusb.o -c libusb.c
+bcmxcp_usb: bcmxcp.o bcmxcp_usb.o nut_usb.o main.o dstate.o ../common/state.o \
+		../common/upsconf.o ../common/parseconf.o $(LIBDEP) $(STRLCPY)
+	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o $@ bcmxcp.o bcmxcp_usb.o nut_usb.o \
+		main.o dstate.o ../common/state.o ../common/upsconf.o \
+		../common/parseconf.o \
+		$(LIBOBJ) $(LIBUSB_LIBS) $(LDFLAGS)
+
+bcmxcp_usb.o:
+	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -c bcmxcp_usb.c
+
+nut_usb.o:
+	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o nut_usb.o -c nut_usb.c
+
 
 # ==========================================================================
 # Special case: mge-shut driver - development version (early beta)
@@ -110,12 +145,12 @@ mge-shut: mge-shut.o hidparser.o main.o dstate.o serial.o \
 		../common/upsconf.o ../common/parseconf.o $(LIBDEP)
 	$(CC) $(CFLAGS) -o mge-shut mge-shut.o hidparser.o main.o \
 		dstate.o serial.o ../common/state.o ../common/upsconf.o \
-		../common/parseconf.o $(LIBOBJ)
+		../common/parseconf.o $(LIBOBJ) $(LDFLAGS)
 
-mge-shut.o: mge-shut.c mge-shut.h hidparser.h
+mge-shut.o:
 	$(CC) $(CFLAGS) -c mge-shut.c
 
-hidparser.o: hidparser.h hidparser.c
+hidparser.o:
 	$(CC) $(CFLAGS) -c hidparser.c
 
 # ==========================================================================
@@ -126,10 +161,9 @@ snmp-ups: snmp-ups.o main.o dstate.o ../common/state.o \
 		../common/upsconf.o ../common/parseconf.o $(LIBDEP)
 	$(CC) $(CFLAGS) $(NETSNMP_CFLAGS) -o $@ $@.o main.o dstate.o \
 		../common/state.o ../common/upsconf.o ../common/parseconf.o \
-		$(LIBOBJ) $(NETSNMP_LIBS)
+		$(LIBOBJ) $(LDFLAGS) $(NETSNMP_LIBS)
 
-snmp-ups.o: snmp-ups.c snmp-ups.h \
-		ietfmib.h apccmib.h mgemib.h
+snmp-ups.o:
 	$(CC) $(CFLAGS) $(NETSNMP_CFLAGS) -c snmp-ups.c
 
 
@@ -139,10 +173,12 @@ snmp-ups.o: snmp-ups.c snmp-ups.h \
 # gendb runs here so that the source always goes out the door with a
 # current Makefile.drvbuild file
 
-clean:
-	rm -f *~ *.o $(PROGS) Makefile.drvbuild
-	rm -f dummycons snmp-ups energizerups newhidups hidups mge-shut upsdrvctl
+depend Makefile.drvbuild:
 	./gendb $(PROGS)
+
+clean:
+	rm -f *~ *.o $(PROGS)
+	rm -f dummycons snmp-ups energizerups newhidups hidups mge-shut upsdrvctl bcmxcp_usb
 
 distclean: clean
 

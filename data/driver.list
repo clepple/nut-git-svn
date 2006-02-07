@@ -19,14 +19,18 @@
 # Duplicate text in the last field will be cooked out during the conversion
 # to HTML with ROWSPAN magic.  They must be an exact match for this to work.
 
+"AEC"	"MiniGuard UPS 700"		"Megatec M2501 cable"	"genericups upstype=21"
+
 "APC"	"Back-UPS Pro"		""	"apcsmart"
 "APC"	"Matrix-UPS"		""	"apcsmart"
 "APC"	"Smart-UPS"		""	"apcsmart"
 
-"APC"	"Back-UPS Pro USB"	""	"hidups (experimental USB driver for Linux)"
-"APC"	"Back-UPS USB"		""	"hidups (experimental USB driver for Linux)"
-"APC"	"Back-UPS LS USB"	""	"hidups (experimental USB driver for Linux)"
-"APC"	"Back-UPS ES/CyberFort 350"	""	"hidups (experimental USB driver for Linux)"
+"APC"	"Back-UPS Pro USB"	""	"newhidups or hidups"
+"APC"   "Back-UPS RS USB"	""      "newhidups or hidups"
+"APC"	"Back-UPS USB"		""	"newhidups or hidups"
+"APC"	"Back-UPS LS USB"	""	"newhidups or hidups"
+"APC"	"Back-UPS ES/CyberFort 350"	""	"newhidups or hidups"
+"APC"	"Smart-UPS USB"		""	"newhidups or hidups"
 
 "APC"	"Back-UPS"	"940-0095A/C cables"	"genericups upstype=1"
 "APC"	"Back-UPS"	"940-0020B/C cables"	"genericups upstype=2"
@@ -43,7 +47,9 @@
 "Belkin"	"Regulator Pro"	"serial"	"belkin"
 "Belkin"	"Resource"	""		"genericups upstype=4"
 "Belkin"	"Home Office"	"F6H350-SER, F6H500-SER, F6H650-SER"	"genericups upstype=7"
-"Belkin"	"Universal UPS" "F6C800-UNV, F6C120-UNV"	"belkinunv"
+"Belkin"	"Universal UPS" "F6C800-UNV, F6C120-UNV, F6C1100-UNV"	"belkinunv"
+"Belkin"	"Universal UPS" "F6C800-UNV, F6C120-UNV, F6C1100-UNV"	"newhidups"
+"Belkin"	"Office Series"	"F6C550-AVR"	"newhidups"
 
 "Best Power"	"Fortress (newer)"	""	"bestups"
 "Best Power"	"Fortress Telecom"	""	"bestups"
@@ -56,7 +62,17 @@
 
 "Centralion"	"Blazer"		""	"blazer"
 
+"Clary"		"ST-800"		""	"gamatronic"
+
+"Compaq"	"T1500h"	""	"upscode2 use_pre_lf"
+
+"Cyber Power Systems"	"320AVR"	""	"cyberpower"
+"Cyber Power Systems"	"500AVR"	""	"cyberpower"
+"Cyber Power Systems"	"650AVR"	""	"cyberpower"
+"Cyber Power Systems"   "685AVR"        ""      "newhidups (USB driver)"
 "Cyber Power Systems"	"700AVR"	""	"cyberpower"
+"Cyber Power Systems"	"800AVR"	""	"cyberpower"
+"Cyber Power Systems"	"850AVR"	""	"cyberpower"
 "Cyber Power Systems"	"900AVR"	""	"cyberpower"
 "Cyber Power Systems"	"1250AVR"	""	"cyberpower"
 "Cyber Power Systems"	"1500AVR"	""	"cyberpower"
@@ -64,6 +80,10 @@
 "Cyber Power Systems"	"CPS825VA"	""	"cpsups (experimental)"
 "Cyber Power Systems"	"1100AVR"	""	"cpsups (experimental)"
 "Cyber Power Systems"	"1500AVR-HO"	""	"cpsups (experimental)"
+
+"Deltec"	"PowerRite Pro II"	""	"genericups upstype=15"
+
+"Dynex"		"975AVR"		""	"genericups upstype=7"
 
 "Effekta"	"MI/MT/MH"	"2502 cable"	"fentonups"
 
@@ -79,6 +99,8 @@
 
 "Ever-Power"	"625/1000"	""	"safenet"
 
+"Exide"		"NetUPS SE"	""	"genericups upstype=15"
+
 "Fenton Technologies"	"PowerPal"	"P-series"	"safenet"
 "Fenton Technologies"	"PowerPal"	"L-series"	"fentonups"
 "Fenton Technologies"	"PowerOn"		""	"fentonups"
@@ -89,7 +111,22 @@
 "Fideltronik"	"Ares 700 and larger"	""	"genericups upstype=6"
 "Fideltronik"	"Other Ares models"	""	"genericups upstype=19"
 
+"Fiskars"	"PowerRite MAX"	""	"upcsode2"
+"Fiskars"	"PowerServer 10"	""	"upcsode2"
+"Fiskars"	"PowerServer 30"	""	"upcsode2"
+
+"Gamatronic"	"All models with alarm interface"	""	"genericups upstype=22"
+"Gamatronic"	"MP110/210"	""	"gamatronic"
+"Gamatronic"	"MS-T"		""	"gamatronic"
+"Gamatronic"	"MS"		""	"gamatronic"
+"Gamatronic"	"µPS3/1"	""	"gamatronic"
+
 "Gemini"	"UPS625/UPS1000"	""	"safenet"
+
+"HP"		"R3000 XR"      ""      "bcmxcp"
+"HP"		"R5500 XR"      ""      "bcmxcp"
+
+"INELT"		"Monolith 1000LT"	""	"fentonups"
 
 "Infosec"	"iPEL 350"	""	"esupssmart"
 "Infosec"	"iPEL 500"	""	"esupssmart"
@@ -145,28 +182,36 @@
 "Meta System"	"Megaline 8750"		""	"metasys"
 "Meta System"	"Megaline 10000"	""	"metasys"
 
-"MGE UPS SYSTEMS"	"Protection Center"		""	"newhidups or hidups (experimental USB drivers)"
-"MGE UPS SYSTEMS"	"Pulsar Ellipse USBS"		"USB cable"	"newhidups or hidups (experimental USB drivers)"
-"MGE UPS SYSTEMS"	"Pulsar Ellipse USB"		""	"newhidups or hidups (experimental USB drivers)"
-"MGE UPS SYSTEMS"	"Pulsar Ellipse Premium USBS"		"USB cable"	"newhidups or hidups (experimental USB drivers)"
-"MGE UPS SYSTEMS"	"Pulsar Ellipse Premium USB"	""	"newhidups or hidups (experimental USB drivers)"
-"MGE UPS SYSTEMS"	"Pulsar Evolution"	"USB port"	"newhidups or hidups (experimental USB drivers)"
-"MGE UPS SYSTEMS"	"Comet / Galaxy (USB)"		"USB Card (ref 66067)"		"newhidups or hidups (experimental USB drivers)"
-"MGE UPS SYSTEMS"	"NOVA AVR Serial"		""	"mge-shut"
+"MGE UPS SYSTEMS"	"Protection Center"		""	"newhidups"
+"MGE UPS SYSTEMS"	"NOVA AVR USB"		""	"newhidups"
+"MGE UPS SYSTEMS"	"Pulsar Ellipse USBS"		"USB cable"	"newhidups"
+"MGE UPS SYSTEMS"	"Pulsar Ellipse USB"		""	"newhidups"
+"MGE UPS SYSTEMS"	"Pulsar Ellipse Premium USBS"		"USB cable"	"newhidups"
+"MGE UPS SYSTEMS"	"Pulsar Ellipse Premium USB"	""	"newhidups"
+"MGE UPS SYSTEMS"	"Ellipse Office 600/750/1000/1500"		"USB cable"	"newhidups"
+"MGE UPS SYSTEMS"	"Pulsar Evolution"	"USB port"	"newhidups"
+"MGE UPS SYSTEMS"	"Comet / Galaxy (USB)"		"USB Card (ref 66067)"		"newhidups"
+"MGE UPS SYSTEMS"	"NOVA AVR Serial"	""	"mge-shut"
 "MGE UPS SYSTEMS"	"Pulsar Ellipse USBS"		"Serial cable"	"mge-shut"
 "MGE UPS SYSTEMS"	"Pulsar Ellipse S"		""	"mge-shut"
 "MGE UPS SYSTEMS"	"Pulsar Ellipse Premium USBS"		"Serial cable"	"mge-shut"
 "MGE UPS SYSTEMS"	"Pulsar Ellipse Premium S"	""	"mge-shut"
-"MGE UPS SYSTEMS"	"Pulsar Evolution"	"Serial port"	"mge-utalk or mge-shut"
+"MGE UPS SYSTEMS"	"Ellipse Office 600/750/1000/1500"		"Serial cable"	"mge-shut"
+"MGE UPS SYSTEMS"	"Pulsar EXtreme C / EX RT"	""	"mge-shut"
+"MGE UPS SYSTEMS"	"Comet EX RT"			""	"mge-shut"
+"MGE UPS SYSTEMS"	"Pulsar Esprit"			""	"mge-shut"
+"MGE UPS SYSTEMS"	"Pulsar Evolution"	"Serial port"	"mge-shut or mge-utalk"
+"MGE UPS SYSTEMS"	"Pulsar EXtreme C"		""	"mge-shut or mge-utalk"
+"MGE UPS SYSTEMS"	"Pulsar ES+"			""	"mge-utalk"
 "MGE UPS SYSTEMS"	"Pulsar ESV+"			""	"mge-utalk"
+"MGE UPS SYSTEMS"	"Pulsar SV"			""	"mge-utalk"
 "MGE UPS SYSTEMS"	"Pulsar ESV"			""	"mge-utalk"
 "MGE UPS SYSTEMS"	"Pulsar EX"			""	"mge-utalk"
 "MGE UPS SYSTEMS"	"Pulsar EXL"			""	"mge-utalk"
+"MGE UPS SYSTEMS"	"Pulsar PSX"			""	"mge-utalk"
 "MGE UPS SYSTEMS"	"Pulsar SX"			""	"mge-utalk"
-"MGE UPS SYSTEMS"	"Pulsar ES+"			""	"mge-utalk"
-"MGE UPS SYSTEMS"	"Pulsar Esprit"			""	"mge-shut"
-"MGE UPS SYSTEMS"	"Pulsar EXtreme C"		""	"mge-utalk or mge-shut"
-"MGE UPS SYSTEMS"	"Pulsar / Comet EXtreme"	""	"mge-utalk"
+"MGE UPS SYSTEMS"	"Pulsar EXtreme"	""	"mge-utalk"
+"MGE UPS SYSTEMS"	"Comet EXtreme"	""	"mge-utalk"
 "MGE UPS SYSTEMS"	"Comet / Galaxy (Serial)"		"Utalk Serial Card (ref 66060)"	"mge-utalk"
 "MGE UPS SYSTEMS"	"Comet / Galaxy (Serial)"		"HID COM Serial Card (ref 66066)"	"mge-shut"
 "MGE UPS SYSTEMS"	"Pulsar / Comet / Galaxy (SNMP)"	"SNMP/Web Transverse card (ref 66074)"	"snmp-ups (experimental)"
@@ -175,12 +220,24 @@
 "MGE UPS SYSTEMS"	"Pulsar (SNMP)"		"SNMP card (ref 66045)"	"snmp-ups (experimental)"
 "MGE UPS SYSTEMS"	"UM-Link (SNMP)"		"Not a UPS (ref 66850)"	"snmp-ups (experimental)"
 
+"MicroDowell"	"B.Box BP  500"	""	"cpsups"
+"MicroDowell"	"B.Box BP  750"	""	"cpsups"
+"MicroDowell"	"B.Box BP 1000"	""	"cpsups"
+"MicroDowell"	"B.Box BP 1500"	""	"cpsups"
+
+"Microsol"	"Solis 1.0"	"1000VA"	"solis"
+"Microsol"	"Solis 1.5"	"1500VA"	"solis"
+"Microsol"	"Solis 2.0"	"2000VA"	"solis"
+"Microsol"	"Solis 3.0"	"3000VA"	"solis"
+
 "Mustek"	"Various"	""	"mustek"
 
 "Mustek"	"Powermust"	"400VA Plus"	"powermust"
 "Mustek"	"Powermust"	"600VA Plus"	"powermust"
 "Mustek"	"Powermust"	"800VA Pro"	"powermust"
 "Mustek"	"Powermust"	"1000VA Plus"	"powermust"
+"Mustek"	"Powermust"	"1400VA Plus"	"powermust"
+"Mustek"	"Powermust"	"2000VA USB"	"powermust"
 
 "Nitram"	"Elite 500"	""	"genericups upstype=8"
 "Nitram"	"Elite 2002"	""	"genericups upstype=16"
@@ -205,8 +262,20 @@
 
 "PowerTech"	"Comp1000"	"DTR cable power"	"genericups upstype=3"
 
+"Powerware"	"3110"		""	"genericups upstype=7"
 "Powerware"	"3115"		""	"genericups upstype=11"
 "Powerware"	"5119, 5125"	""	"genericups upstype=15"
+"Powerware"	"5119 RM"	""	"genericups upstype=20"
+"Powerware"	"PW3105"	""	"bcmxcp_usb"
+"Powerware"	"PW5110"	""	"bcmxcp_usb"
+"Powerware"	"PW5115"	""	"bcmxcp"
+"Powerware"	"PW5125"	""	"bcmxcp"
+"Powerware"	"PW9120"	""	"bcmxcp"
+"Powerware"	"PW9125"	""	"bcmxcp"
+"Powerware"	"9120"	""	"upscode2"
+"Powerware"	"9150"	""	"upscode2"
+"Powerware"	"9305"	""	"upscode2"
+"Powerware"	"(various)"	"ConnectUPS Web/SNMP card"	"snmp-ups (experimental driver)"
 
 "Powerwell"	"PM525A/-625A/-800A/-1000A/-1250A"	""	"safenet"
 
@@ -225,17 +294,32 @@
 "SOLA/BASIC Mexico"	"various"	"ISBMEX protocol"	"isbmex"
 
 "Socomec Sicon"	"Egys"	"420 VA"	"powercom"  
+"Socomec Sicon"	"Netvision"	"UPS equipped with Netvision WEB/SNMP card/external box"	"snmp-ups (experimental)" 
 
 "Soltec"	"Winmate 525/625/800/1000"	""	"safenet"
+
+"Soyntec"	"Sekury C 500"		""	"powermust"	
+"Soyntec"	"Sekury C 800"		""	"powermust"	
+
+"SquareOne Power"	"QP1000"		""	"powermust"
 
 "SuperPower"	"HP360, Hope-550"	""	"fentonups"
 
 "Sweex"		"500/1000"	"smart - shipped with SafeNet"			"safenet"
 "Sweex"		"500/1000"	"contact closure - shipped with UPSmart"	"genericups upstype=7"
 
+"Sysgration"	"UPGUARDS Pro650"	""	"fentonups"
+
+"Tecnoware"	"Easy Power 1200"	""	"powermust"
+
+"Tripp-Lite"	"OMNIVS1000"	"USB"	"tripplite_usb"
+"Tripp-Lite"	"OMNIVS1500XL"	"USB"	"tripplite_usb"
+"Tripp-Lite"	"SMART1500RM2U"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"SmartUPS"	""	"tripplite"
 "Tripp-Lite"	"SmartOnline"	""	"tripplitesu"
 "Tripp-Lite"	"(various)"	"Lan 2.2 interface - black 73-0844 cable"	"genericups upstype=5"
+
+"Trust"		"UPS 1000 Management PW-4105"	""	"powermust"
 
 "UNITEK"	"ALPHA 500 IC"		""	"fentonups"
 "UNITEK"	"Alpha 1000is"		""	"fentonups"
@@ -243,7 +327,9 @@
 "UPSonic"	"LAN Saver 600"		""	"genericups upstype=0"
 "UPSonic"	"Power Guardian"	""	"genericups upstype=7"
 
+"Various"	"(various)"	"SEC protocol"		"gamatronic"
 "Various"	"(various)"	"Generic RUPS model"	"genericups upstype=4"
+"Various"	"(various)"	"Generic RUPS 2000 (Megatec M2501 cable)"	"genericups upstype=21"
 "Various"	"(various)"	"Megatec protocol"	"fentonups"
 "Various"	"(various)"	"PhoenixTec protocol"	"bestups"
 "Various"	"(various)"	"SNMP - RFC 1628"	"snmp-ups (experimental)"

@@ -1,3 +1,712 @@
+2.0.3
+
+Tue Feb 07 10:47:01 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - update configure.in, install.sh, include/version* and NEWS
+ - several minor fixes
+
+Tue Jan 24 20:40:34 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - safenet: improve robustness, add minimal hardware detection and
+   improve the error handling
+ - bestfcom, tripplite: fix the "array subscript out of range" bug
+   (https://bugzilla.novell.com/show_bug.cgi?id=133610)
+
+   (Arjen de Korte)
+
+Mon Jan 23 08:48:13 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - README, INSTALL, NEWS: more update on USB and other points.
+
+Fri Jan 20 18:51:53 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - FAQ: update a bit more USB support and SNMP information
+
+Wed Jan 18 23:56:12 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - added "Tecnoware Easy Power 1200" to "powermust.8" and driver.list
+
+Mon Jan 16 22:17:02 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - powermust: minor changes to the manpage
+ - added "Trust UPS 1000 Management PW-4105" to driver.list
+
+Mon Jan 16 12:01:22 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * mge-utalk 0.87:
+   - only set lowbatt, ondelay and offdelay if configured, and without first getting
+   the current value, as some models only support writing and not reading (ie ES+),
+   (thanks to Rogenry Avila Batista)
+   - change the parameters lowbatt, ondelay and offdelay to lower case for
+   consistency. This won't affect existing setup as the test are done in
+   case insensitive mode,
+   - made various improvements to fix the regression with some older models, such
+   as Pulsar EXtreme, ES+ and EX units
+   - update the TODO list in the mge-utalk manpage 
+
+2.0.3-pre2
+
+Fri Dec 16 20:21:43 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - newhidups.8, mge-shut.8, mge-utalk.8, driver.list: various update
+ - FAQ: update USB support information
+
+Tue Nov 15 17:25:00 CEST 2005 / Kjell Claesson <kjell.claesson@telia.com>
+
+ * driver.list:
+   - add HP R5500 XR compatibility with bcmxcp
+
+Wed Nov 09 20:06:58 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * driver.list:
+   - add APC Back-UPS RS USB compatibility with newhidups,
+   - add missing tripplite_usb compatibility,
+   - remove newhidups experimental flags, except for Belkin
+
+ * Linux Hotplug and udev:
+   - upgrade old style hotplug rules with the newly supported
+     models
+   - add new udev style hotplug rule
+
+ - complete UPGRADING and NEWS notes
+
+Tue Oct 11 06:59:22 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - README and driver.list: add missing bcmxcp_usb information
+
+Mon Oct 10 22:36:00 CEST 2005 / Kjell Claesson <kjell.claesson@telia.com>
+
+ - drivers/gendb: Removed doublet's of the rows
+    EXTRA=""
+    EXTRAOBJ=""
+
+Sun Oct 9 23:41:00 CEST 2005 / Kjell Claesson <kjell.claesson@telia.com>
+
+ - bcmxcp: Merging driver from Development to Testing. Driver is the
+   same but splitted up due to the usb support.
+   Files changed bcmxcp.c bcmxcp.h , added bcmxcp_io.h bcmxcp_ser.c
+   driver/gendb changed to support EXTRAOBJ="bcmxcp_ser.o".
+
+ - bcmxcp_usb: Added to Testing due to the backport of bcmxcp from
+   Development. Added bcmxcp_usb nut_usb.c nut_usb.h.
+   driver/Makefile.in changed to support build of bcmxcp_usb.
+   configure.in changed to add bcmxcp_usb and manpage to USB_DRIVER_LIST
+   and USBPAGES.
+
+ - Tested on both serial and usb. Serial has the same funktion as
+   the previous 0.09 driver in Testing branch. USB stable on 3105.
+
+Sun Oct  9 22:10:00 EDT 2005 / Charles Lepple <clepple@gmail.com>
+
+ - tripplite_usb: Finished merging v0.6 of this driver from the
+   Development branch. The driver now handles both OMNIVS and SMARTPRO
+   models.
+
+ - drivers/Makefile.in: Reorganized the USB build targets to be closer
+   to install-usb. This matches the Development branch, where the list
+   of USB drivers is pulled from autoconf.
+
+Sun Oct  9 05:31:09 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: repaired the way status flags are stored. Note that
+   there can be more than one device status flag (such as "lowbatt"
+   and "shutdownimm") mapped to the same NUT status (such as "LB").
+   We now store the device flags, and convert them to NUT values only
+   on request. This solves the problem where multiple variables (e.g.
+   "lowbatt" and "shutdownimm") might have erased each other's values
+   if one was set and the other was not. This also solves the issue
+   reported by Alfred Ganz of the CHRG and DISCHRG flags not being
+   cleared properly.
+
+ - newhidups: added NUT status flags OVERHEAT, COMMFAULT, DEPLETED;
+   these already exist in the belkinunv driver.
+
+ - newhidups/Belkin: changed the way the OL/OB status is determined;
+   now correctly shows OB during battery test (even when AC power is
+   present).
+
+Sun Oct  9 02:40:25 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+  - libhid.c: added some missing usages from UPS/HID definition
+
+Tue Oct  4 03:29:19 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups/APC and Belkin: fixed declarations of string length of
+   writable variables. Also made ups.beeper.status writable in both
+   subdrivers. Note: currently the written value must be numeric
+   (1/2/3) instead of symbolic (disabled/enabled/muted). Out-of range
+   values can be given and can leave the variable in an "error" state
+   that cannot be fixed. Should implement writing of symbolic values.
+
+Mon Oct  3 21:54:19 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups/APC: made battery.charge.low, battery.runtime.low,
+   input.transfer.low, input.transfer.high writable in APC subdriver,
+   as suggested by Alfred Ganz. Also added status flags for
+   "RemainingTimeLimitExpired" (RTE) and "BatteryPresent" (BP),
+   although they will be ignored by newhidups.
+
+ - newhidups/Belkin: added flag ST_FLAG_STRING to all writable
+   variables.  It is apparently required by upsrw that all writable
+   variables are either strings or enums. ups.test.result is no longer
+   writable (because writing it failed anyway), and ups.delay.restart
+   and ups.delay.shutdown are no longer writable (because they are
+   dangerous: rather than just configuring a time limit, this actually
+   initiates a timed shutdown). 
+
+Mon Oct  3 21:51:38 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: removed bug that made all variables writable.
+
+Sat Oct 01 18:17:54 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - upssched.txt: document the required PIPEFN and LOCKFN variables
+
+   (Cristian Rigamonti) [Alioth Patch #302107]
+
+Fri Sep 30 20:38:09 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - driver.list: add Exide NETUPS SE and Deltec PowerRite Pro II
+   (rebranded models of Powerware 5119)
+
+   (Karl Schmidt) [Alioth Patch #301881]
+
+ - driver.list: add Dynex 975AVR (reported by Andrew Kalafut)
+
+   [Alioth Patch #302203]
+
+ - bcmxcp: add the baud_rate parameter, which allows to support HP
+   R3000 XR (reported by Matthijs Sneijders)
+
+   (Kjell Claesson) [Alioth Patch #302284]
+
+Sat Sep 24 04:30:34 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: moved remaining vendor-specific code into the X-hid.c
+   subdrivers. Vendor specific usage strings are now defined in
+   subdrivers.
+
+ - libhid.c: replaced lookup_path() by two functions string_to_path()
+   and path_to_string().
+
+Sat Sep 24 02:34:05 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - libhid.c: reduced number of global variables in libhid to 3. Also
+   simplified logic in HIDGetItemValue() and fixed a bug where the
+   report timestamp was refreshed even when an old report was used.
+
+Sat Sep 24 00:46:12 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - libusb.c: eliminated global variables from libusb.
+
+Sat Sep 24 00:09:13 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: moved most vendor-specific code into X-hid.c, where
+   X=mge,apc,belkin. This eliminates the various switch(hd->VendorID)
+   statements throughout the driver. Subdrivers now declare themselves
+   by exporting a subdriver_t structure (defined in newhidups.h). This
+   structure contains functions and data that define the subdriver. In
+   particular, each driver implements a "claim()" method by which it
+   can claim a particular device. Driver availability is checked
+   inside libusb_open() via the general "matcher" mechanism, so that
+   libusb no longer contains vendor specific code.
+
+ - added docs/hid-subdrivers.txt to explain how to write a new HID subdriver. 
+
+Tue Sep 20 00:51:01 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: cleaned up code so that *.h files contain headers, *.c
+   files contain sources. Declared all non-exported variables and
+   functions as static. Moved code from X-hid.h to X-hid.c, where
+   X=mge,apc,belkin. Enclosed all header files in #ifndef/#endif
+   pairs.
+ - renamed drivers/hid-usb.h as drivers/libusb.h
+
+Mon Sep 19 17:50:21 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: added -x bus=X option to open a device on a specific USB
+   bus. Here X is a regular expression. When reconnecting to a
+   previously opened device, the policy is that the bus name of the
+   reopened device must match the regular expression previously
+   specified, but need not be the exact same bus as when the device
+   was initially opened. Thus, e.g., -x bus='00[23]' allows the device
+   to be moved between busses 002 and 003. (This is different from how
+   e.g. a device serial number is treated, which must match the
+   regular expression when the device is initially opened, but must
+   match exactly when the device is reopened).
+
+Mon Sep 19 16:43:57 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - drivers/Makefile.in: don't remove Makefile.drvbuild on "make clean".
+
+Mon Sep 19 16:11:17 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - drivers/gendb: added test for gcc availability.
+
+Sat Sep 17 00:25:23 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - drivers/Makefile.in: don't run gendb on "make clean", only on
+   "make depend". This way, only maintainers need to re-generate
+   dependencies.
+
+Fri Sep 16 01:18:47 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - drivers/: updated gendb and Makefile.in to automatically generate
+   correct *.h dependencies. Added "make depend" target.
+
+Fri Sep 16 01:04:57 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: make sure correct matcher is used for reopenings. 
+
+Thu Sep 15 19:54:12 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: eliminated some unused arguments from functions
+
+Thu Sep 15 03:54:02 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - added Belkin and APC models to supported hardware list in README and
+   data/driver.list. 
+
+Thu Sep 15 03:37:28 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: changed implementation of regular expression device
+   matching to use a callback function called a "matcher" (similar,
+   but not identical, to libhid's matchers). The public matcher
+   interface is documented in libhid.h. Two sample matchers are
+   provided: an exact matcher, used for reconnecting, and a regular
+   expression matcher, used to connect to a user-defined UPS.
+
+ - newhidups: replaced error numbers by cleartext error messages in
+   some debug output.
+
+Thu Sep 15 01:15:49 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: Belkin now detects serial number correctly; removed
+   temporary "ups.serial.internal" variable.
+
+ - newhidups: simplified and documented HIDDevice structure; this
+   structure is used as a "fingerprint" of a USB device and is used
+   for reopening, thus must not be modified by client code. 
+
+ - newhidups: further cleaned up logic in libusb.c:libusb_open() to
+   deal with NULL strings correctly. Slight cleanup of
+   newhidups.c:identify_ups().
+
+Wed Sep 14 18:31:47 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: cleaned up logic in libusb.c:libusb_open(), in
+   preparation for improvements to "device matching" mechanism.
+
+ - newhidups: fixed "free null pointer" error in regular expression
+   code.
+
+Wed Sep 14 16:23:55 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: renamed ups.devicechemistry as battery.type, bumped 
+   newhidups driver release.
+
+Tue Sep 13 20:50:14 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: added Belkin support. Also added some new variables and
+   instant commands (some of these were already used by other
+   drivers); see new-names.txt.
+
+ - newhidups: fixed return value bug in libusb.c:libusb_open() when no
+   device was found.
+
+Tue Sep 13 05:22:49 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: added options -x vendor=X, -x vendorid=X, -x product=X,
+   -x productid=X, -x serial=X, that let the user select a specific
+   UPS if there is more than one present. The arguments "X" are
+   extended regular expressions that must match the whole string (in
+   case of vendor, product or serial number), or the whole 4-digit
+   hexadecimal code (in case of vendorid, productid). Examples:
+   -x vendor="APC.*", -x product=".*(Smart|Back)-?UPS.*", etc.
+
+ - skel.c: fixed typos
+
+Tue Sep 13 01:35:47 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: in libhid.h, removed iProduct from HIDDevice structure.
+   Use ProductID instead.
+
+Mon Sep 12 17:53:03 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: fixed logic in upsdrv_shutdown(): return after first
+   command succeeds, don't print "Shutdown command failed".
+
+Tue Aug 23 07:33:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - gamatronic: revive the sec driver as gamatronic to support officialy
+   the Gamatronic models MP110/210, MS-T, MS and µPS3/1.
+
+   (Gamatronic, Nadav Moskovitch)
+
+ - driver.list: add old sec compatibilities with gamatronic, which
+   are Clary ST-800 and various SEC protocol compatible units.
+
+ - README for hotplug scripts updated a bit.
+
+Thu Aug 18 09:47:07 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ * mge-utalk 0.86:
+   - improve the startup sequence not to overload old units
+     (such as ES/ES+/ESV/ESV+) at startup which can cause an immediate
+     shutdown. For these units, also read mge-utalk manpage for the
+     Known Issues.
+   - update a bit the manpage according to the above.
+   - improve the reactivity when asked to stop during an init/update
+     loop
+   - remove the OFF status handling (doesn't point the right data).
+
+Tue Aug 16 20:51:27 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
+
+ - driver.list: add Soyntec Sekury C 500 and C 800 support using
+   the powermust driver (contributed by Hanno Borns)
+ - complete the NEWS files
+
+2.0.3-pre1
+
+Thu Aug 16 10:51:17 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - genericups type 22: add Gamatronic UPSs with alarm interface
+
+   (Gamatronic, Nadav Moskovitch) [Alioth Patch #302015]
+
+ - mge-shut: enhance ups.model retrieving, and bump release to 0.65
+ - drivers now don't chroot to statepath if called for power off
+   (using -k). This avoid unneeded failure to poweroff the UPS if
+   /var is umounted (thanks to Gaspar Bakos).
+
+Wed Jul 27 07:08:01 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - bcmxcp: typo fixes (length instead of lenght, thanks to Bill Richter)
+
+Fri Jul 22 08:20:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - newhidups: minor change in interface claiming to avoid message like
+   "process <pid> (<name>) did not claim interface X before use" upon
+   device reopening, and bump driver release to 0.24
+
+Thu Jul 21 14:02:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - add the missing LDFLAGS to gendb
+ - add Belkin F6C1100-UNV to the driver.list (thanks to Dave Breiland)
+
+Wed Jul 20 11:15:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - adapt newhidups to recognize units from Tripplite, Mustek and
+   Unitek for development purpose
+
+ - isbmex: fix various errors in formulas, add shutdown capability
+   and bump driver release to 0.05
+
+   (Ricardo Martinezgarza)
+
+ - fentonups: fix the ID string for Sysgration UPGUARDS Pro650
+
+   (Simon J. Rowe)
+
+ - various fixes in the RedHat spec file
+
+   (Thomas Jarosch)
+
+Fri Jul  1 08:15:56 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - isbmex: revert back to B9600 instead of B2400, as it broke the
+   communication, and bump the driver release to 0.04 (thanks to
+   Ricardo Martinezgarza)
+ - genericups: add a trace to expose overriden data, and bump the
+   driver release to 1.31
+
+Thu Jun 30 13:13:02 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - solis: fix a naming colision on Solaris, bump the driver release to
+   0.41 (thanks to Paweł Kierdelewicz)
+
+Tue Jun 28 16:41:14 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - *mib.h: remove all references to SU_TYPE_TIME as it's not used
+   and cause some problems when exposing the data
+
+2.0.2
+
+Mon Jun 27 08:11:54 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - Final version number bump for release.
+ - driver.list: add Smart-UPS USB support, and leave the experimental
+   flag for hidups/newhidups and APC units
+
+2.0.2-pre2
+
+Wed Jun 22 07:11:54 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - tripplite: fix a battery charge bug, remove some extraneous
+   leading zeros from integral variables (temperature, ...) and
+   bump driver release to 0.8 
+
+   (Cedric Tefft) [Alioth Patch #301783]
+
+ - newhidups: remove experimental flag
+ - driver.list: add MGE Ellipse Office, remove legacy hidups support for
+   MGE units, add newhidups for APC units and remove experimental flag
+   for newhidups only supported units
+
+Tue Jun 21 14:51:02 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - apc-hid: complete APC data for newhidups
+ - libhid.c: complete HID usages
+
+   (George Ross)
+
+ - libusb.c: improve Report Descriptor length calculation (thanks to
+   John Stamp for pointing out usbutils workaround), and minor type
+   declaration fix
+ - mge-shut, newhidups: improve exit reactivity for restart/shutdown
+   sequences (both imply driver stop and start, while the driver might
+   still be busy in its "long" update loop) by testing the exit_flag.
+
+Fri Jun  3 13:01:55 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - libhid.usermap: add a newline at the end, otherwise hotplug
+   won't be able to parse it
+ - libhid.c: change the dummy HIDItem test to remove exposed
+   path that are broken
+
+   (John Stamp)
+
+Sat May 28 20:05:55 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ * newhidups, libhid, apc-hid:
+   - fix typo error on offdelay vartable declaration
+   - complete APC usages,
+   - improve APC support (should work with BackUPS Pro, Back-UPS ES,
+     Smart-UPS and BackUPS), but still lacks of shutdown on some models
+
+   (John Stamp)
+
+Thu May 26 12:17:55 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - newhidups, libhid: code formating, and documentation
+ - libhid.usermap: add preliminary APC rules
+
+Wed May 25 14:09:02 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - newhidups.8: remove the staleness information (not needed anymore),
+   and add hotplug information.
+
+Thu May 24 14:06:02 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - mge-hid.h: add forgotten Protection Center definition
+
+Mon May 23 09:21:10 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - fentonups: complete the trace
+
+   (Michel Bouissou) [Alioth Patch #301574]
+
+Mon May 23 07:25:02 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - mge-hid.h: add low end (non backuped) outlet handling
+ - libusb: rework a bit the debug trace on device opening
+
+2.0.2-pre1
+
+Wed May  4 07:09:02 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - bring testing release in sync with development release
+ - bump release to 2.0.2-pre1
+
+2.1.0:
+
+Wed May  4 07:09:02 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - solis: new driver for Microsol units
+
+   (Silvino B. Magalhaes) [Alioth Patch #301272]
+
+Tue May  3 09:09:07 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ * fentonups:
+   - fix a problem with establishing serial communication,
+   - fix UNITEK Alpha 500iC model exposure,
+   - add separate battery voltage scales to better determine charge
+     percentage when on AC/charging
+   - add a user-defined battery voltage under which the UPS is considered
+     on "low battery" condition when running on battery ("lowbattvolt")
+
+   (Michel Bouissou) [Alioth Patch #301574] 
+
+ - driver.list: add Powerware 3110 support, through genericups type=7
+
+   (Paul Andreassen) [Alioth Patch #301573]
+
+ - upscode2: merge this driver for Fiskars, Compaq and Powerware
+   devices.
+
+   (Niels Baggesen, Havard Lygre) [Alioth Patch #301144]
+
+ - newhidups, libhid, libusb: improve UBS support. Interrupt and
+   device reconnexion are now supported.
+
+Mon May  2 11:14:40 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - configure, man/Makefile: check which USB manpage(s) to install
+ - man/Makefile: suppress snmp-ups duplication
+
+ - pwmib.h, snmp-ups.ch8, driver.list: add Powerware MIB support for
+   Powerware devices with ConnectUPS SNMP cards
+
+   (Olli Salvia) [Alioth Patch #301568]
+
+Fri Apr 29 16:03:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
+
+ - apcsmart: fix APC600 support, and bump driver release to 1.99.7
+
+   (Bill Richter) [Alioth Patch #301287]
+
+Thu Apr 28 18:03:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
+
+ - configure.in, drivers/Makefile: check which USB driver(s) to build
+
+Mon Apr 25 22:03:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
+
+ - Makefiles: add LDFLAGS support
+ - drivers/Makefile.in: remove unneeded STRLCPY flag for newhidups
+
+Sun Apr 24 19:03:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
+
+ - etapro.c: fix brokeness due to ser_get_line use
+
+   (Marek Michalkiewicz) [Alioth Patch #301505]
+
+Sat Apr 23 19:34:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
+
+ - cyberpower.c: add CyberPower 1000AVR support
+ - driver.list: complete the missing CyberPower models
+
+   (Dave Huang) [Alioth Patch #301288]
+
+ - drivers/main.c: move upsdrv_initups() to point after become_user().
+   This makes clear error message when user has no write privilege
+   on the device.
+ 
+   (?) [Alioth Patch #301284]
+
+Fri Apr 22 11:42:22 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - bcmxcp.ch8: reintegrate the new BCM/XCP driver (0.08) ; adjust
+   Makefile's accordingly
+ - driver.list: update according to the tested units
+   http://web.telia.com/~u50205618/compatibility.html
+
+   (Tore �petveit, Kjell Claesson) [Alioth Patch #301290]
+
+Thu Apr 15 11:04:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - netvisionmib.h, snmp-ups.ch8, driver.list: add Socomec SNMP
+   card/external box (Netvision MIB support)
+
+   (Thanos Chatziathanassiou) [Alioth Patch #301296]
+
+ - driver.list: add MicroDowell B.Box BP 500/750/1000/1500
+ - cpsups.ch: add MicroDowell support, and fix a segfault on upsdrv_shutdown
+
+   (Armin Diehl) [Alioth Patch #301282]
+
+ - upsstats.c: fix a case where upsstats.cgi crashes if hosts.conf has
+   no valid MONITOR lines
+
+   (Charles Lepple) [Alioth Patch #301461]
+
+Thu Apr 15 11:04:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - mge-shut.h: add Ellipse Pro models, and bump driver version to 0.63
+
+ * newhidups patch-set:
+   - libusb.c: enhance discovery performance (only search for MGE / APC),
+   - newhidups.c: 
+     - add the code to manage Interrupt Pipe (will improve USB flow
+       by lowering polling on device), and a pollfreq parameter
+       (default to 60 sec, newhidups will wait for Interrupt in the
+       meantime). This is disabled for the moment
+     - lower USB flow by only querying ups.status information within
+       the above pollfreq period.
+     - improve ups.status handling (needed for interrupt and partial
+       status update)
+     - enhance model name exposure
+     - factorise the data walking code
+     - a bit of code cleaning
+     - enable device reconnexion (still not working!)
+   - mge-hid.h: renamed from mgehid.h, and completed with the model names,
+     outlet collection, and some missing data
+   - apc-hid.h: add and complete this file
+   - prepare the future merge of mge-shut
+   - add Unitek VendorID
+
+Tue Mar 22 11:10:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - driver.list: add missing Mustek PowerMust 1400VA Plus and 2000VA USB
+
+   (Carlos Rodrigues) [Alioth Patch #301289]
+   
+ * MGE patch-set:
+   - driver.list: add Pulsar EXtreme C / EX RT, Comet EX RT, Pulsar SV,
+     Pulsar PSX and NOVA AVR USB
+   - mge-utalk.ch, mge-utalk.8: enhance support for old units, by adding
+     disable_ups_comm, and Si discovering ; rework the model names,
+     change driver version numbering to X.Y (instead of X.Y.Z) and
+     bump to 0.85 (thanks to Martin Loyer and Patrick Agrain)
+   - mgehid.h: add BYPASS management for newhidups
+   - libhid.c: add the HID "Used" usage for the mgehid.h BYPASS
+     management 
+   - newhidups.h: add the lookup values for mgehid.h/libhid.c
+     above changes
+   - mge-shut.ch, mge-shut.8: rework the model names, add value
+     lookup, bump the driver version to 0.62
+ 
+ - apccmib.h: minor change to get the firmware of the Silcon DP3160E
+   by interrogating an ap9606
+
+   (Christophe Grenier) [Alioth Patch #301283]
+   
+ - fentonups.h, driver.list: add support for Sysgration UPGUARDS Pro650
+
+   (Simon J. Rowe) [Alioth Patch #301281]
+   
+ - energizerups: fix for Linux 2.6 byte dropping
+
+   (Viktor T. Toth) [Alioth Patch #301279]
+   
+ - powermust.c, driver.list: rework initups/initinfo to follow NUT
+   standard recommendation, and add support for SquareOne Power QP1000
+
+   (Carlos Rodrigues) [Alioth Patch #301146]
+   
+Mon Mar 21 15:52:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - tripplite.c: fix the reporting of the battery voltage and charge
+
+   (Andrew Cook, Nicholas J. Kain) [Alioth Patch #301271]
+
+Fri Mar 18 13:36:20 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - driver.list: add the missing Powerware 5119 RM (genericups type=20)
+
+ - drivers/main.c, nutupsdrv.8: brings the drivers usage message and
+   the generic driver man page in line with the getopt processing.
+   It also remove an unused -d option from the getopt call.
+
+   (Niels Baggesen) [Alioth Patch #301145]
+
+ - genericups.h, genericups.8, driver.list: add Generic RUPS 2000
+   and AEC MiniGuard UPS 700 (using Megatec M2501 cable)
+
+   (Nick Barnes) [Alioth Patch #301143]
+
+ * Forked from 2.0.1 to start the new 2.1 dev tree.
+
 2.0.1:
 
 Thu Feb 24 00:55:20 CST 2005 / Russell Kroll <rkroll@exploits.org>
@@ -20,11 +729,11 @@ Thu Oct 21 01:02:08 CDT 2004 / Russell Kroll <rkroll@exploits.org>
    - enhance the server side variables handling, and particularly the
      wrongly exposed PowerShare outlet description (outlet.*.desc) when
      these doesn't exists,
-    - expose the detected model at upsdrv_initinfo() time
-     (this will be standardised in 2.1 tree),
-    - add NOVA models support,
-    - update manpage and driver.list accordingly,
-    - bump driver version to 0.60
+   - expose the detected model at upsdrv_initinfo() time
+    (this will be standardised in 2.1 tree),
+   - add NOVA models support,
+   - update manpage and driver.list accordingly,
+   - bump driver version to 0.60
 
    (Arnaud Quette) [patch-2.0.1_nova-shut]
 
@@ -3168,7 +3877,7 @@ Mon Dec  2 06:11:22 CST 2002 / Russell Kroll <rkroll@exploits.org>
 Mon Dec  2 04:59:43 CST 2002 / Russell Kroll <rkroll@exploits.org>
 
  - genericups: applied patch from Tomek Orzechowski and 
-   Arkadiusz Mi�kiewicz to support Fideltronik Ares Series as type 19.
+   Arkadiusz Mikiewicz to support Fideltronik Ares Series as type 19.
 
 1.2.1-pre1:
 
