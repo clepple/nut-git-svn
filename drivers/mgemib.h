@@ -27,56 +27,56 @@
 
 /* SNMP OIDs set */
 #define MGE_OID_UPS_MIB			".1.3.6.1.4.1.705"
-#define MGE_OID_MODEL_NAME		".1.3.6.1.4.1.705.1.1.1"
-#define MGE_OID_SERIAL			".1.3.6.1.4.1.705.1.1.7"
-#define MGE_OID_LOBATTPCT		".1.3.6.1.4.1.705.1.4.8"
-#define MGE_OID_BATT_RUNTIME 	".1.3.6.1.4.1.705.1.5.1"
-#define MGE_OID_BATT_CHARGE		".1.3.6.1.4.1.705.1.5.2"
-#define MGE_OID_BATTVOLT		".1.3.6.1.4.1.705.1.5.5"
-#define MGE_OID_LOWBATT_STATUS	".1.3.6.1.4.1.705.1.5.14"
+#define MGE_OID_MODEL_NAME		".1.3.6.1.4.1.705.1.1.1.0"
+#define MGE_OID_SERIAL			".1.3.6.1.4.1.705.1.1.7.0"
+#define MGE_OID_LOBATTPCT		".1.3.6.1.4.1.705.1.4.8.0"
+#define MGE_OID_BATT_RUNTIME 	".1.3.6.1.4.1.705.1.5.1.0"
+#define MGE_OID_BATT_CHARGE		".1.3.6.1.4.1.705.1.5.2.0"
+#define MGE_OID_BATTVOLT		".1.3.6.1.4.1.705.1.5.5.0"
+#define MGE_OID_LOWBATT_STATUS	".1.3.6.1.4.1.705.1.5.14.0"
 info_lkp_t mge_lowbatt_info[] = {
 	{ 1, "LB" },
 	{ 2, "" },
 	{ 0, "NULL" }
 };
-#define MGE_OID_INVOLT			".1.3.6.1.4.1.705.1.6.2.1.2"
-#define MGE_OID_INFREQ			".1.3.6.1.4.1.705.1.6.2.1.3"
-#define MGE_OID_INVOLTMIN		".1.3.6.1.4.1.705.1.6.2.1.4"
-#define MGE_OID_INVOLTMAX		".1.3.6.1.4.1.705.1.6.2.1.5"
-#define MGE_OID_OUTVOLT			".1.3.6.1.4.1.705.1.7.2.1.2"
-#define MGE_OID_OUTFREQ			".1.3.6.1.4.1.705.1.7.2.1.3"
-#define MGE_OID_LOADPCT			".1.3.6.1.4.1.705.1.7.2.1.4"
-#define MGE_OID_ONBATT_STATUS	".1.3.6.1.4.1.705.1.7.3"
+#define MGE_OID_INVOLT			".1.3.6.1.4.1.705.1.6.2.1.2.0"
+#define MGE_OID_INFREQ			".1.3.6.1.4.1.705.1.6.2.1.3.0"
+#define MGE_OID_INVOLTMIN		".1.3.6.1.4.1.705.1.6.2.1.4.0"
+#define MGE_OID_INVOLTMAX		".1.3.6.1.4.1.705.1.6.2.1.5.0"
+#define MGE_OID_OUTVOLT			".1.3.6.1.4.1.705.1.7.2.1.2.0"
+#define MGE_OID_OUTFREQ			".1.3.6.1.4.1.705.1.7.2.1.3.0"
+#define MGE_OID_LOADPCT			".1.3.6.1.4.1.705.1.7.2.1.4.0"
+#define MGE_OID_ONBATT_STATUS	".1.3.6.1.4.1.705.1.7.3.0"
 info_lkp_t mge_onbatt_info[] = {
 	{ 1, "OB" },
 	{ 2, "OL" },
 	{ 0, "NULL" }
 };
 
-#define MGE_OID_BYPASS_STATUS	".1.3.6.1.4.1.705.1.7.4"
+#define MGE_OID_BYPASS_STATUS	".1.3.6.1.4.1.705.1.7.4.0"
 info_lkp_t mge_bypass_info[] = {
 	{ 1, "BYPASS" },
 	{ 2, "" },
 	{ 0, "NULL" }
 };
 
-#define MGE_OID_BOOST_STATUS	".1.3.6.1.4.1.705.1.7.8"
+#define MGE_OID_BOOST_STATUS	".1.3.6.1.4.1.705.1.7.8.0"
 info_lkp_t mge_boost_info[] = {
 	{ 1, "BOOST" },
 	{ 2, "" },
 	{ 0, "NULL" }
 };
 
-#define MGE_OID_OVERBATT_STATUS	".1.3.6.1.4.1.705.1.7.10"
+#define MGE_OID_OVERBATT_STATUS	".1.3.6.1.4.1.705.1.7.10.0"
 info_lkp_t mge_overbatt_info[] = {
 	{ 1, "OVER" },
 	{ 2, "" },
 	{ 0, "NULL" }
 };
 
-#define MGE_OID_FIRMREV			".1.3.6.1.4.1.705.1.12.12"
+#define MGE_OID_FIRMREV			".1.3.6.1.4.1.705.1.12.12.0"
 
-#define MGE_OID_BATT_TEST		".1.3.6.1.4.1.705.1.10.4"
+#define MGE_OID_BATT_TEST		".1.3.6.1.4.1.705.1.10.4.0"
 
 #define MGE_NOTHING_VALUE		1
 #define MGE_START_VALUE			2
@@ -123,7 +123,7 @@ snmp_info_t mge_mib[] = {
  	{ "battery.voltage", 0, 0.1, MGE_OID_BATTVOLT, "", SU_FLAG_OK, NULL },
 
 /*	{ "ups.delay.shutdown", ST_FLAG_STRING | ST_FLAG_RW, 3, MGE_OID_GRACEDELAY, "",
-		SU_TYPE_TIME | SU_FLAG_OK, NULL },
+		SU_FLAG_OK, NULL },
 */
 	/* Outlet page */
 	{ "outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
