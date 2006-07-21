@@ -3,7 +3,7 @@
 CC	= @CC@
 CFLAGS	= -I../include @CFLAGS@
 
-all: @BUILDOBJ@ upsconf.o parseconf.o state.o
+all: @BUILDOBJ@ upsconf.o parseconf.o state.o nutparser.o data_types.o stack.o tree.o
 
 clean:
 	rm -f *~ *.o
