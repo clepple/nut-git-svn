@@ -1,30 +1,35 @@
-/*
- * 		Implementation of a general purpose stack
+/*! 
+ * @file stack.h
+ * @brief Implementation of generic stack
  * 
- *  Copyright (C) 2006  Jonathan Dion <dion.jonathan@gmail.com>
+ * @author Copyright (C) 2006 Jonathan Dion <dion.jonathan@gmail.com>
  *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
+ * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
  * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#ifndef STACK_H_	// To prevent circular include
+#ifndef STACK_H_	// To prevent circular inclusion
 #define STACK_H_
 
 /** 
  * Basic structure of a stack
  * 
- * @note data : array of pointer piled up
- * @note front : indice of the front pointer. -1 if empty stack
- * @note stack_size : the max number of pointer that can be piled up.
+ * @param data : array of pointer piled up
+ * @param front : indice of the front pointer. -1 if empty stack
+ * @param stack_size : the max number of pointer that can be piled up.
  */
 typedef struct _t_stack {
   void** data;

@@ -1,3 +1,22 @@
+Fri Jul 21 16:15:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
+
+ - nutparser: create the new nut parser for configuration (and
+   possibly the network protocol)
+   * tree.ch : Implementation of trees of data
+   * stack.ch : Implementation of generic stack
+   * data_types.ch : Contains definition of data type and function to manage them
+ 
+ - test directory : added. see below  
+   
+ - test_parser : add. Enable to parse a configuration file and to see the output
+   for test and torture only
+   
+ - utils directory : added. To contain upsconf tool
+ 
+ - upsconf.ch : files added in utils. blanks for the moment
+ 
+ - libupsconf.ch : files added in lib directory. blanks for the moment
+
 Wed Jul 12 10:47:43 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - genericups: merge type 23 into type 22

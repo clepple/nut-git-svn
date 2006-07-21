@@ -1,73 +1,65 @@
-#ifndef TREE_H_
-#define TREE_H_
-
-/*
- * 		Implementation of a tree of data with access rights
- * 		(More details follow)
+/*! 
+ * @file tree.h
+ * @brief Implementation of a tree of data with access rights
  * 
- *  Copyright (C) 2006  Jonathan Dion <dion.jonathan@gmail.com>
+ * @author Copyright (C) 2006 Jonathan Dion <dion.jonathan@gmail.com>
  *
+ * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
  * 
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * 
-*/
-
-/*
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ */
+ 
+/* 
  *  Here is a sample of tree that can be managed with this program
  * 
  * nut
  * 	|->ups
  * 	|	|->myups
  * 	|		|->driver
- * 	|		|	|->name = newhidups
- * 	|		|	|->port = auto
+ * 	|		|	|->name = "newhidups"
+ * 	|		|	|->port = "auto"
  * 	|		|->battery
- * 	|			|->charge = 98
- * 	|				|->low = 30 s*
+ * 	|			|->charge = "98"
+ * 	|				|->low = "30" s*
  * 	|->users
  * 		|->myadmin
- * 		|	|->type = admin
- * 		|	|->passwd = mypass s*
+ * 		|	|->type = "admin"
+ * 		|	|->passwd = "mypass" s*
+ * 		|	|->action = { "SET" "FSD" }
  * 		|->monuser
- * 			|->type = upsmon_master
- * 			|->passwd = titi s*
+ * 			|->type = "upsmon_master"
+ * 			|->passwd = "titi" s*
  * 
  * 
- * Notes : - the s after a value means this value can be modified.
- *         - the * after a value means this value is protected and need
- *           "admin" rights to access to 
- * 		   - Path in the tree are in this format : nut.ups.myups.battery.charge
- *         - Each node's name is the complete path to this node
+ * Notes : 
+ * 	- the s after a value means this value can be modified.
+ *	- the * after a value means this value is protected and need "admin" rights to access to 
+ * 	- Path in the tree are in this format : nut.ups.myups.battery.charge
+ *	- Each node's name is the complete path to this node
  * 
- * 	Types defined
- * 
- * t_tree			=> implement a node of a tree or a tree
- * t_types			=> define the types of data that can be contained in the tree
- * 						Only chain and enumeration of chain are implemented for
- * 						the moment
- * t_enum_chain		=> One of those types : enumeration of chain
- * 
- *  List of functions :
- * 
- * t_tree new_node(char* name, void* value, t_types type );
- * int add_to_tree(t_tree tree, char* name, void* value, t_types type, t_rights right);
- * t_tree tree_search(t_tree tree, char* name, int admin);
- * int modify_node_value(t_tree node, void* new_value, t_types new_type, int admin);
- * int del_from_tree(t_tree tree, char* name);
- * void add_tree_to_tree(t_tree tree1, t_tree tree2);
- */
+*/
+
+#ifndef TREE_H_
+#define TREE_H_
 
 #include "data_types.h"
 
+/**
+ * Enumeration of the rights possible for a tree node
+ */
 typedef enum {
 	all_rw,
 	all_r,
@@ -120,11 +112,13 @@ t_tree new_node(char* name, void* value, t_types type );
  *                 path to the variable from the first node of tree
  * @param value The value to give at the variable. If not value, give a null pointer
  * @param type  The type of the value
+ * @param right The right to add the node with
+ * 
  * @return 		1 if no problem, else 0
  * 
  * @note		The the variable already exist, it will be overwritten if not 
- * @note		a protected variable. If it is a protected varible, it will
- * @note		remains unchanged.
+ * 				a protected variable. If it is a protected variable, it will
+ * 				remains unchanged.
  */
 int add_to_tree(t_tree tree, char* name, void* value, t_types type, t_rights right);
 

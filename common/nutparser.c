@@ -1,3 +1,25 @@
+/*  nutparser.c - The new configuration parser (and possibly network protocol)
+
+   Copyright (C) 2006 Jonathan Dion <dion.jonathan@gmail.com>
+
+	This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+*/
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -104,7 +126,7 @@ void free_context(t_context* ctx) {
 // Make an error message and exit
 void pconf_fatal_error(char* errtxt) {
 	if (parser_ctx == 0 || parser_ctx->error_handler == 0)
-     	fprintf(stderr, "parseconf: fatal error : %s\n", errtxt);
+     	fprintf(stderr, "nutparser : fatal error : %s\n", errtxt);
 	else
 		parser_ctx->error_handler(errtxt);
 		
@@ -114,7 +136,7 @@ void pconf_fatal_error(char* errtxt) {
 // Make an error message without exiting
 void pconf_error(char* errtxt) {
 	if (parser_ctx == 0 || parser_ctx->error_handler == 0)
-     	fprintf(stderr, "parseconf: error : %s\n", errtxt);
+     	fprintf(stderr, "nutparser : error : %s\n", errtxt);
 	else
 		parser_ctx->error_handler(errtxt);
 }
@@ -125,12 +147,12 @@ void pconf_error(char* errtxt) {
 void pconf_syntax_error(lex_types lex) {
 	t_string s = (t_string)xmalloc(sizeof(char)* (100 + strlen(parser_ctx->filename) + strlen(parser_ctx->filename)));
 	if (lex == WORD) {
-		sprintf(s, "syntaxe error : In %s, line %d : Unexpected word \"%s\" found. Stoping parsing", 
+		sprintf(s, "syntax error : In %s, line %d : Unexpected word \"%s\" found. Stoping parsing", 
 				parser_ctx->filename, 
 				parser_ctx->line_number, 
 				parser_ctx->buffer);
 	} else {
-		sprintf(s, "syntaxe error : In %s, line %d : Unexpected %s found. Stoping parsing", 
+		sprintf(s, "syntax error : In %s, line %d : Unexpected %s found. Stoping parsing", 
 				parser_ctx->filename, 
 				parser_ctx->line_number, 
 				lex_to_string(lex));
@@ -253,7 +275,7 @@ void open_file(t_string filename) {
 	// is the default configuration path
 	if (filename[0] != '/') {
 		complete_filename = (t_string)xmalloc(sizeof(char)*(strlen(CONFPATH) + strlen(filename) + 2));
-		sprintf(s, "%s/%s", CONFPATH, filename);
+		sprintf(complete_filename, "%s/%s", CONFPATH, filename);
 	} else {
 		complete_filename = string_copy(filename);
 	}
@@ -265,6 +287,7 @@ void open_file(t_string filename) {
 		// If there were an error, signal it
 		s = (t_string)xmalloc(sizeof(char)*(strlen(complete_filename) + 100));
 		sprintf(s,"Unable to open the configuration file (\"%s\").", complete_filename);
+		free(complete_filename);
 		free(s);
 		pconf_error(s);
 	}
@@ -537,7 +560,7 @@ void parse_word () {
 
 // Manage the parsing of include files.
 void parse_include () {
-	t_string s, s2;
+	t_string s;
 	lex_types lex = get_lex(is_valid_char_for_word);
 	int line_number;
 	
@@ -548,6 +571,9 @@ void parse_include () {
 			break;
 		default :
 			pconf_syntax_error(lex);
+			// We never arrive here, but to don't get a warning about s that
+			// not be initialized :
+			return;
 	}
 	
 	lex = get_lex(is_valid_char_for_word);
@@ -563,16 +589,18 @@ void parse_include () {
 	// Try to open the file
 	open_file(s);
 	
+	free(s);
+	
 	if (parser_ctx->conf_file == 0) {
 		//
 		// Unable to open the file
 		//
 		
 		// Error message
-		s2 = (t_string)xmalloc(sizeof(char)*(strlen(((t_context*)(stack_front(context_stack)))->filename) + 200));
-		sprintf(s2,"In %s, line %d : Unable to execute include directive. Ignoring it.\n", ((t_context*)(stack_front(context_stack)))->filename, parser_ctx->line_number);
-		pconf_error(s2);
-		free(s2);
+		s = (t_string)xmalloc(sizeof(char)*(strlen(((t_context*)(stack_front(context_stack)))->filename) + 200));
+		sprintf(s,"In %s, line %d : Unable to execute include directive. Ignoring it.\n", ((t_context*)(stack_front(context_stack)))->filename, parser_ctx->line_number);
+		pconf_error(s);
+		free(s);
 		free_context(parser_ctx);
 		
 		// Restore the context and ignore the include directive
@@ -581,7 +609,6 @@ void parse_include () {
 	}
 
 	// Updating new values.	
-	parser_ctx->filename = s;
 	parser_ctx->line_number = 1;
 
 	// Save the new base context
@@ -744,40 +771,3 @@ t_tree parse_conf(t_string filename, void errhandler(const char*)) {
 	return conf_tree;
 	
 }
-
-#define PCONF_ESCAPE "#\\\""
-
-char* pconf_encode(const char* src, char* dest, size_t destsize)
-{
-	size_t	i, srclen, destlen, maxlen;
-
-	if (destsize < 1)
-		return dest;
-
-	memset(dest, '\0', destsize);
-
-	/* always leave room for a final NULL */
-	maxlen = destsize - 1;
-	srclen = strlen(src);
-	destlen = 0;
-
-	for (i = 0; i < srclen; i++) {
-		if (strchr(PCONF_ESCAPE, src[i])) {
-
-			/* if they both won't fit, we're done */
-			if (destlen >= maxlen - 1)
-				return dest;
-
-			dest[destlen++] = '\\';
-		}
-
-		/* bail out when dest is full */
-		if (destlen >= maxlen)
-			return dest;
-
-		dest[destlen++] = src[i];
-	}
-
-	return dest;
-}
-
