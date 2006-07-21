@@ -1,3 +1,9 @@
+Fri Jul 21 16:34:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
+
+ - Makefile.in : added test in the SUBDIR variable to make also test_parser
+ 
+ - common/Makefile.in : added the 4 new object to create : nutparser, tree, stack and data_types
+
 Fri Jul 21 16:15:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
 
  - nutparser: create the new nut parser for configuration (and
