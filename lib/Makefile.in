@@ -13,7 +13,10 @@ INSTALLMODE_X = 0755
 PKG_CFG_DIR = $(DESTDIR)@PKG_CFG_DIR@
 USE_PKG_CFG = @USE_PKG_CFG@
 
-all:
+CC	= @CC@
+CFLAGS	= -I../include @CFLAGS@
+
+all: libupsconfig.o
 
 clean:
 	rm -f *~ libupsclient.pc libupsclient-config

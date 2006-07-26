@@ -2,6 +2,8 @@
 	(More details follow)
 	
    Copyright (C) 2006 Jonathan Dion <dion.jonathan@gmail.com>
+   
+   This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -51,6 +53,30 @@ t_tree new_node(char* name, void* value, t_types type) {
 	node->right = all_r;
 	node->name = string_copy(name);
 	return node;
+}
+
+
+t_string extract_last_part(t_string string) {
+	int i;
+	int j;
+	int size;
+	t_string buffer;
+	
+	i = 0; j= 0;
+	buffer = xmalloc(sizeof(char) * BUFFER_SIZE);
+	
+	size = strlen(string);
+	
+	while ( i < size ) {
+		if (string[i] == '.') {
+			j = 0;
+		} else {
+			buffer[j++] = string[i];
+		}
+		i++;
+	}
+	buffer[j] = 0;
+	return buffer;
 }
 
 /*
@@ -222,7 +248,7 @@ int modify_node_value(t_tree node, void* new_value, t_types new_type, int admin)
 				node->value.string_value = string_copy((char*)new_value);
 				break;
 			case enum_string_type :
-				node->value.enum_string_value = (t_enum_string)new_value;
+				node->value.enum_string_value = enum_string_copy((t_enum_string)new_value);
 		}
 		node->type = new_type;
 	} else {

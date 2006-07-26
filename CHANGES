@@ -1,3 +1,15 @@
+Wed Jul 26 17:03:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
+
+ - data_types.ch : moving in some functions that should be here and not elsewhere
+ - tree.ch : moving in a function that should be here and not elsewhere
+ - libupsconfig.ch : nearly finished. Have still some test to do.
+ - Makefile.in (at the root) : added lib in the list of SUBDIR
+ - lib/Makefile.in : added rules to compile libupsconfig
+
+Mon Jul 24 17:00:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
+
+ - test/*.conf : added, to allow testing the parser
+
 Fri Jul 21 16:34:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
 
  - Makefile.in : added test in the SUBDIR variable to make also test_parser

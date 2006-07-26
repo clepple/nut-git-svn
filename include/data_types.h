@@ -21,10 +21,14 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#ifndef TYPES_H_
-#define TYPES_H_
+#ifndef DATA_TYPES_H_
+#define DATA_TYPES_H_
 
+typedef int boolean;
 typedef char* t_string;
+
+#define TRUE 1
+#define FALSE 0
 
 /**
  * Structure to represente enumeration of chain
@@ -34,8 +38,45 @@ typedef struct _t_enum_string {
 	struct _t_enum_string * next_value; 
 } *t_enum_string;
 
+typedef enum {
+	standalone,
+	net_server,
+	net_client,
+	pm
+} t_modes;
+
+typedef enum {
+	admin,
+	upsmon_master,
+	upsmon_slave,
+	custom
+} t_user_types;
+
+typedef enum {
+	SYSLOG,
+	SYSLOGWALL,
+	SYSLOGEXEC,
+	SYSLOGWALLEXEC,
+	WALL,
+	WALLEXEC,
+	EXEC,
+	IGNORE
+} t_flags;
+
+typedef enum {
+	ONLINE,
+	ONBATT,
+	LOWBATT,
+	FSD,
+	COMMOK,
+	COMMBAD,
+	SHUTDOWN,
+	REPLBATT,
+	NOCOMM
+} t_notify_events;
+
 /**
- * Enumeration of possible type of data
+ * Enumeration of possible type of data for the tree
  * 
  * @note Add here the new types in future modifications
  */
@@ -143,4 +184,13 @@ t_enum_string search_in_enum_string(t_enum_string enum_string, t_string value);
  */
 t_string enum_string_to_string(t_enum_string enum_string);
 
-#endif /*TYPES_H_*/
+t_string user_type_to_string(t_user_types type);
+t_user_types string_to_user_type(t_string s);
+t_modes string_to_mode(t_string s);
+t_string mode_to_string(t_modes mode);
+t_notify_events string_to_event(t_string s);
+t_string event_to_string(t_notify_events event);
+t_flags string_to_flag(t_string s);
+t_string flag_to_string(t_flags flag);
+
+#endif /*DATA_TYPES_H_*/

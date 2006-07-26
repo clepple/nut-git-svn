@@ -12,7 +12,7 @@ DRVPATH		= $(DESTDIR)@DRVPATH@
 
 INSTALLDIRS	= $(CONFPATH) $(DRVPATH) $(BINDIR) $(SBINDIR)
 
-SUBDIRS	= common drivers server clients test
+SUBDIRS	= common drivers server clients test lib
 CFLAGS	= -I../include @CFLAGS@
 
 # Permissions for executables

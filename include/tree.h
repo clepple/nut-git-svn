@@ -116,9 +116,7 @@ t_tree new_node(char* name, void* value, t_types type );
  * 
  * @return 		1 if no problem, else 0
  * 
- * @note		The the variable already exist, it will be overwritten if not 
- * 				a protected variable. If it is a protected variable, it will
- * 				remains unchanged.
+ * @note		The the variable already exist, it will be overwritten 
  */
 int add_to_tree(t_tree tree, char* name, void* value, t_types type, t_rights right);
 
@@ -167,6 +165,8 @@ void add_tree_to_tree(t_tree tree1, t_tree tree2);
 
 
 void free_tree(t_tree tree);
+
+t_string extract_last_part(t_string string);
 
 
 // FOR DEBUG USE ONLY
