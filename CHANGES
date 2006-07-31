@@ -1,3 +1,10 @@
+Mon Jul 31 09:09:24 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - dstate-hal.ch, main-hal.ch, configure.in, drivers/Makefile.in:
+   quick and dirty hack to wrap HAL communication and make a first
+   try with newhidups. This will then be propagated to other drivers
+   (at least USB, then serial) and improved.
+
 Wed Jul 12 10:47:43 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - genericups: merge type 23 into type 22
