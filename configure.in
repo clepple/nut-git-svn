@@ -728,6 +728,17 @@ AC_ARG_ENABLE(pkg-config,
 	fi
 ])
 
+# HAL specific
+# PKG_CHECK_MODULES(HAL, hal)
+AC_MSG_CHECKING(whether to enable HAL support)
+if ( test "$USE_PKG_CFG" = yes )
+then
+	AC_MSG_RESULT(yes)
+	HAL_CFLAGS=`pkg-config --cflags hal`
+	HAL_LIBS=`pkg-config --libs hal`
+else
+	AC_MSG_RESULT(yes)
+fi
 
 # 'long long' check - this gets used down in snprintf.o
 #
@@ -780,5 +791,7 @@ AC_SUBST(USB_NOTIFICATION_DISABLED)
 AC_SUBST(WORDS_BIGENDIAN)
 AC_SUBST(PKG_CFG_DIR)
 AC_SUBST(USE_PKG_CFG)
+AC_SUBST(HAL_CFLAGS)
+AC_SUBST(HAL_LIBS)
 
 AC_OUTPUT(clients/Makefile conf/Makefile data/Makefile data/html/Makefile data/html/header.html drivers/Makefile server/Makefile Makefile common/Makefile man/Makefile lib/Makefile lib/libupsclient-config lib/libupsclient.pc scripts/hotplug/libhidups)

@@ -17,9 +17,14 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef UPS_HANDLER_H_SEEN
+#define UPS_HANDLER_H_SEEN 1
+
 /* structure for funcs that get called by msg parse routine */
 struct ups_handler
 {
 	int	(*setvar)(const char *, const char *);
 	int	(*instcmd)(const char *, const char *);
 };
+
+#endif /* UPS_HANDLER_H_SEEN */

@@ -107,6 +107,15 @@ install-usb:
 	@cd drivers; $(MAKE) install-usb; cd ..;
 	@cd man; $(MAKE) install-usb-man; cd ..;
 
+hal: build-hal
+
+build-hal:
+	@cd drivers; $(MAKE) build-hal; cd ..;
+
+#install-hal:
+#	@cd drivers; $(MAKE) install-hal; cd ..;
+#	@cd man; $(MAKE) install-usb-man; cd ..;
+
 snmp: build-snmp
 
 build-snmp:
