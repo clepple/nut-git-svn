@@ -38,6 +38,18 @@ typedef struct _t_enum_string {
 	struct _t_enum_string * next_value; 
 } *t_enum_string;
 
+/**
+ * Enumeration of the rights possible for a tree node
+ */
+typedef enum {
+	invalid_right,
+	all_rw,
+	all_r,
+	all_r_admin_rw,
+	admin_rw,
+	admin_r,
+} t_rights;
+
 typedef enum {
 	standalone,
 	net_server,
@@ -184,6 +196,8 @@ t_enum_string search_in_enum_string(t_enum_string enum_string, t_string value);
  */
 t_string enum_string_to_string(t_enum_string enum_string);
 
+t_string right_to_string(t_rights right);
+t_rights string_to_right(t_string s);
 t_string user_type_to_string(t_user_types type);
 t_user_types string_to_user_type(t_string s);
 t_modes string_to_mode(t_string s);

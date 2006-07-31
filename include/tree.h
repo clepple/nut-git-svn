@@ -57,15 +57,6 @@
 
 #include "data_types.h"
 
-/**
- * Enumeration of the rights possible for a tree node
- */
-typedef enum {
-	all_rw,
-	all_r,
-	admin_rw,
-	admin_r
-} t_rights;
 
 /**
  * Structure that represente a tree. 
@@ -131,6 +122,8 @@ int add_to_tree(t_tree tree, char* name, void* value, t_types type, t_rights rig
  * 				if it was a protected variable, null pointer is returned
  */
 t_tree tree_search(t_tree tree, char* name, int admin);
+
+void modify_node_right(t_tree node, t_rights new_rights);
 
 /**
  * Modify the value of the node of a tree

@@ -129,7 +129,8 @@ t_tree go_to_node(t_tree tree, char* name) {
 	
 	if (tree == 0) {
 		// Non initialized tree
-		pconf_fatal_error("in go_to_node : Non initialized tree");
+		pconf_error("in go_to_node : Non initialized tree");
+		return 0;
 	}
 	
 	if (strcmp(tree->name, name) == 0) {
@@ -143,7 +144,8 @@ t_tree go_to_node(t_tree tree, char* name) {
 	next_step = extract_next_part(name, tree->name);
 	if (next_step == 0) {
 		// paths don't match
-		pconf_fatal_error("in go_to_node : path don't match");
+		pconf_error("in go_to_node : path don't match");
+		return 0;
 	}
 	
 	next_tree = tree->son;
@@ -175,7 +177,8 @@ t_tree go_to_node_or_create(t_tree tree, char* name) {
 	
 	if (tree == 0) {
 		// Non initialized tree
-		pconf_fatal_error("in go_to_node_or_create : Non initialized tree");
+		pconf_error("in go_to_node_or_create : Non initialized tree");
+		return 0;
 	}
 	
 	if (strcmp(tree->name, name) == 0) {
@@ -189,7 +192,8 @@ t_tree go_to_node_or_create(t_tree tree, char* name) {
 	next_step = extract_next_part(name, tree->name);
 	if (next_step == 0) {
 		// paths don't match
-		pconf_fatal_error("in go_to_node_or_create : paths don't match");
+		pconf_error("in go_to_node_or_create : paths don't match");
+		return 0;
 	}
 	
 	next_tree = tree->son;
@@ -229,19 +233,44 @@ int add_to_tree(t_tree tree, char* name, void* value, t_types type, t_rights rig
 	
 	node = go_to_node_or_create(tree, name);
 	
+	if (node == 0) {
+		return 0;
+	}
+	
+	modify_node_right(node, admin_rw);
+	
 	res = modify_node_value(node, value, type, 1);
 	
-	node->right = right;
+	modify_node_right(node, right);
 	
 	return res;
 }
 
+void modify_node_right(t_tree node, t_rights new_rights) {
+	if (node == 0) return;
+	
+	node->right = new_rights;
+}
 
 int modify_node_value(t_tree node, void* new_value, t_types new_type, int admin) {
-	if (node == 0) {
-		pconf_fatal_error("in modify_node_value : Trying to modify null pointer");
-	}
+	
+	if (node == 0) return 0;
+	
+	if (!admin && (node->right != all_rw)) return 0;
+	
+	if (admin && (node->right != admin_rw) && (node->right != all_r_admin_rw)) return 0;
+	
 	if (new_value != 0) {
+		// Free the old value
+		if (node->has_value) {
+			switch(node->type) {
+				case string_type :
+					free(node->value.string_value);
+					break;
+				case enum_string_type :
+					free(node->value.enum_string_value);
+			}
+		}
 		node->has_value = 1;
 		switch(new_type) {
 			case string_type :
@@ -356,35 +385,21 @@ void add_tree_to_tree(t_tree tree1, t_tree tree2) {
 // FOR DEBUG USE ONLY
 void print_tree(t_tree tree){
 	t_tree son;
-	t_string rights, s;
+	t_string s;
 	
 	if (tree == 0) return;
 	
 	if (tree->has_value) {
-		switch(tree->right) {
-			case all_rw :
-				rights = string_copy("s");
-				break;
-			case all_r :
-				rights = string_copy("");
-				break;
-			case admin_rw :
-				rights = string_copy("s*");
-				break;
-			case admin_r :
-				rights = string_copy("*");
-		}
 		switch(tree->type) {
 			case string_type :
-				printf("%s = \"%s\" %s\n", tree->name, tree->value.string_value, rights);
+				printf("%s = \"%s\" %s\n", tree->name, tree->value.string_value, right_to_string(tree->right));
 				break;
 			case enum_string_type :
 				s = enum_string_to_string(tree->value.enum_string_value);
 				strlen(s);
-				printf("%s = { %s } %s\n", tree->name, s, rights);
+				printf("%s = { %s } %s\n", tree->name, s, right_to_string(tree->right));
 				free(s);
 		}
-		free(rights);
 	} else {
 		printf("%s\n", tree->name);
 	}

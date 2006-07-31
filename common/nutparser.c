@@ -2,7 +2,7 @@
 
    Copyright (C) 2006 Jonathan Dion <dion.jonathan@gmail.com>
 
-	This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
+   This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -31,10 +31,6 @@
 #include "tree.h"
 #include "stack.h"
 
-// Define the max size of words
-#define BUFFER_SIZE 200
-// Define the max depth of imbrication of the configuration file
-#define STACK_SIZE  50
 
 /**
  * Structure of a context 
@@ -145,7 +141,7 @@ void pconf_error(char* errtxt) {
 // Syntax error are considered fatal, so it use pconf_fatal_error
 // (and thus exit)
 void pconf_syntax_error(lex_types lex) {
-	t_string s = (t_string)xmalloc(sizeof(char)* (100 + strlen(parser_ctx->filename) + strlen(parser_ctx->filename)));
+	t_string s = (t_string)xmalloc(sizeof(char)* (100 + strlen(parser_ctx->filename) + strlen(parser_ctx->buffer)));
 	if (lex == WORD) {
 		sprintf(s, "syntax error : In %s, line %d : Unexpected word \"%s\" found. Stoping parsing", 
 				parser_ctx->filename, 
@@ -193,7 +189,7 @@ int is_valid_char_for_word(char c) {
 }
 
 int is_valid_char_for_rights(char c) {
-	return c == 's' || c == '*' ;
+	return c == 'r' || c == 'w' || c == '*' ;
 }
 
 // The base function.
@@ -268,33 +264,22 @@ void increase_context(t_string s) {
 }
 
 // Open a file
-void open_file(t_string filename) {
+void parser_open_file(t_string filename) {
 	t_string complete_filename, s;
 	
-	// If the filename is not an absolute name, considers the path
-	// is the default configuration path
-	if (filename[0] != '/') {
-		complete_filename = (t_string)xmalloc(sizeof(char)*(strlen(CONFPATH) + strlen(filename) + 2));
-		sprintf(complete_filename, "%s/%s", CONFPATH, filename);
-	} else {
-		complete_filename = string_copy(filename);
-	}
-	
 	// Open the file
-	parser_ctx->conf_file = fopen(complete_filename, "r");
+	parser_ctx->conf_file = fopen(filename, "r");
 	
 	if (parser_ctx->conf_file == 0) {
 		// If there were an error, signal it
-		s = (t_string)xmalloc(sizeof(char)*(strlen(complete_filename) + 100));
-		sprintf(s,"Unable to open the configuration file (\"%s\").", complete_filename);
-		free(complete_filename);
+		s = (t_string)xmalloc(sizeof(char)*(strlen(filename) + 100));
+		sprintf(s,"Unable to open the configuration file (\"%s\").", filename);
 		free(s);
 		pconf_error(s);
 	}
 	
 	// Update the filename in the context structure
-	parser_ctx->filename = string_copy(complete_filename);
-	free(complete_filename);
+	parser_ctx->filename = string_copy(filename);
 }
 
 // Parse a string value
@@ -387,19 +372,11 @@ void parse_rights() {
 			parser_ctx->rights = all_r;
 			break;
 		case WORD :
-			if (strcmp(parser_ctx->buffer, "s") == 0) {
-				parser_ctx->rights = all_rw;
-				break;
+			parser_ctx->rights = string_to_right(parser_ctx->buffer);
+			if (parser_ctx->rights == invalid_right) {
+				pconf_syntax_error(lex);
 			}
-			if (strcmp(parser_ctx->buffer, "*") == 0) {
-				parser_ctx->rights = admin_r;
-				break;
-			}
-			if (strcmp(parser_ctx->buffer, "s*") == 0) {
-				parser_ctx->rights = admin_rw;
-				break;
-			}
-			pconf_syntax_error(lex);
+			break;
 		case EOL :
 			parser_ctx->rights = all_r;
 			ungetc('\n', parser_ctx->conf_file);
@@ -448,6 +425,7 @@ void parse_equal() {
 						enum_string,
 						enum_string_type,
 						parser_ctx->rights);
+			free_enum_string(enum_string);
 			break;
 		default :
 			pconf_syntax_error(lex);
@@ -587,7 +565,7 @@ void parse_include () {
 	((t_context*)stack_front(context_stack))->line_number = parser_ctx->line_number + 1;
 	
 	// Try to open the file
-	open_file(s);
+	parser_open_file(s);
 	
 	free(s);
 	
@@ -720,18 +698,19 @@ t_tree parse_conf(t_string filename, void errhandler(const char*)) {
 	
 	// Opening configuration file
 	if (filename != 0) {
-		open_file(filename);
+		parser_open_file(filename);
 	} else { 
 		// If no filename provided, open default configuration file
 		s = (t_string)xmalloc(sizeof(char)*(strlen(CONFPATH)+ 10));
 		sprintf(s,"%s/nut.conf", CONFPATH);
-		open_file(s);
+		parser_open_file(s);
 		free(s);
 	}
 	
 	// Was the opening a succes ?
 	if (parser_ctx->conf_file == 0) {
-		pconf_fatal_error("No configuration file opened. Aborting");
+		pconf_error("No configuration file opened. Aborting");
+		return 0;
 	}
 	
 	conf_tree = new_node("nut",0,0);

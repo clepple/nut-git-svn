@@ -1,3 +1,16 @@
+Mon Jul 31 16:17:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
+
+ - common/data_types.ch : added some conversion functions
+ - nutparser.ch : some minor changes
+ - tree.ch : functions do not anymore exit on error but return an error value
+ - data/base_config : a new directory containing template to generate configuration files
+ - lib/libupsconfig.ch : lot of little changes. functions do not anymore exit on error 
+   but return an error value.
+ - utils/upsconfig.c : creation of this tool.
+   * utils/Makefile.in added too.
+ - configure.in : added a rule to make utils/Makefile
+ - Makefile.in : added the utils directory in the SUBDIR variable
+
 Wed Jul 26 17:03:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
 
  - data_types.ch : moving in some functions that should be here and not elsewhere

@@ -22,11 +22,16 @@
 */
  
 
-#ifndef PARSECONF_H_
-#define PARSECONF_H_
+#ifndef NUTPARSER_H_
+#define NUTPARSER_H_
 
 #include <stdio.h>
 #include "tree.h"
+
+// Define the max size of words
+#define BUFFER_SIZE 200
+// Define the max depth of imbrication of the configuration file
+#define STACK_SIZE  50
 
 /**
  * Print an error message and then exit
@@ -52,4 +57,4 @@ void pconf_error(char* errtxt);
  */
 t_tree parse_conf(t_string filename, void errhandler(const char*));
 
-#endif /*PARSECONF_H_*/
+#endif /*NUTPARSER_H_*/

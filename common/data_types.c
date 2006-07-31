@@ -181,6 +181,30 @@ t_string enum_string_to_string(t_enum_string enum_string) {
 	return string;
 }
 
+t_string right_to_string(t_rights right) {
+	
+	switch (right) {
+		case all_rw : return "rw";
+		case all_r : return "r";
+		case admin_rw : return "r*w*";
+		case admin_r : return "r*";
+		case all_r_admin_rw : return "rw*";
+		default : return "";
+	}
+}
+
+t_rights string_to_right(t_string s) {
+	if ((strcmp(s,"rw") == 0) ||
+		(strcmp(s,"w") == 0)) return all_rw;
+	if ((strcmp(s,"r") == 0) ||
+		(strcmp(s,"") == 0))	return all_r;
+	if (strcmp(s,"r*w*") == 0) return admin_rw;
+	if (strcmp(s,"r*") == 0) return admin_r;
+	if ((strcmp(s,"rw*") == 0) ||
+		(strcmp(s,"w*") == 0)) return all_r_admin_rw;
+	else return invalid_right;
+}
+
 t_string user_type_to_string(t_user_types type) {
 	switch (type) {
 		case admin : return "admin";

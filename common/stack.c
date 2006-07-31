@@ -1,6 +1,8 @@
 /* stack.c - Implementation of generic stack
 
    Copyright (C) 2006 Jonathan Dion <dion.jonathan@gmail.com>
+   
+   This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by

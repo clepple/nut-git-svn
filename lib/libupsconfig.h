@@ -27,9 +27,10 @@
  
 
 void new_config();
-void load_config(t_string filename);
+int load_config(t_string filename, void errhandler(const char*));
+void drop_config();
 
-void save_config(t_string directory, boolean single);
+int save_config(t_string directory_dest, t_string comm_filename, boolean single, void errhandler(const char*));
 
 t_modes get_mode();
 void set_mode(t_modes mode);
@@ -83,14 +84,16 @@ void set_reject(t_enum_string acllist);
 int get_maxage();
 void set_maxage(int value);
 
-int get_monitor_rules_number();
+int get_number_of_monitor_rules();
 void add_monitor_rule(t_string upsname, t_string host, int powervalue, t_string username);
 int remove_monitor_rule(int rulenumber);
 int search_monitor_rule(int rulenumber);
 t_string get_monitor_ups();
-t_string get_minotor_host();
+t_string get_monitor_host();
 int get_monitor_powervalue();
+void set_monitor_powervalue(int value);
 t_string get_monitor_user();
+void set_monitor_user(t_string username);
 t_string get_shutdown_command();
 void set_shutdown_command(t_string command);
 t_flags get_notify_flag(t_notify_events event);
