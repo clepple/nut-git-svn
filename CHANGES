@@ -1,3 +1,16 @@
+Tue Aug 01 12:18:33 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - dstate-hal.c: complete data
+ - main-hal.c: defaults to haldaemon user, and add a delay before
+   starting the communication (race condition between udev and HAL)
+
+Mon Jul 31 09:09:24 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - drivers/Makefile.in: add the rules for hald-addon-bcmxcp_usb
+   and hald-addon-tripplite_usb.
+ - 20-ups-nut-device.fdi: add this file in scripts/hal to create
+   matchers for HAL for all NUT supported USB UPSs.
+
 Mon Jul 31 09:09:24 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - dstate-hal.ch, main-hal.ch, configure.in, drivers/Makefile.in:

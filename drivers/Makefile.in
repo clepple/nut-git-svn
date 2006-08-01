@@ -34,17 +34,19 @@ USB_DRIVER_LIST = @USB_DRIVER_LIST@
 LIBUSB_CFLAGS = @LIBUSB_CFLAGS@
 LIBUSB_LIBS = @LIBUSB_LIBS@
 
-# HAL specific
-HAL_CFLAGS = @HAL_CFLAGS@
-HAL_LIBS = @HAL_LIBS@
-
 all: $(DRIVER_BUILD_LIST) upsdrvctl
 
 all-drivers: $(PROGS) mge-shut dummy-ups
 
 build-usb: $(USB_DRIVER_LIST)
 
-build-hal: hald-addon-usbhid-ups
+# HAL specific
+HAL_CFLAGS = @HAL_CFLAGS@
+HAL_LIBS = @HAL_LIBS@
+
+# FIXME: use $(USB_DRIVER_LIST) and $(PROGS) + some gendb magic
+HAL_DRIVER_LIST = hald-addon-usbhid-ups hald-addon-bcmxcp_usb hald-addon-tripplite_usb
+build-hal: $(HAL_DRIVER_LIST)
 
 # ==========================================================================
 # Driver build details
@@ -115,21 +117,6 @@ kebo-hid.o tripplite_usb.o bcmxcp_usb.o nut_usb.o:
 	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -c $<
 
 # ==========================================================================
-# Special case: newhidups driver - HAL development version
-
-hald-addon-usbhid-ups: newhidups.o main-hal.o dstate-hal.o \
-		../common/upsconf.o ../common/parseconf.o $(LIBDEP) \
-		$(STRLCPY) libhid.o libusb.o hidparser.o \
-		$(NEWHIDUPS_SUBDRIVERS)
-	$(CC) $(CFLAGS) -o $@ newhidups.o main-hal.o dstate-hal.o \
-		../common/upsconf.o ../common/parseconf.o \
-		$(LIBOBJ) $(LIBUSB_LIBS) $(HAL_LIBS) $(LDFLAGS) \
-		libhid.o libusb.o hidparser.o $(NEWHIDUPS_SUBDRIVERS)
-
-main-hal.o dstate-hal.o:
-	$(CC) $(CFLAGS) $(HAL_CFLAGS) -c $<
-
-# ==========================================================================
 # Special case: tripplite_usb driver - development version (early beta)
 
 tripplite_usb: tripplite_usb.o main.o dstate.o ../common/state.o \
@@ -149,6 +136,36 @@ bcmxcp_usb: bcmxcp.o bcmxcp_usb.o nut_usb.o main.o dstate.o ../common/state.o \
 		../common/parseconf.o \
 		$(LIBOBJ) $(LIBUSB_LIBS) $(LDFLAGS)
 
+# ==========================================================================
+# Special case: HAL drivers - development version
+
+hald-addon-usbhid-ups: newhidups.o main-hal.o dstate-hal.o \
+		../common/upsconf.o ../common/parseconf.o $(LIBDEP) \
+		$(STRLCPY) libhid.o libusb.o hidparser.o \
+		$(NEWHIDUPS_SUBDRIVERS)
+	$(CC) $(CFLAGS) -o $@ newhidups.o main-hal.o dstate-hal.o \
+		../common/upsconf.o ../common/parseconf.o \
+		$(LIBOBJ) $(LIBUSB_LIBS) $(HAL_LIBS) $(LDFLAGS) \
+		libhid.o libusb.o hidparser.o $(NEWHIDUPS_SUBDRIVERS)
+
+hald-addon-tripplite_usb: tripplite_usb.o main-hal.o dstate-hal.o \
+		../common/upsconf.o ../common/parseconf.o $(LIBDEP) \
+		$(STRLCPY) libhid.o libusb.o hidparser.o
+	$(CC) $(CFLAGS) -o $@ tripplite_usb.o main-hal.o dstate-hal.o \
+		../common/upsconf.o ../common/parseconf.o \
+		$(LIBOBJ) $(LIBUSB_LIBS) $(HAL_LIBS) $(LDFLAGS) \
+		-lm libhid.o libusb.o hidparser.o
+
+hald-addon-bcmxcp_usb:  bcmxcp.o bcmxcp_usb.o nut_usb.o main-hal.o \
+		dstate-hal.o ../common/upsconf.o ../common/parseconf.o \
+		$(LIBDEP) $(STRLCPY)
+	$(CC) $(CFLAGS) -o $@ bcmxcp.o bcmxcp_usb.o nut_usb.o \
+		main-hal.o dstate-hal.o ../common/upsconf.o \
+		../common/parseconf.o \
+		$(LIBOBJ) $(LIBUSB_LIBS) $(HAL_LIBS) $(LDFLAGS)
+
+main-hal.o dstate-hal.o:
+	$(CC) $(CFLAGS) $(HAL_CFLAGS) -c $<
 
 # ==========================================================================
 # Special case: mge-shut driver
@@ -233,7 +250,7 @@ depend Makefile.drvbuild:
 
 clean:
 	rm -f *~ *.o $(PROGS)
-	rm -f dummy-ups snmp-ups $(USB_DRIVER_LIST) mge-shut upsdrvctl
+	rm -f dummy-ups snmp-ups $(USB_DRIVER_LIST) $(HAL_DRIVER_LIST) mge-shut upsdrvctl
 
 distclean: clean
 

@@ -728,16 +728,16 @@ AC_ARG_ENABLE(pkg-config,
 	fi
 ])
 
-# HAL specific
-# PKG_CHECK_MODULES(HAL, hal)
+# HAL specific - requires pkg-config
+# FIXME: use PKG_CHECK_MODULES(HAL, hal)
 AC_MSG_CHECKING(whether to enable HAL support)
 if ( test "$USE_PKG_CFG" = yes )
 then
 	AC_MSG_RESULT(yes)
-	HAL_CFLAGS=`pkg-config --cflags hal`
-	HAL_LIBS=`pkg-config --libs hal`
+	HAL_CFLAGS=`pkg-config --silence-errors --cflags hal`
+	HAL_LIBS=`pkg-config --silence-errors --libs hal`
 else
-	AC_MSG_RESULT(yes)
+	AC_MSG_RESULT(no)
 fi
 
 # 'long long' check - this gets used down in snprintf.o

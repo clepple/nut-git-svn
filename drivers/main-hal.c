@@ -19,12 +19,6 @@
 */
 
 
-/* AQ notes:
- * check addon-usb-csr.c (libusb based)
- * hal/fdi/information/10freedesktop/10-wireless-mice.fdi
- * => 20thirdparty - device information files from the device manufacturer and installed from media accompanying the hardware
- */
-
 #include "main.h"
 #include "dstate-hal.h"
 #include <hal/libhal.h>
@@ -473,8 +467,8 @@ int main(int argc, char **argv)
 
         /* pick up a default from configure --with-user */
         /*user = xstrdup(RUN_AS_USER);*/	/* xstrdup: this gets freed at exit */
-        /* FIXME: keep running as root for HAL (needed?) */
-	user = xstrdup("root");	/* xstrdup: this gets freed at exit */
+        /* FIXME: get the HAL username somewhere (pkg-config or) */
+	user = xstrdup("haldaemon");	/* xstrdup: this gets freed at exit */
 
 	upsdrv_banner();
 
@@ -500,11 +494,18 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-        /* FIXME */
+	/* FIXME: rework HAL param interface! or get path/regex from UDI? */
         device_path = xstrdup("auto"); /*getenv ("HAL_PROP_HIDDEV_DEVICE"); */
         nut_debug_level = 5;
 	
-	
+	/* needed to avoid udev/hal race condition */
+	/* otherwise, hal start this addon while the rights */
+	/* are not yet set. */
+	/* FIXME: check if it's due to the current udev through */
+	/* hotplug shell script perms settings (maybe too slow?) */
+	sleep (2);
+
+	/* end of HAL init */
 	
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();

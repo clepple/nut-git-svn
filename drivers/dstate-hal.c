@@ -50,19 +50,6 @@ LibHalContext *ctx;
 const char *udi;
 DBusError error;
 
-/* HAL fdi data
- * newhidups		=> MGE		0x463:0001,ffff
- * newhidups		=> APC		0x051d:
- * newhidups		=> Belkin	0x050d:
- * newhidups		=> CyberPower	0x0764:
- * newhidups		=> TrippLite	0x09ae:0x2005
- * tripplite_usb	=> TrippLite	0x09ae:????? => Charles
- * bcmxcp_usb		=> 
- *ev->descriptor.idVendor == 0x0592 ||
-                             dev->descriptor.idVendor == 0x06da) &&
-                            dev->descriptor.idProduct == 0x0002)
- */
-
 /* Structure to lookup between NUT and HAL */
 typedef struct {
 	char	*nut_name;		/* NUT variable name */
@@ -104,40 +91,6 @@ int convert_to_int(char *value)
 	return intValue;
 }
 
-#if 0
-  // FIXME: to be processed (need possible NUT extension)
-	case FIXME: not present in NUT "battery.present":
-		libhal_device_set_property_bool (
-			ctx, udi, "battery.present", uref.value != 0, &error);
-		break;
-
-	case ???:
-		libhal_device_set_property_string (
-			ctx, udi, "foo", 
-			ups_get_string (fd, uref.value), &error);
-		break;
-
-	case UPS_RECHARGEABLE:
-		libhal_device_set_property_bool (
-			ctx, udi, "battery.is_rechargeable", uref.value != 0, &error);
-		break;
-
-	case "???":
-		libhal_device_set_property_int (
-			ctx, udi, "battery.charge_level.design", uref.value, &error);
-		libhal_device_set_property_int (
-			ctx, udi, "battery.charge_level.last_full", uref.value, &error);
-		libhal_device_set_property_int (
-			ctx, udi, "battery.reporting.design", uref.value, &error);
-		libhal_device_set_property_int (
-			ctx, udi, "battery.reporting.last_full", uref.value, &error);
-		break;
-
-	default:
-						break;
-#endif
-
-
 /********************************************************************
  * dstate compatibility interface
  *******************************************************************/
@@ -151,17 +104,41 @@ void dstate_init(const char *prog, const char *port)
 	libhal_device_set_property_string (
 			ctx, udi, "battery.reporting.unit", "percent", &error);
 
-        /* UPS are always rechargeable! */
-        /* FIXME: Check for NUT extension however: UPS.PowerSummary.Rechargeable
+	/* Various UPSs assumptions */
+	/****************************/
+	/* UPS are always rechargeable! */
+        /* FIXME: Check for NUT extension however: ie HID->UPS.PowerSummary.Rechargeable
          * into battery.rechargeable
+	 * or always expose it?
          */
-        libhal_device_set_property_bool (
-            ctx, udi, "battery.is_rechargeable", TRUE, &error);
+	libhal_device_set_property_bool (
+		ctx, udi, "battery.is_rechargeable", TRUE, &error);
+
+	/* UPS always has a max battery charge of 100 % */
+	libhal_device_set_property_int (
+		ctx, udi, "battery.charge_level.design", 100, &error);
+	libhal_device_set_property_int (
+		ctx, udi, "battery.charge_level.last_full", 100, &error);
+	libhal_device_set_property_int (
+		ctx, udi, "battery.reporting.design", 100, &error);
+	libhal_device_set_property_int (
+		ctx, udi, "battery.reporting.last_full", 100, &error);
+
+	/* UPS always have a battery! */
+	/* Note(AQU): wrong with some solar panel usage, where the UPS */
+	/* is just an energy source switch! */
+	/* FIXME: to be processed (need possible NUT extension) */
+	libhal_device_set_property_bool (ctx, udi, "battery.present", TRUE, &error);
 
 	/* Set generic properties */
-	libhal_device_set_property_bool (ctx, udi, "battery.present", TRUE, &error);
 	libhal_device_set_property_string (ctx, udi, "battery.type", "ups", &error);
 	libhal_device_add_capability (ctx, udi, "battery", &error);
+	
+	/* FIXME: what's that? (from addon-hidups) */
+	/* UPS_DEVICENAME
+	libhal_device_set_property_string (
+	ctx, udi, "foo", ups_get_string (fd, uref.value), &error); */
+
 }
 
 
@@ -191,6 +168,7 @@ int dstate_setinfo(const char *var, const char *fmt, ...)
 						atoi(value), &error);
 				break;
 			case HAL_TYPE_BOOL:
+				/* FIXME: howto lookup TRUE/FALSE? */
 				libhal_device_set_property_bool (ctx, udi, nut2hal_info->hal_name, TRUE, &error);
 				break;
 			case HAL_TYPE_STRING:
@@ -247,9 +225,12 @@ void status_set(const char *buf)
 {
 	upsdebugx(2, "status_set: %s\n", buf);
 
+	/* Note: only newhidups supported devices expose [DIS]CHRG status */
+	/* along with the standard OL (online) / OB (on battery) status! */
 	if ( (strcmp(buf, "DISCHRG") == 0) || (strcmp(buf, "OB") == 0) )
 	{
 		/* Set AC present status */
+		/* Note: UPSs are also AC adaptors! */
 		libhal_device_set_property_bool (ctx, udi,
 				"ac_adaptor.present", FALSE, &error);
 
@@ -264,6 +245,7 @@ void status_set(const char *buf)
 	else if ( (strcmp(buf, "CHRG") == 0) || (strcmp(buf, "OL") == 0) )
 	{
 		/* Set AC present status */
+		/* Note: UPSs are also AC adaptors! */
 		libhal_device_set_property_bool (ctx, udi,
 				"ac_adaptor.present", TRUE, &error);
 
@@ -290,6 +272,7 @@ void status_commit(void)
 
 void dstate_addcmd(const char *cmdname)
 {
+	/* Nothing to do? */
 	return;
 }
 
@@ -310,8 +293,7 @@ static info_lkp_t *find_nut_info(const char *nut_varname, info_lkp_t *prev_info_
 	
 	if (prev_info_item != NULL) {
 		/* Start from the item following prev_info_item */
-		info_item = prev_info_item;
-		info_item++;
+		info_item = ++prev_info_item;
 	}
 	else {
 		info_item = nut2hal;
