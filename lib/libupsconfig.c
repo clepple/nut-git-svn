@@ -469,7 +469,7 @@ t_modes get_mode() {
 	
 	t = tree_search(conf, "nut.mode", TRUE);
 	if (t != 0 && t->has_value && t->type == string_type) {
-		current.rights_in = t->right;
+		current.rights_out = t->right;
 		return string_to_mode(t->value.string_value);
 	}
 	return -1;
@@ -477,12 +477,11 @@ t_modes get_mode() {
 
 void set_mode(t_modes mode) {
 	t_string s;
-	t_tree t;
 	
-	s = mode_to_string(mode);
-	add_to_tree(conf, "nut.mode", s, string_type, current.rights_in);
-	t = tree_search(conf, "nut.mode", TRUE);
-	
+	if (current.rights_in != invalid_right) {
+		s = mode_to_string(mode);
+		add_to_tree(conf, "nut.mode", s, string_type, current.rights_in);
+	}
 	
 }
 
@@ -511,7 +510,7 @@ t_enum_string get_ups_list() {
 		enum_string = 0;
 		while (t != 0) {
 			s = extract_last_part(t->name);
-			add_to_enum_string(enum_string, s);
+			enum_string = add_to_enum_string(enum_string, s);
 			free(s);
 			t = t->next_brother;
 		}
@@ -523,7 +522,6 @@ t_enum_string get_ups_list() {
 
 void add_ups(t_string upsname, t_string driver, t_string port) {
 	t_string s;
-	t_tree t;
 	
 	s = xmalloc(sizeof(char) * ( 31 + strlen(upsname)));
 	sprintf(s, "nut.ups.%s.driver.name", upsname); 
@@ -531,8 +529,7 @@ void add_ups(t_string upsname, t_string driver, t_string port) {
 	sprintf(s, "nut.ups.%s.driver.parameter.port", upsname);
 	add_to_tree(conf, s, port, string_type, current.rights_in);
 	sprintf(s, "nut.ups.%s", upsname);
-	t = tree_search(conf, s, TRUE);
-	current.ups = t;
+	current.ups = tree_search(conf, s, TRUE);
 	free(s);
 }
 
@@ -542,9 +539,9 @@ int remove_ups(t_string upsname) {
 	
 	s = xmalloc(sizeof(char) * ( 9 + strlen(upsname)));
 	sprintf(s, "nut.ups.%s", upsname);
+	if (tree_search(conf,s, TRUE) == current.ups) current.ups = 0;
 	i = del_from_tree(conf, s);
 	free(s);
-	current.ups = 0;
 	return i;
 	
 }
@@ -576,7 +573,8 @@ t_string get_ups_name() {
 }
 
 void set_ups_name(t_string upsname) {
-	if (current.ups != 0) {
+	if (current.ups != 0 && current.rights_in != invalid_right) {
+		
 		free(current.ups->name);
 		current.ups->name = string_copy(upsname);
 	}	
@@ -600,7 +598,7 @@ t_string get_driver() {
 void set_driver(t_string driver) {
 	t_string s;
 	
-	if (current.ups != 0) {
+	if (current.ups != 0 && current.rights_in != invalid_right) {
 		s = xmalloc(sizeof(char) * (strlen(current.ups->name) + 13));
 		sprintf( s, "%s.driver.name", current.ups->name);
 		add_to_tree(conf, s, driver, string_type, current.rights_in);
@@ -618,6 +616,7 @@ t_string get_port() {
 		t = tree_search(conf, s, TRUE);
 		free(s);
 		if (t == 0) return 0;
+		current.rights_out = t->right;
 		return string_copy(t->value.string_value);
 	}
 	return 0;
@@ -626,7 +625,7 @@ t_string get_port() {
 void set_port(t_string driver) {
 	t_string s;
 	
-	if (current.ups != 0) {
+	if (current.ups != 0 && current.rights_in != invalid_right) {
 		s = xmalloc(sizeof(char) * (strlen(current.ups->name) + 23));
 		sprintf( s, "%s.driver.parameter.port", current.ups->name);
 		add_to_tree(conf, s, driver, string_type, current.rights_in);
@@ -644,18 +643,23 @@ t_string get_desc() {
 		t = tree_search(conf, s, TRUE);
 		free(s);
 		if (t == 0) return 0;
+		current.rights_out = t->right;
 		return string_copy(t->value.string_value);
 	}
 	return 0;
 }
 
-void set_desc(t_string driver) {
+void set_desc(t_string desc) {
 	t_string s;
 	
-	if (current.ups != 0) {
+	if (current.ups != 0 && current.rights_in != invalid_right) {
 		s = xmalloc(sizeof(char) * (strlen(current.ups->name) + 6));
 		sprintf( s, "%s.desc", current.ups->name);
-		add_to_tree(conf, s, driver, string_type, current.rights_in);
+		if (desc == 0) {
+			del_from_tree(conf, s);
+		} else {
+			add_to_tree(conf, s, desc, string_type, current.rights_in);
+		}
 		free(s);
 	}
 }
@@ -676,7 +680,7 @@ t_enum_string get_driver_parameter_list() {
 		if (t ==0) return 0;
 		t = t->son;
 		while (t !=0) {
-			add_to_enum_string(enum_string, t->name);
+			enum_string = add_to_enum_string(enum_string, extract_last_part(t->name));
 			t = t->next_brother;
 		}
 		return enum_string;
@@ -685,26 +689,37 @@ t_enum_string get_driver_parameter_list() {
 	return 0;
 }
 
-t_string get_driver_parameter(t_string paramname) {
+t_typed_value get_driver_parameter(t_string paramname) {
 	t_tree t;
 	t_string s;
+	t_typed_value value;
 	
 	if (current.ups != 0) {
-		s = xmalloc(sizeof(char) * (strlen(current.ups->name) + strlen(paramname) + 17));
-		sprintf( s, "%s.desc.parameter.%s", current.ups->name, paramname);
+		s = xmalloc(sizeof(char) * (strlen(current.ups->name) + strlen(paramname) + 21));
+		sprintf( s, "%s.driver.parameter.%s", current.ups->name, paramname);
 		t = tree_search(conf, s, TRUE);
 		free(s);
-		if (t == 0) return 0;
-		return string_copy(t->value.string_value);
+		if (t == 0) {
+			value.has_value = FALSE;
+			return value;
+		}
+		value.has_value = t->has_value;
+		if (value.has_value) {
+			value.value = t->value;
+			value.type = t->type;
+		}
+		current.rights_out = t->right;
+		return value;
 	}
-	return 0;
+	value.has_value = FALSE;
+	return value;
 }
 
 void set_driver_parameter(t_string paramname, void* value, t_types type) {
 	t_string s;
 	
-	if (current.ups != 0) {
-		s = xmalloc(sizeof(char) * (strlen(paramname) + strlen(current.ups->name) + 19));
+	if (current.ups != 0 && current.rights_in != invalid_right) {
+		s = xmalloc(sizeof(char) * (strlen(paramname) + strlen(current.ups->name) + 21));
 		sprintf(s, "%s.driver.parameter.%s", current.ups->name, paramname);
 		if (value == 0) {
 			del_from_tree(conf, s);
@@ -715,25 +730,76 @@ void set_driver_parameter(t_string paramname, void* value, t_types type) {
 	}	
 }
 
-t_string get_ups_variable(t_string varname) {
+t_enum_string get_ups_variable_list() {
+	t_enum_string enum_string;
+	t_tree t;
+	
+	if (current.ups != 0) {
+		enum_string = 0;
+		t =tree_search(conf, current.ups->name, TRUE);
+		if (t ==0) return 0;
+		t = t->son;
+		while (t !=0) {
+			enum_string = add_to_enum_string(enum_string, extract_last_part(t->name));
+			t = t->next_brother;
+		}
+		return enum_string;	
+	}
+	return 0;
+}
+
+t_enum_string get_ups_subvariable_list(t_string varname) {
+	t_enum_string enum_string;
 	t_tree t;
 	t_string s;
+	
+	if (current.ups != 0) {
+		enum_string = 0;
+		s = xmalloc(sizeof(char) * (strlen(current.ups->name) + strlen(varname) + 2));
+		sprintf(s, "%s.%s", current.ups->name, varname);
+		t =tree_search(conf, s, TRUE);
+		free(s);
+		if (t ==0) return 0;
+		t = t->son;
+		while (t !=0) {
+			enum_string = add_to_enum_string(enum_string, extract_last_part(t->name));
+			t = t->next_brother;
+		}
+		return enum_string;	
+	}
+	return 0;
+}
+
+t_typed_value get_ups_variable(t_string varname) {
+	t_tree t;
+	t_string s;
+	t_typed_value value;
 	
 	if (current.ups != 0) {
 		s = xmalloc(sizeof(char) * (strlen(current.ups->name) + strlen(varname) + 2));
 		sprintf( s, "%s.%s", current.ups->name, varname);
 		t = tree_search(conf, s, TRUE);
 		free(s);
-		if (t == 0) return 0;
-		return string_copy(t->value.string_value);
+		if (t == 0) {
+			value.has_value = FALSE;
+			return value;
+		}
+		value.has_value = t->has_value;
+		if (value.has_value) {
+			value.value = t->value;
+			value.type = t->type;
+		}
+		current.rights_out = t->right;
+		return value;
 	}
-	return 0;
+	value.has_value = FALSE;
+	return value;
 }
 
 void set_ups_variable(t_string varname, void* value, t_types type) {
 	t_string s;
 	
-	if (current.ups != 0) {
+	if (current.ups != 0 && current.rights_in != invalid_right) {
 		s = xmalloc(sizeof(char) * (strlen(varname) + strlen(current.ups->name) + 2));
 		sprintf(s, "%s.%s", current.ups->name, varname);
 		if (value == 0) {
@@ -761,7 +827,7 @@ t_enum_string get_users_list() {
 		enum_string = 0;
 		while (t != 0) {
 			s = extract_last_part(t->name);
-			add_to_enum_string(enum_string, s);
+			enum_string = add_to_enum_string(enum_string, s);
 			free(s);
 			t = t->next_brother;
 		}
@@ -774,7 +840,6 @@ t_enum_string get_users_list() {
 
 void add_user(t_string username, t_user_types type, t_string password) {
 	t_string s;
-	t_tree t;
 	
 	s = xmalloc(sizeof(char) * ( 20 + strlen(username)));
 	sprintf(s, "nut.users.%s.type", username);
@@ -782,8 +847,7 @@ void add_user(t_string username, t_user_types type, t_string password) {
 	sprintf(s, "nut.users.%s.password", username);
 	add_to_tree(conf, s, password, string_type, current.rights_in);
 	sprintf(s, "nut.users.%s", username);
-	t = tree_search(conf, s, TRUE);
-	current.user = t;
+	current.user = tree_search(conf, s, TRUE);
 	free(s);	
 }
 	
@@ -794,6 +858,7 @@ int remove_user(t_string username) {
 	
 	s = xmalloc(sizeof(char) * ( 11 + strlen(username)));
 	sprintf(s, "nut.users.%s", username);
+	if (current.user == tree_search(conf,s,TRUE)) current.user = 0;
 	i = del_from_tree(conf, s);
 	free(s);
 	current.user = 0;
@@ -827,12 +892,13 @@ t_string get_name() {
 }
 
 
-void set_name(t_string username) {
-	if (current.user != 0) {
-		free(current.user->name);
-		current.user->name = string_copy(username);
-	}	
-}
+// NIY : It need to modify the name of each sons of the user. Use add_user then remove_user for the moment
+//void set_name(t_string username) {
+//	if (current.user != 0 && current.rights_in != invalid_right) {
+//		free(current.user->name);
+//		current.user->name = string_copy(username);
+//	}	
+//}
 
 
 t_user_types get_type() {
@@ -845,6 +911,7 @@ t_user_types get_type() {
 		t = tree_search(conf, s, TRUE);
 		free(s);
 		if (t == 0) return 0;
+		current.rights_out = t->right;
 		return string_to_user_type(t->value.string_value);
 	}
 	return 0;
@@ -854,7 +921,7 @@ t_user_types get_type() {
 void set_type(t_user_types type) {
 	t_string s;
 	
-	if (current.user != 0) {
+	if (current.user != 0 && current.rights_in != invalid_right) {
 		s = xmalloc(sizeof(char) * (strlen(current.user->name) + 6));
 		sprintf( s, "%s.type", current.user->name);
 		add_to_tree(conf, s, user_type_to_string(type), string_type, current.rights_in);
@@ -883,7 +950,7 @@ t_string get_password() {
 void set_password(t_string password) {
 	t_string s;
 	
-	if (current.user != 0) {
+	if (current.user != 0 && current.rights_in != invalid_right) {
 		s = xmalloc(sizeof(char) * (strlen(current.user->name) + 10));
 		sprintf( s, "%s.password", current.user->name);
 		add_to_tree(conf, s, password, string_type, current.rights_in);
@@ -903,6 +970,7 @@ t_enum_string get_allowfrom() {
 		free(s);
 		if (t == 0) return 0;
 		if (t->type == enum_string_type) {
+			current.rights_out = t->right;
 			return enum_string_copy(t->value.enum_string_value);
 		}
 	}
@@ -913,7 +981,7 @@ t_enum_string get_allowfrom() {
 void set_allowfrom(t_enum_string acllist) {
 	t_string s;
 	
-	if (current.user != 0) {
+	if (current.user != 0 && current.rights_in != invalid_right) {
 		s = xmalloc(sizeof(char) * (strlen(current.user->name) + 11));
 		sprintf( s, "%s.allowfrom", current.user->name);
 		if (acllist == 0) {
@@ -937,6 +1005,7 @@ t_enum_string get_actions() {
 		free(s);
 		if (t == 0) return 0;
 		if (t->type == enum_string_type) {
+			current.rights_out = t->right;
 			return enum_string_copy(t->value.enum_string_value);
 		}
 	}
@@ -947,7 +1016,7 @@ t_enum_string get_actions() {
 void set_actions(t_enum_string actionlist) {
 	t_string s;
 	
-	if (current.user != 0) {
+	if (current.user != 0 && current.rights_in != invalid_right) {
 		s = xmalloc(sizeof(char) * (strlen(current.user->name) + 9));
 		sprintf( s, "%s.actions", current.user->name);
 		if (actionlist == 0) {
@@ -964,13 +1033,14 @@ t_enum_string get_instcmds() {
 	t_tree t;
 	t_string s;
 	
-	if (current.user != 0) {
+	if (current.user != 0 && current.rights_in != invalid_right) {
 		s = xmalloc(sizeof(char) * (strlen(current.user->name) + 10));
 		sprintf( s, "%s.instcmds", current.user->name);
 		t = tree_search(conf, s, TRUE);
 		free(s);
 		if (t == 0) return 0;
 		if (t->type == enum_string_type) {
+			current.rights_out = t->right;
 			return enum_string_copy(t->value.enum_string_value);
 		}
 	}
@@ -1009,25 +1079,14 @@ t_enum_string get_acl_list() {
 		enum_string = 0;
 		while (t != 0) {
 			s = extract_last_part(t->name);
-			add_to_enum_string(enum_string, s);
+			enum_string = add_to_enum_string(enum_string, s);
 			free(s);
 			t = t->next_brother;
 		}
 		return enum_string;
 	}
 	return 0;
-}
-
-
-void add_acl(t_string aclname, t_string value) {
-	t_string s;
-	
-	s = xmalloc(sizeof(char) * ( 14 + strlen(aclname)));
-	sprintf(s, "nut.upsd.acl.%s", aclname);
-	add_to_tree(conf, s, value, string_type, current.rights_in);
-	free(s);	
-}
-	
+}	
 	
 int remove_acl(t_string aclname) {
 	t_string s;
@@ -1050,6 +1109,7 @@ t_string get_acl_value(t_string aclname) {
 	t = tree_search(conf, s, TRUE);
 	free(s);
 	if (t == 0) return 0;
+	current.rights_out = t->right;
 	return string_copy(t->value.string_value);
 }
 
@@ -1057,10 +1117,12 @@ t_string get_acl_value(t_string aclname) {
 void set_acl_value(t_string aclname, t_string value) {
 	t_string s;
 	
-	s = xmalloc(sizeof(char) * (strlen(aclname) + 14));
-	sprintf( s, "nut.upsd.acl.%s", aclname);
-	add_to_tree(conf, s, value, string_type, current.rights_in);
-	free(s);
+	if (current.rights_in != invalid_right) {
+		s = xmalloc(sizeof(char) * (strlen(aclname) + 14));
+		sprintf( s, "nut.upsd.acl.%s", aclname);
+		add_to_tree(conf, s, value, string_type, current.rights_in);
+		free(s);
+	}
 }
 
 
@@ -1070,6 +1132,7 @@ t_enum_string get_accept() {
 	t = tree_search(conf, "nut.upsd.accept", TRUE);
 	if (t == 0) return 0;
 	if (t->type == enum_string_type) {
+		current.rights_out = t->right;
 		return enum_string_copy(t->value.enum_string_value);
 	}
 	return 0;
@@ -1077,7 +1140,9 @@ t_enum_string get_accept() {
 
 
 void set_accept(t_enum_string acllist) {
-	add_to_tree(conf, "nut.upsd.accept", acllist, enum_string_type, current.rights_in);
+	if (current.rights_in != invalid_right) {
+		add_to_tree(conf, "nut.upsd.accept", acllist, enum_string_type, current.rights_in);
+	}
 }
 
 
@@ -1087,6 +1152,7 @@ t_enum_string get_reject() {
 	t = tree_search(conf, "nut.upsd.reject", TRUE);
 	if (t == 0) return 0;
 	if (t->type == enum_string_type) {
+		current.rights_out = t->right;
 		return enum_string_copy(t->value.enum_string_value);
 	}
 	return 0;
@@ -1094,7 +1160,9 @@ t_enum_string get_reject() {
 
 
 void set_reject(t_enum_string acllist) {
-	add_to_tree(conf, "nut.upsd.reject", acllist, enum_string_type, current.rights_in);
+	if (current.rights_in != invalid_right) {
+		add_to_tree(conf, "nut.upsd.reject", acllist, enum_string_type, current.rights_in);
+	}
 }
 
 
@@ -1104,6 +1172,7 @@ int get_maxage() {
 	t = tree_search(conf, "nut.upsd.maxage", TRUE);
 	if (t == 0) return 0;
 	if (t->type == string_type) {
+		current.rights_out = t->right;
 		return atoi(t->value.string_value);
 	}
 	return 0;
@@ -1113,12 +1182,14 @@ int get_maxage() {
 void set_maxage(int value) {
 	t_string s;
 	
-	// an int can need 10 char to be represented (without the sign)
-	// I put 15 to be sure
-	s = xmalloc(sizeof(char) * 15);
-	sprintf(s, "%d", value);
-	add_to_tree(conf, "nut.upsd.reject", s, string_type, current.rights_in);
-	free(s);
+	if (current.rights_in != invalid_right) {
+		// an int can need 10 char to be represented (without the sign)
+		// I put 15 to be sure
+		s = xmalloc(sizeof(char) * 15);
+		sprintf(s, "%d", value);
+		add_to_tree(conf, "nut.upsd.maxage", s, string_type, current.rights_in);
+		free(s);
+	}
 }
 
 
@@ -1156,6 +1227,8 @@ void add_monitor_rule(t_string upsname, t_string host, int powervalue, t_string 
 	free(s2);
 	sprintf(s, "nut.upsmon.monitor.%s@%s.user", upsname, host);
 	add_to_tree(conf, s, username, string_type, current.rights_in);
+	sprintf(s, "nut.upsmon.monitor.%s@%s", upsname, host);
+	current.monitor_rule = tree_search(conf, s, TRUE);
 	free(s);
 }
 	
@@ -1170,6 +1243,7 @@ int remove_monitor_rule(int rulenumber) {
 		while (t != 0) {
 			i++;
 			if (i == rulenumber) {
+				if (t == current.monitor_rule) current.monitor_rule = 0;
 				i = del_from_tree(conf, t->name);	
 				return i;
 			}
@@ -1256,6 +1330,7 @@ int get_monitor_powervalue() {
 		free(s);
 		if (t == 0) return 0;
 		if (t->type == string_type) {
+			current.rights_out = t->right;
 			return atoi(t->value.string_value);
 		}
 		return -1;
@@ -1266,11 +1341,11 @@ int get_monitor_powervalue() {
 void set_monitor_powervalue(int value) {
 	t_string s, s2;
 
-	if (current.monitor_rule != 0) {
+	if (current.monitor_rule != 0 && current.rights_in != invalid_right) {
 		s = xmalloc(sizeof(char) * (strlen(current.monitor_rule->name) + 12));
 		sprintf( s, "%s.powervalue", current.monitor_rule->name);
 		s2 = xmalloc(sizeof(char) * 15);
-		sprintf(s, "%d", value);
+		sprintf(s2, "%d", value);
 		
 		add_to_tree(conf, s, s2, string_type, current.rights_in);
 		free(s);
@@ -1290,6 +1365,7 @@ t_string get_monitor_user() {
 		free(s);
 		if (t == 0) return 0;
 		if (t->type == string_type) {
+			current.rights_out = t->right;
 			return string_copy(t->value.string_value);
 		}
 		return 0;
@@ -1300,9 +1376,9 @@ t_string get_monitor_user() {
 void set_monitor_user(t_string username) {
 	t_string s;
 
-	if (current.monitor_rule != 0) {
-		s = xmalloc(sizeof(char) * (strlen(current.monitor_rule->name) + 12));
-		sprintf( s, "%s.powervalue", current.monitor_rule->name);
+	if (current.monitor_rule != 0 && current.rights_in != invalid_right) {
+		s = xmalloc(sizeof(char) * (strlen(current.monitor_rule->name) + 6));
+		sprintf( s, "%s.user", current.monitor_rule->name);
 		add_to_tree(conf, s, username, string_type, current.rights_in);
 		free(s);
 	}
@@ -1315,6 +1391,7 @@ t_string get_shutdown_command() {
 	t = tree_search(conf, "nut.upsmon.shutdowncmd", TRUE);
 	if (t == 0) return 0;
 	if (t->type == string_type) {
+		current.rights_out = t->right;
 		return string_copy(t->value.string_value);
 	}
 	return 0;
@@ -1322,7 +1399,9 @@ t_string get_shutdown_command() {
 
 
 void set_shutdown_command(t_string command) {
-	add_to_tree(conf, "nut.upsmon.shutdowncmd", command, string_type, current.rights_in);
+	if (current.rights_in != invalid_right) {
+		add_to_tree(conf, "nut.upsmon.shutdowncmd", command, string_type, current.rights_in);
+	}
 }
 
 
@@ -1336,6 +1415,7 @@ t_flags get_notify_flag(t_notify_events event) {
 	t = tree_search(conf, s, TRUE);
 	free(s);
 	if (t != 0) {
+		current.rights_out = t->right;
 		return string_to_flag(t->value.string_value);
 	}
 	return IGNORE;
@@ -1345,11 +1425,13 @@ t_flags get_notify_flag(t_notify_events event) {
 void set_notify_flag(t_notify_events event, t_flags flag) {
 	t_string s, s2;
 	
-	s2 = event_to_string(event);
-	s = xmalloc(sizeof(char) * (strlen(s2) + 23));
-	sprintf(s, "nut.upsmon.notifyflag.%s", s2);
-	add_to_tree(conf, s, flag_to_string(flag), string_type, current.rights_in);
-	free(s);
+	if (current.rights_in != invalid_right) {
+		s2 = event_to_string(event);
+		s = xmalloc(sizeof(char) * (strlen(s2) + 23));
+		sprintf(s, "nut.upsmon.notifyflag.%s", s2);
+		add_to_tree(conf, s, flag_to_string(flag), string_type, current.rights_in);
+		free(s);
+	}
 }
 
 t_string get_notify_message(t_notify_events event) {
@@ -1362,6 +1444,7 @@ t_string get_notify_message(t_notify_events event) {
 	t = tree_search(conf, s, TRUE);
 	free(s);
 	if (t != 0) {
+		current.rights_out = t->right;
 		return string_copy(t->value.string_value);
 	}
 	return 0;
@@ -1377,7 +1460,9 @@ void set_notify_message(t_notify_events event, t_string message) {
 	if (message == 0) {
 			del_from_tree(conf, s);
 	} else {
-		add_to_tree(conf, s, message, string_type, current.rights_in);
+		if (current.rights_in != invalid_right) {
+			add_to_tree(conf, s, message, string_type, current.rights_in);
+		}
 	}
 	free(s);
 }
@@ -1388,6 +1473,7 @@ t_string get_notify_command() {
 	
 	t = tree_search(conf, "nut.upsmon.notifycmd", TRUE);
 	if (t != 0 || t->type != string_type) {
+		current.rights_out = t->right;
 		return string_copy(t->value.string_value);
 	}
 	return 0;
@@ -1398,7 +1484,9 @@ void set_notify_command(t_string command) {
 	if (command == 0) {
 			del_from_tree(conf,"nut.upsmon.notifycmd" );
 	} else {
-		add_to_tree(conf, "nut.upsmon.notifycmd", command, string_type, current.rights_in);
+		if (current.rights_in != invalid_right) {
+			add_to_tree(conf, "nut.upsmon.notifycmd", command, string_type, current.rights_in);
+		}
 	}
 }
 
@@ -1409,6 +1497,7 @@ int get_deadtime() {
 	t = tree_search(conf, "nut.upsmon.deadtime", TRUE);
 	if (t == 0) return 0;
 	if (t->type == string_type) {
+		current.rights_out = t->right;
 		return atoi(t->value.string_value);
 	}
 	return 0;
@@ -1418,10 +1507,12 @@ int get_deadtime() {
 void set_deadtime(int value) {
 	t_string s;
 	
-	s = xmalloc(sizeof(char) * 15);
-	sprintf(s, "%d", value);
-	add_to_tree(conf, "nut.upsmon.deadtime", s, string_type, current.rights_in);
-	free(s);
+	if (current.rights_in != invalid_right) {
+		s = xmalloc(sizeof(char) * 15);
+		sprintf(s, "%d", value);
+		add_to_tree(conf, "nut.upsmon.deadtime", s, string_type, current.rights_in);
+		free(s);
+	}
 }
 
 
@@ -1431,6 +1522,7 @@ int get_finaldelay() {
 	t = tree_search(conf, "nut.upsmon.finaldelay", TRUE);
 	if (t == 0) return 0;
 	if (t->type == string_type) {
+		current.rights_out = t->right;
 		return atoi(t->value.string_value);
 	}
 	return 0;
@@ -1440,10 +1532,12 @@ int get_finaldelay() {
 void set_finaldelay(int value) {
 	t_string s;
 	
-	s = xmalloc(sizeof(char) * 15);
-	sprintf(s, "%d", value);
-	add_to_tree(conf, "nut.upsmon.finaldelay", s, string_type, current.rights_in);
-	free(s);
+	if (current.rights_in != invalid_right) {
+		s = xmalloc(sizeof(char) * 15);
+		sprintf(s, "%d", value);
+		add_to_tree(conf, "nut.upsmon.finaldelay", s, string_type, current.rights_in);
+		free(s);
+	}
 }
 
 
@@ -1453,6 +1547,7 @@ int get_hostsync() {
 	t = tree_search(conf, "nut.upsmon.hostsync", TRUE);
 	if (t == 0) return 0;
 	if (t->type == string_type) {
+		current.rights_out = t->right;
 		return atoi(t->value.string_value);
 	}
 	return 0;
@@ -1462,10 +1557,12 @@ int get_hostsync() {
 void set_hostsync(int value) {
 	t_string s;
 	
-	s = xmalloc(sizeof(char) * 15);
-	sprintf(s, "%d", value);
-	add_to_tree(conf, "nut.upsmon.hostsync", s, string_type, current.rights_in);
-	free(s);
+	if (current.rights_in != invalid_right) {
+		s = xmalloc(sizeof(char) * 15);
+		sprintf(s, "%d", value);
+		add_to_tree(conf, "nut.upsmon.hostsync", s, string_type, current.rights_in);
+		free(s);
+	}
 }
 
 
@@ -1475,6 +1572,7 @@ int get_minsupply() {
 	t = tree_search(conf, "nut.upsmon.minsupply", TRUE);
 	if (t == 0) return 0;
 	if (t->type == string_type) {
+		current.rights_out = t->right;
 		return atoi(t->value.string_value);
 	}
 	return 0;
@@ -1484,10 +1582,12 @@ int get_minsupply() {
 void set_minsupply(int value) {
 	t_string s;
 	
-	s = xmalloc(sizeof(char) * 15);
-	sprintf(s, "%d", value);
-	add_to_tree(conf, "nut.upsmon.minsupply", s, string_type, current.rights_in);
-	free(s);
+	if (current.rights_in != invalid_right) {
+		s = xmalloc(sizeof(char) * 15);
+		sprintf(s, "%d", value);
+		add_to_tree(conf, "nut.upsmon.minsupply", s, string_type, current.rights_in);
+		free(s);
+	}
 }
 
 
@@ -1497,6 +1597,7 @@ int get_nocommwarntime() {
 	t = tree_search(conf, "nut.upsmon.nocommwarntime", TRUE);
 	if (t == 0) return 0;
 	if (t->type == string_type) {
+		current.rights_out = t->right;
 		return atoi(t->value.string_value);
 	}
 	return 0;
@@ -1506,10 +1607,12 @@ int get_nocommwarntime() {
 void set_nocommwarntime(int value) {
 	t_string s;
 	
-	s = xmalloc(sizeof(char) * 15);
-	sprintf(s, "%d", value);
-	add_to_tree(conf, "nut.upsmon.nocommwarntime", s, string_type, current.rights_in);
-	free(s);
+	if (current.rights_in != invalid_right) {
+		s = xmalloc(sizeof(char) * 15);
+		sprintf(s, "%d", value);
+		add_to_tree(conf, "nut.upsmon.nocommwarntime", s, string_type, current.rights_in);
+		free(s);
+	}
 }
 
 
@@ -1519,6 +1622,7 @@ int get_rbwarntime() {
 	t = tree_search(conf, "nut.upsmon.rbwarntime", TRUE);
 	if (t == 0) return 0;
 	if (t->type == string_type) {
+		current.rights_out = t->right;
 		return atoi(t->value.string_value);
 	}
 	return 0;
@@ -1528,10 +1632,12 @@ int get_rbwarntime() {
 void set_rbwarntime(int value) {
 	t_string s;
 	
-	s = xmalloc(sizeof(char) * 15);
-	sprintf(s, "%d", value);
-	add_to_tree(conf, "nut.upsmon.rbwarntime", s, string_type, current.rights_in);
-	free(s);
+	if (current.rights_in != invalid_right) {
+		s = xmalloc(sizeof(char) * 15);
+		sprintf(s, "%d", value);
+		add_to_tree(conf, "nut.upsmon.rbwarntime", s, string_type, current.rights_in);
+		free(s);
+	}
 }
 
 
@@ -1541,6 +1647,7 @@ int get_pollfreq() {
 	t = tree_search(conf, "nut.upsmon.pollfreq", TRUE);
 	if (t == 0) return 0;
 	if (t->type == string_type) {
+		current.rights_out = t->right;
 		return atoi(t->value.string_value);
 	}
 	return 0;
@@ -1550,10 +1657,12 @@ int get_pollfreq() {
 void set_pollfreq(int value) {
 	t_string s;
 	
-	s = xmalloc(sizeof(char) * 15);
-	sprintf(s, "%d", value);
-	add_to_tree(conf, "nut.upsmon.pollfreq", s, string_type, current.rights_in);
-	free(s);
+	if (current.rights_in != invalid_right) {
+		s = xmalloc(sizeof(char) * 15);
+		sprintf(s, "%d", value);
+		add_to_tree(conf, "nut.upsmon.pollfreq", s, string_type, current.rights_in);
+		free(s);
+	}
 }
 
 
@@ -1563,6 +1672,7 @@ int get_pollfreqalert() {
 	t = tree_search(conf, "nut.upsmon.pollfreqalert", TRUE);
 	if (t == 0) return 0;
 	if (t->type == string_type) {
+		current.rights_out = t->right;
 		return atoi(t->value.string_value);
 	}
 	return 0;
@@ -1572,10 +1682,12 @@ int get_pollfreqalert() {
 void set_pollfreqalert(int value) {
 	t_string s;
 	
-	s = xmalloc(sizeof(char) * 15);
-	sprintf(s, "%d", value);
-	add_to_tree(conf, "nut.upsmon.pollfreqalert", s, string_type, current.rights_in);
-	free(s);
+	if (current.rights_in != invalid_right) {
+		s = xmalloc(sizeof(char) * 15);
+		sprintf(s, "%d", value);
+		add_to_tree(conf, "nut.upsmon.pollfreqalert", s, string_type, current.rights_in);
+		free(s);
+	}
 }
 
 
@@ -1584,6 +1696,7 @@ t_string get_powerdownflag() {
 	
 	t = tree_search(conf, "nut.upsmon.powerdownflag", TRUE);
 	if (t != 0 || t->type != string_type) {
+		current.rights_out = t->right;
 		return string_copy(t->value.string_value);
 	}
 	return 0;
@@ -1591,7 +1704,9 @@ t_string get_powerdownflag() {
 
 
 void set_powerdownflag(t_string filename) {
-	add_to_tree(conf, "nut.upsmon.powerdownflag", filename, string_type, current.rights_in);
+	if (current.rights_in != invalid_right) {
+		add_to_tree(conf, "nut.upsmon.powerdownflag", filename, string_type, current.rights_in);
+	}
 }
 
 
@@ -1600,6 +1715,7 @@ t_string get_runasuser() {
 	
 	t = tree_search(conf, "nut.upsmon.runasuser", TRUE);
 	if (t != 0 || t->type != string_type) {
+		current.rights_out = t->right;
 		return string_copy(t->value.string_value);
 	}
 	return 0;
@@ -1607,8 +1723,9 @@ t_string get_runasuser() {
 
 
 void set_runasuser(t_string username) {
-	
-	add_to_tree(conf, "nut.upsmon.", username, string_type, current.rights_in);
+	if (current.rights_in != invalid_right) {
+		add_to_tree(conf, "nut.upsmon.runasuser", username, string_type, current.rights_in);
+	}
 }
 
 

@@ -57,6 +57,13 @@
 
 #include "data_types.h"
 
+/**
+ * An union of value that can be put in the tree
+ */
+typedef union {
+		char* string_value;
+		t_enum_string enum_string_value;
+} t_value;
 
 /**
  * Structure that represente a tree. 
@@ -69,10 +76,7 @@
 typedef struct _t_tree {
 	char* name;
 	int has_value;
-	union {
-		char* string_value;
-		t_enum_string enum_string_value;
-	} value;
+	t_value value;
 	t_types type;
 	t_rights right;
 	struct _t_tree * son;
@@ -80,7 +84,6 @@ typedef struct _t_tree {
 	struct _t_tree * next_brother;
 	struct _t_tree * previous_brother;
 } *t_tree;
-
 
 /**
  * Make a tree node
@@ -123,6 +126,12 @@ int add_to_tree(t_tree tree, char* name, void* value, t_types type, t_rights rig
  */
 t_tree tree_search(t_tree tree, char* name, int admin);
 
+/**
+ * Modify the right value of the node of a tree
+ * 
+ * @param node			The variable to modify the rights of
+ * @param new_rights	The new rights
+ */
 void modify_node_right(t_tree node, t_rights new_rights);
 
 /**
@@ -131,6 +140,7 @@ void modify_node_right(t_tree node, t_rights new_rights);
  * @param node		The variable to modify the value of
  * @param new_value	The new value
  * @param new_type	The new type
+ * @param admin 	Do we have the admin right ?
  * @return			0 if problem, else 1
  */
 int modify_node_value(t_tree node, void* new_value, t_types new_type, int admin);
@@ -156,9 +166,20 @@ int del_from_tree(t_tree tree, char* name);
  */
 void add_tree_to_tree(t_tree tree1, t_tree tree2);
 
-
+/**
+ * Free memory associated with a tree
+ * 
+ * @param tree The tree to free
+ */
 void free_tree(t_tree tree);
 
+/**
+ * Extract the last part of the name of a node
+ * 
+ * @param string The name of the node
+ * 
+ * @note For instance, "nut.ups.myups.driver" would return "driver"
+ */
 t_string extract_last_part(t_string string);
 
 

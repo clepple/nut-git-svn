@@ -45,6 +45,7 @@ int main (int argc, char** argv)  {
 	t_string conf_file, comm_file, s;
 	FILE* test;
 	
+	
 	// Value by default
 	target_dir = CONFPATH;
 	base_config_dir = xmalloc(sizeof(char) * (strlen(CONFPATH) + 13));
@@ -186,8 +187,11 @@ int main (int argc, char** argv)  {
 		// An errors occured, aborting
 		exit(EXIT_FAILURE);
 	}
+	
+	// Set the mode
 	set_mode(mode);
 	
+	// Fill the ups section with the good values
 	search_ups("myups");
 	set_driver(driver);
 	set_port(port);
@@ -195,10 +199,14 @@ int main (int argc, char** argv)  {
 	set_runasuser(RUN_AS_USER);
 	
 	if (mode == net_client) {
+		// net_client configuration don't need some part of the tree
 		remove_user("nutadmin");
 		remove_user("monmaster");
 		search_user("monslave");
+		// To remove the allowfrom variable :
 		set_allowfrom(0);
+		// Want to modify the host of the monitor rule.
+		// Create the one wanted then delete the first
 		search_monitor_rule(1);
 		s = get_monitor_ups();
 		add_monitor_rule(s, server, get_monitor_powervalue(), "monslave");

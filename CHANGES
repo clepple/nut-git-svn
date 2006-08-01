@@ -1,3 +1,10 @@
+Tue Aug 1  17:06:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
+
+ - utils/upsconfig.c : fully functionnal and commented version of upsconfig !!
+ - lib/libupsconfig.h : fully commented
+ - lib/libupsconfig.c : some minor fixes
+ - include/data_type.h stack.h tree.h : added comments
+
 Mon Jul 31 16:17:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
 
  - common/data_types.ch : added some conversion functions

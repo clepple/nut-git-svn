@@ -88,6 +88,12 @@ int stack_is_empty(t_stack stack);
  */
 int stack_is_full(t_stack stack);
 
+
+/**
+ * Free memory associated with a stack
+ * 
+ * @param stack The stack to free
+ */
 void free_stack(t_stack stack);
 
 #endif /*STACK_H_*/
