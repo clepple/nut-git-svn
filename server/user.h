@@ -17,7 +17,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-void user_load(void);
+void read_users(void);
 
 int user_checkinstcmd(const struct sockaddr_in *addr,
 	const char *un, const char *pw, const char *cmd);

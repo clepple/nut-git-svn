@@ -25,7 +25,7 @@
 #include "data_types.h"
 #include "tree.h"
 
-typedef struct {
+typedef struct _t_typed_value {
 	boolean has_value;
 	t_value value;
 	t_types type;
@@ -112,6 +112,29 @@ t_rights get_rights();
  * @note All subsequent calls to functions set_* will set the right of the set variable to this right
  */
 void set_rights(t_rights right);
+
+/**
+ * Return the value of a variable in the NUT tree
+ * 
+ * @param varname The name of the variable to return the value of
+ * 
+ * @return The value of the variable
+ * 
+ * @note varname must be the absolute path in the tree to the variable
+ * @note See structure t_typed_value to know more about return value
+ */
+t_typed_value get_variable(t_string varname);
+
+/**
+ * Set the value of a variable in the NUT tree
+ * 
+ * @param varname The name of the variable to set the value of
+ * @param value The value
+ * @param type the type of the value
+ * 
+ * @note varname must be the absolute path in the tree to the variable
+ */
+void set_variable(t_string varname, void* value, t_types type);
 
 
 /* *************************************************
@@ -249,6 +272,29 @@ t_typed_value get_driver_parameter(t_string paramname);
 void set_driver_parameter(t_string paramname, void* value, t_types type);
 
 /**
+ * Return the list of driver flag of the current UPS
+ * 
+ * @return The list of driver flag
+ * 
+ * @note See the t_enum_string structure in data_types.h to know how to manage it
+ */
+t_enum_string get_driver_flag_list();
+
+/**
+ * Enable a driver parameter
+ * 
+ * @param flagname The name of the driver flag to enable
+ */
+void enable_driver_flag(t_string flagname);
+
+/**
+ * Disable a driver parameter
+ * 
+ * @param flagname The name of the driver flag to disable
+ */
+void disable_driver_flag(t_string flagname);
+
+/**
  * Return the list of variable of the current UPS
  * 
  * @return The list of variable
@@ -269,7 +315,7 @@ t_enum_string get_ups_subvariable_list(t_string varname);
 /**
  * Return the value of an UPS variable
  * 
- * @param paramname The name of the UPS variable to return the value of
+ * @param varname The name of the UPS variable to return the value of
  * 
  * @return The value of the UPS variable
  * 
@@ -278,14 +324,13 @@ t_enum_string get_ups_subvariable_list(t_string varname);
 t_typed_value get_ups_variable(t_string varname);
 
 /**
- * Set the value of a driver parameter
+ * Set the value of an UPS variable
  * 
  * @param varname The name of UPS variable to set the value of
  * @param value The value
  * @param type the type of the value
  */
 void set_ups_variable(t_string varname, void* value, t_types type);
-
 
 
 /* *************************************************
@@ -556,6 +601,13 @@ int remove_monitor_rule(int rulenumber);
 int search_monitor_rule(int rulenumber);
 
 /**
+ * Return the name of the system monitored (that is upsname@host)
+ * 
+ * @return The name of the system monitored by the current monitor rule
+ */
+t_string get_monitor_system();
+
+/**
  * Return the name of the ups monitored by the current monitor rule
  * 
  * @return The name of the ups monitored by the current monitor rule
@@ -805,12 +857,20 @@ void set_powerdownflag(t_string filename);
  *  
  * @return The name of the user
  */
-t_string get_runasuser();
+t_string get_run_as_user();
 
 /**
  * Return the name of the user to run upsmon as
  *  
  * @param username The name of the user
  */
-void set_runasuser(t_string username);
+void set_run_as_user(t_string username);
 
+t_string get_cert_path();
+void set_cert_path(t_string filename);
+boolean get_cert_verify();
+void set_cert_verify(boolean value);
+boolean get_force_ssl();
+void set_force_sll(boolean value);
+
+void free_typed_value(t_typed_value value);

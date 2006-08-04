@@ -196,7 +196,7 @@ int main (int argc, char** argv)  {
 	set_driver(driver);
 	set_port(port);
 	
-	set_runasuser(RUN_AS_USER);
+	set_run_as_user(RUN_AS_USER);
 	
 	if (mode == net_client) {
 		// net_client configuration don't need some part of the tree

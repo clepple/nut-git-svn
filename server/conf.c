@@ -19,7 +19,7 @@
 
 #include "upsd.h"
 #include "conf.h"
-#include "upsconf.h"
+#include "../lib/libupsconfig.h"
 #include "sstate.h"
 #include "access.h"
 #include "user.h"
@@ -143,184 +143,106 @@ static void ups_update(const char *fn, const char *name, const char *desc)
 	temp->retain = 1;
 }		
 
-/* return 1 if usable, 0 if not */
-static int parse_upsd_conf_args(int numargs, char **arg)
-{
-	/* everything below here uses up through arg[1] */
-	if (numargs < 2)
-		return 0;
-
-	/* MAXAGE <seconds> */
-	if (!strcmp(arg[0], "MAXAGE")) {
-		maxage = atoi(arg[1]);
-		return 1;
-	}
-
-	/* STATEPATH <dir> */
-	if (!strcmp(arg[0], "STATEPATH")) {
-		if (statepath)
-			free(statepath);
-
-		statepath = xstrdup(arg[1]);
-		return 1;
-	}
-
-	/* DATAPATH <dir> */
-	if (!strcmp(arg[0], "DATAPATH")) {
-		if (datapath)
-			free(datapath);
-
-		datapath = xstrdup(arg[1]);
-		return 1;
-	}
-
-	/* CERTFILE <dir> */
-	if (!strcmp(arg[0], "CERTFILE")) {
-		if (certfile)
-			free(certfile);
-
-		certfile = xstrdup(arg[1]);
-		return 1;
-	}
-
-	/* ACCEPT <aclname> [<aclname>...] */
-	if (!strcmp(arg[0], "ACCEPT")) {
-		access_add(ACCESS_ACCEPT, numargs - 1, 
-			(const char **) &arg[1]);
-		return 1;
-	}
-
-	/* REJECT <aclname> [<aclname>...] */
-	if (!strcmp(arg[0], "REJECT")) {
-		access_add(ACCESS_REJECT, numargs - 1, 
-			(const char **) &arg[1]);
-		return 1;
-	}
-
-	/* everything below here uses up through arg[2] */
-	if (numargs < 3)
-		return 0;
-
-	/* ACL <aclname> <ip block> */
-	if (!strcmp(arg[0], "ACL")) {
-		acl_add(arg[1], arg[2]);
-		return 1;
-	}
-
-	if (numargs < 4)
-		return 0;
-
-	if (!strcmp(arg[0], "ACCESS")) {
-		upslogx(LOG_WARNING, "ACCESS in upsd.conf is no longer supported - switch to ACCEPT/REJECT");
-		return 1;
-	}
-
-	/* not recognized */
-	return 0;
-}
-
 /* called for fatal errors in parseconf like malloc failures */
 static void upsd_conf_err(const char *errmsg)
 {
 	upslogx(LOG_ERR, "Fatal error in parseconf (upsd.conf): %s", errmsg);
 }
 
-static void load_upsdconf(int reloading)
+static void read_upsdconf(int reloading)
 {
-	char	fn[SMALLBUF];
-	PCONF_CTX	ctx;
-
-	snprintf(fn, sizeof(fn), "%s/upsd.conf", confpath());
-
-	check_perms(fn);
-
-	pconf_init(&ctx, upsd_conf_err);
-
-	if (!pconf_file_begin(&ctx, fn)) {
-		pconf_finish(&ctx);
-
-		if (!reloading)
-			fatalx("%s", ctx.errmsg);
-
-		upslogx(LOG_ERR, "Reload failed: %s", ctx.errmsg);
-		return;
+	t_string s;
+	t_typed_value value;
+	t_enum_string enum_acl, enum_acl_begining;
+	
+	/* maxage <seconds> */
+	if (get_maxage() != 0) {
+		maxage = get_maxage();
 	}
+	
+	/* statepath <dir> */
+	value = get_variable("nut.upsd.statepath");
+	if (value.has_value && value.type == string_type) {
+		if (statepath)
+			free(statepath);
 
-	while (pconf_file_next(&ctx)) {
-		if (pconf_parse_error(&ctx)) {
-			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
-				fn, ctx.linenum, ctx.errmsg);
-			continue;
-		}
-
-		if (ctx.numargs < 1)
-			continue;
-
-		if (!parse_upsd_conf_args(ctx.numargs, ctx.arglist)) {
-			unsigned int	i;
-			char	errmsg[SMALLBUF];
-
-			snprintf(errmsg, sizeof(errmsg), 
-				"upsd.conf: invalid directive");
-
-			for (i = 0; i < ctx.numargs; i++)
-				snprintfcat(errmsg, sizeof(errmsg), " %s", 
-					ctx.arglist[i]);
-
-			upslogx(LOG_WARNING, "%s", errmsg);
-		}
-
+		statepath = value.value.string_value;
 	}
+	
+	/* datapath <dir> */
+	value = get_variable("nut.upsd.datapath");
+	if (value.has_value && value.type == string_type) {
+		if (datapath)
+			free(datapath);
 
-	pconf_finish(&ctx);		
+		datapath = value.value.string_value;
+	}
+	
+	/* certfile <dir> */
+	value = get_variable("nut.upsd.certfile");
+	if (value.has_value && value.type == string_type) {
+		if (certfile)
+			free(certfile);
+
+		certfile = value.value.string_value;
+	}
+	
+	/* accept { <aclname> [<aclname>...] } */
+	enum_acl_begining = enum_acl = get_accept();
+	while (enum_acl != NULL) {
+		access_append(ACCESS_ACCEPT, enum_acl->value);
+		enum_acl = enum_acl->next_value;
+	}
+	free_enum_string(enum_acl_begining);
+	
+	/* rejectt { <aclname> [<aclname>...] } */
+	enum_acl_begining = enum_acl = get_reject();
+	while (enum_acl != NULL) {
+		access_append(ACCESS_REJECT, enum_acl->value);
+		enum_acl = enum_acl->next_value;
+	}
+	free_enum_string(enum_acl_begining);
+	
+	/* acl.<aclname> = <ip block> */
+	enum_acl_begining = enum_acl = get_acl_list();
+	while (enum_acl != NULL) {
+		s = get_acl_value(enum_acl->value);
+		acl_add(enum_acl->value, s);
+		free(s);
+		enum_acl = enum_acl->next_value;
+	}
+	free_enum_string(enum_acl);
+
+	
 }
 
-/* callback during parsing of ups.conf */
-void do_upsconf_args(char *upsname, char *var, char *val)
-{
-	ups_t	*tmp, *last;
+void read_upsconf() {
+	t_enum_string enum_ups, enum_ups_begining;
+	ups_t *ups;
+	
+	// Lets make the upstable 
+	enum_ups_begining = enum_ups = get_ups_list();
+	
+	while (enum_ups != NULL) {
+		ups = xmalloc(sizeof(ups_t));
+		
+		search_ups(enum_ups->value);
+		
+		ups->upsname = xstrdup(enum_ups->value);
+		ups->driver = get_driver();	
+		ups->port = get_port();
+		ups->desc = get_desc();
+		
+		ups->next = upstable;
+		
+		upstable = ups;
 
-	/* no "global" stuff for us */
-	if (!upsname)
-		return;
-
-	last = tmp = upstable;
-
-	while (tmp) {
-		last = tmp;
-
-		if (!strcmp(tmp->upsname, upsname)) {
-			if (!strcmp(var, "driver")) 
-				tmp->driver = xstrdup(val);
-			if (!strcmp(var, "port")) 
-				tmp->port = xstrdup(val);
-			if (!strcmp(var, "desc"))
-				tmp->desc = xstrdup(val);
-			return;
-		}
-
-		tmp = tmp->next;
+		enum_ups = enum_ups->next_value;
 	}
-
-	tmp = xmalloc(sizeof(ups_t));
-	tmp->upsname = xstrdup(upsname);
-	tmp->driver = NULL;
-	tmp->port = NULL;
-	tmp->desc = NULL;
-	tmp->next = NULL;
-
-	if (!strcmp(var, "driver"))
-		tmp->driver = xstrdup(val);
-	if (!strcmp(var, "port"))
-		tmp->port = xstrdup(val);
-	if (!strcmp(var, "desc"))
-		tmp->desc = xstrdup(val);
-
-	if (last)
-		last->next = tmp;
-	else
-		upstable = tmp;
+	free_enum_string(enum_ups_begining);
+	
 }
+
 
 /* add valid UPSes from ups.conf to the internal structures */
 static void upsconf_add(int reloading)
@@ -451,12 +373,17 @@ static int check_file(const char *fn)
 void conf_reload(void)
 {
 	upstype	*upstmp, *upsnext;
+	char fn[SMALLBUF];
 
 	upslogx(LOG_INFO, "SIGHUP: reloading configuration");
 
-	/* see if we can access upsd.conf before blowing away the config */
-	if (!check_file("upsd.conf"))
+	/* see if we can access the configuration file before blowing away the config */
+	if (!check_file("nut.conf"))
 		return;
+	
+	snprintf(fn, sizeof(fn), "%s/nut.conf", confpath());
+	
+	load_config(fn, upsd_conf_err);
 
 	/* reset retain flags on all known UPS entries */
 	upstmp = firstups;
@@ -474,7 +401,7 @@ void conf_reload(void)
 	access_free();
 
 	/* now reread upsd.conf */
-	load_upsdconf(1);		/* 1 = reloading */
+	read_upsdconf(1);		/* 1 = reloading */
 
 	/* now delete all UPS entries that didn't get reloaded */
 
@@ -494,27 +421,39 @@ void conf_reload(void)
 	if (firstups == NULL)
 		upslogx(LOG_WARNING, "Warning: no UPSes currently defined!");
 
-	/* and also make sure upsd.users can be read... */
-	if (!check_file("upsd.users"))
-		return;
+//	/* and also make sure upsd.users can be read... */
+//	if (!check_file("upsd.users"))
+//		return;
 
 	/* delete all users */
 	user_flush();
 
 	/* and finally reread from upsd.users */
-	user_load();
+	read_users();
+	
+	drop_config();
 }
 
 /* startup: load config files */
 void conf_load(void)
 {
+	char fn[SMALLBUF];
+	
+	snprintf(fn, sizeof(fn), "%s/nut.conf", confpath());
+	
+	check_perms(fn);
+	
+	load_config(fn, upsd_conf_err);
+	
 	/* upsd.conf */
-	load_upsdconf(0);	/* 0 = initial */
+	read_upsdconf(0);	/* 0 = initial */
 
 	/* handle ups.conf */
 	read_upsconf();
 	upsconf_add(0);
 
 	/* upsd.users */
-	user_load();
+	read_users();
+	
+	drop_config();
 }

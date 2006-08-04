@@ -493,6 +493,38 @@ void set_rights(t_rights right) {
 	current.rights_in = right;
 }
 
+t_typed_value get_variable(t_string varname) {
+	t_tree t;
+	t_typed_value value;
+	
+	if (current.ups != 0) {
+		t = tree_search(conf, varname, TRUE);
+		if (t == 0) {
+			value.has_value = FALSE;
+			return value;
+		}
+		value.has_value = t->has_value;
+		if (value.has_value) {
+			value.value = t->value;
+			value.type = t->type;
+		}
+		current.rights_out = t->right;
+		return value;
+	}
+	value.has_value = FALSE;
+	return value;
+}
+
+void set_variable(t_string varname, void* value, t_types type) {
+	if (current.ups != 0 && current.rights_in != invalid_right) {
+		if (value == 0) {
+			del_from_tree(conf, varname);
+		} else {
+			add_to_tree(conf, varname, value, type, current.rights_in);
+		}
+	}	
+}
+
 
 /***************************************************
  *                   UPS SECTION                   *
@@ -705,7 +737,15 @@ t_typed_value get_driver_parameter(t_string paramname) {
 		}
 		value.has_value = t->has_value;
 		if (value.has_value) {
-			value.value = t->value;
+			switch (t->type) {
+				case string_type : 
+					value.value.string_value = string_copy(t->value.string_value);
+					break;
+				case enum_string_type :
+					value.value.enum_string_value = enum_string_copy(t->value.enum_string_value);
+					break;
+				default : value.has_value = FALSE;
+			}
 			value.type = t->type;
 		}
 		current.rights_out = t->right;
@@ -726,6 +766,50 @@ void set_driver_parameter(t_string paramname, void* value, t_types type) {
 		} else {
 			add_to_tree(conf, s, value, type, current.rights_in);
 		}
+		free(s);
+	}	
+}
+
+t_enum_string get_driver_flag_list() {
+	t_enum_string enum_string;
+	t_tree t;
+	t_string s;
+	
+	if (current.ups != 0) {
+		enum_string = 0;
+		s = xmalloc(sizeof(char) * (strlen(current.ups->name) + 20));
+		sprintf(s, "%s.driver.flag", current.ups->name);
+		t =tree_search(conf, s, TRUE);
+		free(s);
+		if (t ==0) return 0;
+		t = t->son;
+		while (t !=0) {
+			enum_string = add_to_enum_string(enum_string, extract_last_part(t->name));
+			t = t->next_brother;
+		}
+		return enum_string;	
+	}
+	return 0;
+}
+	
+void enable_driver_flag(t_string flagname) {
+	t_string s;
+	
+	if (current.ups != 0 && current.rights_in != invalid_right) {
+		s = xmalloc(sizeof(char) * (strlen(flagname) + strlen(current.ups->name) + 21));
+		sprintf(s, "%s.driver.flag.%s", current.ups->name, flagname);
+		add_to_tree(conf, s, "enabled", string_type, current.rights_in);
+		free(s);
+	}	
+}
+
+void disable_driver_flag(t_string flagname) {
+	t_string s;
+	
+	if (current.ups != 0 && current.rights_in != invalid_right) {
+		s = xmalloc(sizeof(char) * (strlen(flagname) + strlen(current.ups->name) + 21));
+		sprintf(s, "%s.driver.flag.%s", current.ups->name, flagname);
+		del_from_tree(conf, s);
 		free(s);
 	}	
 }
@@ -810,6 +894,9 @@ void set_ups_variable(t_string varname, void* value, t_types type) {
 		free(s);
 	}	
 }
+
+
+
 
 
 /***************************************************
@@ -1276,6 +1363,12 @@ int search_monitor_rule(int rulenumber) {
 	return 0;
 }
 
+t_string get_monitor_system() {
+	if (current.monitor_rule != 0) {
+		return string_copy(extract_last_part(current.monitor_rule->name));
+	}
+	return 0;
+}
 
 t_string get_monitor_ups() {
 	t_string s, s2;
@@ -1566,7 +1659,7 @@ void set_hostsync(int value) {
 }
 
 
-int get_minsupply() {
+int get_minsupplies() {
 	t_tree t;
 	
 	t = tree_search(conf, "nut.upsmon.minsupply", TRUE);
@@ -1579,7 +1672,7 @@ int get_minsupply() {
 }
 
 
-void set_minsupply(int value) {
+void set_minsupplies(int value) {
 	t_string s;
 	
 	if (current.rights_in != invalid_right) {
@@ -1695,7 +1788,7 @@ t_string get_powerdownflag() {
 	t_tree t;
 	
 	t = tree_search(conf, "nut.upsmon.powerdownflag", TRUE);
-	if (t != 0 || t->type != string_type) {
+	if (t != 0 && t->type == string_type) {
 		current.rights_out = t->right;
 		return string_copy(t->value.string_value);
 	}
@@ -1710,11 +1803,11 @@ void set_powerdownflag(t_string filename) {
 }
 
 
-t_string get_runasuser() {
+t_string get_run_as_user() {
 	t_tree t;
 	
-	t = tree_search(conf, "nut.upsmon.runasuser", TRUE);
-	if (t != 0 || t->type != string_type) {
+	t = tree_search(conf, "nut.upsmon.run_as_user", TRUE);
+	if (t != 0 && t->type == string_type) {
 		current.rights_out = t->right;
 		return string_copy(t->value.string_value);
 	}
@@ -1722,12 +1815,70 @@ t_string get_runasuser() {
 }
 
 
-void set_runasuser(t_string username) {
+void set_run_as_user(t_string username) {
 	if (current.rights_in != invalid_right) {
-		add_to_tree(conf, "nut.upsmon.runasuser", username, string_type, current.rights_in);
+		add_to_tree(conf, "nut.upsmon.run_as_user", username, string_type, current.rights_in);
 	}
 }
 
+t_string get_cert_path() {
+	t_tree t;
+	
+	t = tree_search(conf, "nut.upsmon.security.cert_path", TRUE);
+	if (t != 0 && t->type == string_type) {
+		current.rights_out = t->right;
+		return string_copy(t->value.string_value);
+	}
+	return 0;
+}
+
+void set_cert_path(t_string filename) {
+	if (current.rights_in != invalid_right) {
+		add_to_tree(conf, "nut.upsmon.security.cert_path", filename, string_type, current.rights_in);
+	}
+}
+
+boolean get_cert_verify() {
+	t_tree t;
+	
+	t = tree_search(conf, "nut.upsmon.security.cert_verify", TRUE);
+	if (t != 0 && t->type == string_type) {
+		current.rights_out = t->right;
+		return atoi(t->value.string_value);
+	}
+	return FALSE;
+}
+
+void set_cert_verify(boolean value) {
+	if (current.rights_in != invalid_right) {
+		if (value == FALSE) {
+			add_to_tree(conf, "nut.upsmon.security.cert_verify", "0", string_type, current.rights_in);	
+		} else {
+			add_to_tree(conf, "nut.upsmon.security.cert_verify", "1", string_type, current.rights_in);	
+		}
+	}
+}
+
+boolean get_force_ssl() {
+	t_tree t;
+	
+	t = tree_search(conf, "nut.upsmon.security.force_ssl", TRUE);
+	if (t != 0 && t->type == string_type) {
+		current.rights_out = t->right;
+		return atoi(t->value.string_value);
+	}
+	return FALSE;
+}
+
+void set_force_sll(boolean value) {
+	if (current.rights_in != invalid_right) {
+		if (value == FALSE) {
+			add_to_tree(conf, "nut.upsmon.security.force_ssl", "0", string_type, current.rights_in);	
+		} else {
+			add_to_tree(conf, "nut.upsmon.security.force_ssl", "1", string_type, current.rights_in);	
+		}
+	}
+}
 
 
 
@@ -1891,4 +2042,18 @@ void write_desc(t_string name, FILE* conf_file, FILE* comm_file) {
 		}
 	}
 	
+}
+
+void free_typed_value(t_typed_value value) {
+	if (value.has_value) {
+		switch (value.type) {
+			case string_type : 
+				free(value.value.string_value);
+				break;
+			case enum_string_type : 
+				free_enum_string(value.value.enum_string_value);
+				break;
+			default : ;
+		}
+	}
 }

@@ -168,7 +168,7 @@ void access_free(void)
 	access_head = NULL;
 }	
 
-static void access_append(int action, const char *aclname)
+void access_append(int action, const char *aclname)
 {
 	struct	access_t	*tmp, *last;
 

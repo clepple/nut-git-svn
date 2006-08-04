@@ -25,7 +25,9 @@
 
 #include "upsclient.h"
 #include "upsmon.h"
-#include "parseconf.h"
+#include "../lib/libupsconfig.h"
+#include "data_types.h"
+//#include "parseconf.h"
 #include "timehead.h"
 #
 #ifdef HAVE_STDARG_H
@@ -709,7 +711,7 @@ static void recalc(void)
 			}
 
 		/* note: we assume that a UPS that isn't critical must be OK *
-		 *							     *
+		 *                                                           *
 		 * this means a UPS we've never heard from is assumed OL     *
 		 * whether this is really the best thing to do is undecided  */
 
@@ -887,15 +889,16 @@ static void redefine_ups(utype *ups, int pv, const char *un,
 	}
 }
 
-static void addups(int reloading, const char *sys, const char *pvs, 
+static void addups(int reloading, const char *sys, int pv, 
 		const char *un, const char *pw, const char *master)
 {
-	int	pv;
+	//int	pv;
 	utype	*tmp, *last;
 
 	/* the username is now required - no more host-based auth */
 
-	if ((!sys) || (!pvs) || (!pw) || (!master) || (!un)) {
+	//if ((!sys) || (!pvs) || (!pw) || (!master) || (!un)) {
+	if ((!sys) || (!pw) || (!master) || (!un)) {
 		upslogx(LOG_WARNING, "Ignoring invalid MONITOR line in upsmon.conf!");
 		upslogx(LOG_WARNING, "MONITOR configuration directives require five arguments.");
 		return;
@@ -910,11 +913,11 @@ static void addups(int reloading, const char *sys, const char *pvs,
 		return;
 	}
 
-	pv = strtol(pvs, (char **) NULL, 10);
+//	pv = strtol(pvs, (char **) NULL, 10);
 
 	if (pv < 0) {
-		upslogx(LOG_WARNING, "UPS [%s]: ignoring invalid power value [%s]", 
-			sys, pvs);
+		upslogx(LOG_WARNING, "UPS [%s]: ignoring invalid power value [%d]", 
+			sys, pv);
 		return;
 	}
 
@@ -1086,165 +1089,6 @@ static void checkmode(char *cfgentry, char *oldvalue, char *newvalue,
 	upslogx(LOG_WARNING, "You must restart upsmon for this change to work");
 }
 
-/* returns 1 if used, 0 if not, so we can complain about bogus configs */
-static int parse_conf_arg(int numargs, char **arg)
-{
-	/* using up to arg[1] below */
-	if (numargs < 2)
-		return 0;
-
-	/* SHUTDOWNCMD <cmd> */
-	if (!strcmp(arg[0], "SHUTDOWNCMD")) {
-		checkmode(arg[0], shutdowncmd, arg[1], reload_flag);
-
-		if (shutdowncmd)
-			free(shutdowncmd);
-		shutdowncmd = xstrdup(arg[1]);
-		return 1;
-	}
-
-	/* POWERDOWNFLAG <fn> */
-	if (!strcmp(arg[0], "POWERDOWNFLAG")) {
-		checkmode(arg[0], powerdownflag, arg[1], reload_flag);
-
-		if (powerdownflag)
-			free(powerdownflag);
-
-		powerdownflag = xstrdup(arg[1]);
-
-		if (!reload_flag)
-			upslogx(LOG_INFO, "Using power down flag file %s\n",
-				arg[1]);
-
-		return 1;
-	}		
-
-	/* NOTIFYCMD <cmd> */
-	if (!strcmp(arg[0], "NOTIFYCMD")) {
-		if (notifycmd)
-			free(notifycmd);
-
-		notifycmd = xstrdup(arg[1]);
-		return 1;
-	}
-
-	/* POLLFREQ <num> */
-	if (!strcmp(arg[0], "POLLFREQ")) {
-		pollfreq = atoi(arg[1]);
-		return 1;
-	}
-
-	/* POLLFREQALERT <num> */
-	if (!strcmp(arg[0], "POLLFREQALERT")) {
-		pollfreqalert = atoi(arg[1]);
-		return 1;
-	}
-
-	/* HOSTSYNC <num> */
-	if (!strcmp(arg[0], "HOSTSYNC")) {
-		hostsync = atoi(arg[1]);
-		return 1;
-	}
-
-	/* DEADTIME <num> */
-	if (!strcmp(arg[0], "DEADTIME")) {
-		deadtime = atoi(arg[1]);
-		return 1;
-	}
-
-	/* MINSUPPLIES <num> */
-	if (!strcmp(arg[0], "MINSUPPLIES")) {
-		minsupplies = atoi(arg[1]);
-		return 1;
-	}
-
-	/* RBWARNTIME <num> */
-	if (!strcmp(arg[0], "RBWARNTIME")) {
-		rbwarntime = atoi(arg[1]);
-		return 1;
-	}
-
-	/* NOCOMMWARNTIME <num> */
-	if (!strcmp(arg[0], "NOCOMMWARNTIME")) {
-		nocommwarntime = atoi(arg[1]);
-		return 1;
-	}
-
-	/* FINALDELAY <num> */
-	if (!strcmp(arg[0], "FINALDELAY")) {
-		finaldelay = atoi(arg[1]);
-		return 1;
-	}
-
-	/* RUN_AS_USER <userid> */
- 	if (!strcmp(arg[0], "RUN_AS_USER")) {
-		if (run_as_user)
-			free(run_as_user);
-
-		run_as_user = xstrdup(arg[1]);
-		return 1;
-	}
-
-	/* CERTPATH <path> */
-	if (!strcmp(arg[0], "CERTPATH")) {
-		if (certpath)
-			free(certpath);
-
-		certpath = xstrdup(arg[1]);
-		return 1;
-	}
-
-	/* CERTVERIFY (0|1) */
-	if (!strcmp(arg[0], "CERTVERIFY")) {
-		certverify = atoi(arg[1]);
-		return 1;
-	}
-
-	/* FORCESSL (0|1) */
-	if (!strcmp(arg[0], "FORCESSL")) {
-		forcessl = atoi(arg[1]);
-		return 1;
-	}
-
-	/* using up to arg[2] below */
-	if (numargs < 3)
-		return 0;
-
-	/* NOTIFYMSG <notify type> <replacement message> */
-	if (!strcmp(arg[0], "NOTIFYMSG")) {
-		set_notifymsg(arg[1], arg[2]);
-		return 1;
-	}
-
-	/* NOTIFYFLAG <notify type> <flags> */
-	if (!strcmp(arg[0], "NOTIFYFLAG")) {
-		set_notifyflag(arg[1], arg[2]);
-		return 1;
-	}	
-
-	/* using up to arg[4] below */
-	if (numargs < 5)
-		return 0;
-
-	if (!strcmp(arg[0], "MONITOR")) {
-
-		/* original style: no username (only 5 args) */
-		if (numargs == 5) {
-			upslogx(LOG_ERR, "Unable to use old-style MONITOR line without a username");
-			upslogx(LOG_ERR, "Convert it and add a username to upsd.users - see the documentation");
-
-			fatalx("Fatal error: unusable configuration");
-		}
-
-		/* <sys> <pwrval> <user> <pw> ("master" | "slave") */
-		addups(reload_flag, arg[1], arg[2], arg[3], arg[4], arg[5]);
-		return 1;
-	}
-
-	/* didn't parse it at all */
-	return 0;
-}
-
 /* called for fatal errors in parseconf like malloc failures */
 static void upsmon_err(const char *errmsg)
 {
@@ -1254,50 +1098,149 @@ static void upsmon_err(const char *errmsg)
 static void loadconfig(void)
 {
 	char	fn[SMALLBUF];
-	PCONF_CTX	ctx;
+	t_string s, s2, s3;
+	int i;
 
-	snprintf(fn, sizeof(fn), "%s/upsmon.conf", confpath());
+	snprintf(fn, sizeof(fn), "%s/nut.conf", confpath());
 
-	pconf_init(&ctx, upsmon_err);
-
-	if (!pconf_file_begin(&ctx, fn)) {
-		pconf_finish(&ctx);
-
-		if (reload_flag == 1) {
-			upslog_with_errno(LOG_ERR, "Reload failed: %s", ctx.errmsg);
-			return;
-		}
-
-		fatalx("%s", ctx.errmsg);
+	load_config(fn, upsmon_err);
+	
+	/* shutdown command */
+	s = get_shutdown_command();
+	if ( s != 0) {
+		checkmode("Shutdown command", shutdowncmd, s, reload_flag);
+		
+		if (shutdowncmd)
+			free(shutdowncmd);
+			
+		shutdowncmd = s;	
+	}
+	
+	/* powerdown flag */
+	s = get_powerdownflag();
+	if ( s != 0) {
+		checkmode("Powerdown flag", powerdownflag, s, reload_flag);
+		
+		if (powerdownflag)
+			free(powerdownflag);
+			
+		powerdownflag = s;
+		
+		if (!reload_flag)
+			upslogx(LOG_INFO, "Using power down flag file %s\n",s);	
+	}
+	
+	/* notify command */
+	s = get_powerdownflag();
+	if ( s != 0) {
+		if (notifycmd)
+			free(notifycmd);
+			
+		notifycmd = s;
+	}
+	
+	/* Poll freq */
+	if (get_pollfreq() != 0) {
+		pollfreq = get_pollfreq();
 	}
 
-	while (pconf_file_next(&ctx)) {
-		if (pconf_parse_error(&ctx)) {
-			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
-				fn, ctx.linenum, ctx.errmsg);
-			continue;
+	/* Poll freq alert*/
+	if (get_pollfreqalert() != 0) {
+		pollfreqalert = get_pollfreqalert();
+	}
+
+	/* hostsync */
+	if (get_hostsync() != 0) {
+		hostsync = get_hostsync();
+	}
+	
+	/* deadtime */
+	if (get_deadtime() != 0) {
+		deadtime = get_deadtime();
+	}
+	
+	/* minsupplies */
+	if (get_minsupplies() != 0) {
+		minsupplies = get_minsupplies();
+	}
+
+	/* rbwarntime */
+	if (get_rbwarntime() != 0) {
+		rbwarntime = get_rbwarntime();
+	}
+	
+	/* nocommwarntime */
+	if (get_nocommwarntime() != 0) {
+		nocommwarntime = get_nocommwarntime();
+	}
+
+	/* finaldelay */
+	if (get_finaldelay() != 0) {
+		finaldelay = get_finaldelay();
+	}
+
+	/* run as user */
+	s = get_run_as_user();
+	if (s != 0) {
+		if (run_as_user)
+			free(run_as_user);
+		run_as_user = s;
+	}
+	
+	/* cert_path */
+	s = get_cert_path();
+	if (s != 0) {
+		if (certpath)
+			free(certpath);
+			
+		certpath = s;	
+	}
+	
+	/* cert_verify */
+	certverify = get_cert_verify();
+	
+	/* force_ssl */
+	forcessl = get_force_ssl();
+
+	/* notify messages and flags*/
+	for ( i = ONLINE; i <= NOCOMM; i++ ) {
+		s = get_notify_message(i);
+		if ( s != 0) {
+			s2 = event_to_string(i);
+			set_notifymsg(s2, s);
+			free(s);
 		}
-
-		if (ctx.numargs < 1)
-			continue;
-
-		if (!parse_conf_arg(ctx.numargs, ctx.arglist)) {
-			unsigned int	i;
-			char	errmsg[SMALLBUF];
-
-			snprintf(errmsg, sizeof(errmsg), 
-				"upsmon.conf line %d: invalid directive",
-				ctx.linenum);
-
-			for (i = 0; i < ctx.numargs; i++)
-				snprintfcat(errmsg, sizeof(errmsg), " %s", 
-					ctx.arglist[i]);
-
-			upslogx(LOG_WARNING, "%s", errmsg);
+		if (get_notify_flag(i) != 0) {
+			s = flag_to_string(get_notify_flag(i));
+			s2 = event_to_string(i);
+			set_notifyflag(s2, s);
 		}
 	}
 
-	pconf_finish(&ctx);		
+	/* Monitor rules */
+	for ( i = 1; i <= get_number_of_monitor_rules(); i++) {
+		search_monitor_rule(i);
+		s = get_monitor_system();
+		s2 = get_monitor_user();
+		if (!search_user(s2)) {
+			upslogx(LOG_ERR, "Non declared user %s used in monitor rules. Ignoring the rule", s2);
+			free(s); free(s2);
+			continue;
+		}
+		s3 = get_password();
+		if ( get_type() == upsmon_master) {
+			addups(reload_flag, s, get_monitor_powervalue(), s2, s3, "master");
+		} else if ( get_type() == upsmon_slave ) {
+			addups(reload_flag, s, get_monitor_powervalue(), s2, s3, "slave");
+		} else {
+			upslogx(LOG_ERR, "User %s is not an upsmon master or slave. Ignoring the rule", s2);
+		}
+		free(s); free(s2); free(s3);
+	}
+	
+	// free the memory
+	drop_config();
+
 }
 
 /* SIGPIPE handler */
@@ -2076,3 +2019,4 @@ int main(int argc, char *argv[])
 
 	exit(EXIT_SUCCESS);
 }
+

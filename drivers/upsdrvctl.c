@@ -28,7 +28,7 @@
 #include "proto.h"
 #include "version.h"
 #include "common.h"
-#include "upsconf.h"
+#include "../lib/libupsconfig.h"
 
 typedef struct {
 	char	*upsname;
@@ -55,74 +55,78 @@ static	char	*pt_root = NULL, *pt_user = NULL;
 static	sigset_t	nut_upsdrvctl_sigmask;
 static	struct	sigaction	sa;
 
-void do_upsconf_args(char *upsname, char *var, char *val)
+/* called for fatal errors in nutparser */
+static void upsconf_err(const char *errmsg)
 {
-	ups_t	*tmp, *last;
-
-	/* handle global declarations */
-	if (!upsname) {
-		if (!strcmp(var, "maxstartdelay"))
-			maxstartdelay = atoi(val);
-
-		if (!strcmp(var, "driverpath")) {
-			if (driverpath)
-				free(driverpath);
-
-			driverpath = xstrdup(val);
-		}
-
-		/* ignore anything else - it's probably for main */
-
-		return;
-	}
-
-	last = tmp = upstable;
-
-	while (tmp) {
-		last = tmp;
-
-		if (!strcmp(tmp->upsname, upsname)) {
-			if (!strcmp(var, "driver"))
-				tmp->driver = xstrdup(val);
-
-			if (!strcmp(var, "port"))
-				tmp->port = xstrdup(val);
-
-			if (!strcmp(var, "maxstartdelay"))
-				tmp->maxstartdelay = atoi(val);
-
-			if (!strcmp(var, "sdorder")) {
-				tmp->sdorder = atoi(val);
-
-				if (tmp->sdorder > maxsdorder)
-					maxsdorder = tmp->sdorder;
-			}
-
-			return;
-		}
-
-		tmp = tmp->next;
-	}
-
-	tmp = xmalloc(sizeof(ups_t));
-	tmp->upsname = xstrdup(upsname);
-	tmp->driver = NULL;
-	tmp->port = NULL;
-	tmp->next = NULL;
-	tmp->sdorder = 0;
-	tmp->maxstartdelay = -1;	/* use global value by default */
-
-	if (!strcmp(var, "driver"))
-		tmp->driver = xstrdup(val);
-
-	if (!strcmp(var, "port"))
-		tmp->port = xstrdup(val);
-
-	if (last)
-		last->next = tmp;
-	else
-		upstable = tmp;
+	upslogx(LOG_ERR, "Fatal error in configuration file : %s", errmsg);
 }
+
+void read_upsconf(void)
+{
+	char	fn[SMALLBUF];
+	t_typed_value value;
+	t_enum_string enum_ups, enum_ups_begining;
+	ups_t *ups;
+	
+	snprintf(fn, sizeof(fn), "%s/nut.conf", confpath());
+	
+	load_config(fn, upsconf_err);
+	
+	// Lets begin with global args
+	value = get_variable("nut.ups.maxstartdelay");
+	if (value.has_value && value.type == string_type) {
+		maxstartdelay = atoi(value.value.string_value);
+	}
+	free_typed_value(value);
+	
+	value = get_variable("nut.ups.driverpath");
+	if (value.has_value && value.type == string_type) {
+		if (driverpath)
+			free(driverpath);
+
+		driverpath = value.value.string_value;
+	}
+	
+	// Lets make the upstable 
+	enum_ups_begining = enum_ups = get_ups_list();
+	
+	while (enum_ups != NULL) {
+		ups = xmalloc(sizeof(ups_t));
+		
+		search_ups(enum_ups->value);
+		
+		ups->upsname = xstrdup(enum_ups->value);
+		
+		ups->driver = get_driver();	
+		
+		ups->port = get_port();
+		
+		ups->next = upstable;
+		
+		value = get_ups_variable("sdorder");
+		if (value.has_value && value.type == string_type) {
+			ups->sdorder = atoi(value.value.string_value);
+		} else {
+			ups->sdorder = 0;
+		}
+		free_typed_value(value);
+		
+		value = get_ups_variable("maxstartdelay");
+		if (value.has_value && value.type == string_type) {
+			ups->maxstartdelay = atoi(value.value.string_value);
+		} else {
+			ups->maxstartdelay = -1;
+		}
+		free_typed_value(value);
+		
+		upstable = ups;
+
+		enum_ups = enum_ups->next_value;
+	}
+	free_enum_string(enum_ups_begining);
+	
+}
+
 
 /* handle sending the signal */
 static void stop_driver(const ups_t *ups)

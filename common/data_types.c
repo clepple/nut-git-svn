@@ -243,6 +243,7 @@ t_string mode_to_string(t_modes mode) {
 
 
 t_notify_events string_to_event(t_string s) {
+	if (strcmp(s,"online") == 0) return ONLINE;
 	if (strcmp(s,"onbatt") == 0) return ONBATT;
 	if (strcmp(s,"lowbatt") == 0) return LOWBATT;
 	if (strcmp(s,"fsd") == 0) return FSD;
@@ -256,6 +257,7 @@ t_notify_events string_to_event(t_string s) {
 
 t_string event_to_string(t_notify_events event) {
 	switch (event) {
+		case ONLINE : return "online";
 		case ONBATT : return "onbatt";
 		case LOWBATT : return "lowbatt";
 		case FSD : return "fsd";
@@ -281,6 +283,7 @@ t_flags string_to_flag(t_string s) {
 	if (strcmp(s,"EXEC+WALL+SYSLOG") == 0) return SYSLOGWALLEXEC;
 	if (strcmp(s,"EXEC+SYSLOG+WALL") == 0) return SYSLOGWALLEXEC;
 	if (strcmp(s,"WALL+EXEC") == 0) return WALLEXEC;
+	if (strcmp(s,"WALL") == 0) return WALL;
 	if (strcmp(s,"EXEC") == 0) return EXEC;
 	if (strcmp(s,"IGNORE") == 0) return IGNORE;
 	else return -1;

@@ -5,8 +5,7 @@ CFLAGS	= -I../include @CFLAGS@
 
 PROGS = upsconfig
 
-UPSCONFIGOBJ = ../common/data_types.o ../common/tree.o \
-../common/stack.o ../lib/libupsconfig.o ../common/nutparser.o upsconfig.o
+UPSCONFIGOBJ = upsconfig.o ../lib/libupsconfig.a
 LIBOBJ	= @LIBOBJ@
 
 all: $(PROGS)

@@ -3,6 +3,9 @@
 prefix		= @prefix@
 exec_prefix	= @exec_prefix@
 
+AR	 = @AR@
+RANLIB	 = @RANLIB@
+
 BINDIR		= $(DESTDIR)@bindir@
 LIBDIR		= $(DESTDIR)@libdir@
 
@@ -16,7 +19,14 @@ USE_PKG_CFG = @USE_PKG_CFG@
 CC	= @CC@
 CFLAGS	= -I../include @CFLAGS@
 
-all: libupsconfig.o
+LIBUPSCONFIG_OBJ = libupsconfig.o ../common/stack.o \
+../common/data_types.o ../common/tree.o ../common/nutparser.o
+
+all: libupsconfig.a
+
+libupsconfig.a: $(LIBUPSCONFIG_OBJ)
+	$(AR) rv libupsconfig.a $(LIBUPSCONFIG_OBJ)
+	$(RANLIB) libupsconfig.a
 
 clean:
 	rm -f *~ libupsclient.pc libupsclient-config

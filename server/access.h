@@ -41,6 +41,7 @@ struct access_t {
 int acl_check(const char *aclname, const struct sockaddr_in *addr);
 int access_check(const struct sockaddr_in *addr);
 void acl_add(const char *aclname, char *ipblock);
+void access_append(int action, const char *aclname);
 void access_add(int type, int numargs, const char **arg);
 void acl_free(void);
 void access_free(void);

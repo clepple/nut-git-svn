@@ -16,7 +16,7 @@ STRLCPY = @STRLCPY@
 
 NETOBJ  = netget.o netmisc.o netlist.o netuser.o netset.o netinstcmd.o
 UPSDOBJ	= upsd.o user.o conf.o ssl.o sstate.o access.o $(NETOBJ) \
-		desc.o ../common/state.o ../common/upsconf.o \
+		desc.o ../common/state.o ../lib/libupsconfig.a \
 		../common/parseconf.o
 
 SSL_CFLAGS  = @SSL_CFLAGS@

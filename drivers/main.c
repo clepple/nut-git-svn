@@ -19,6 +19,7 @@
 
 #include "main.h"
 #include "dstate.h"
+#include "../lib/libupsconfig.h"
 
 	/* data which may be useful to the drivers */	
 	int	upsfd = -1;
@@ -263,82 +264,130 @@ static int main_arg(char *var, char *val)
 	return 0;	/* unhandled, pass it through to the driver */
 }
 
-static void do_global_args(const char *var, const char *val)
+/* called for fatal errors in nutparser */
+static void upsconf_err(const char *errmsg)
 {
-	if (!strcmp(var, "pollinterval")) {
-		poll_interval = atoi(val);
-		/* store this too */
-		dparam_setinfo("pollinterval", val);
-		return;
-	}
+	upslogx(LOG_ERR, "Fatal error in configuration file : %s", errmsg);
+}
 
-	if (!strcmp(var, "chroot")) {
+void read_upsconf(void) 
+{
+	char	fn[SMALLBUF];
+	char	tmp[SMALLBUF];
+	t_string s;
+	t_enum_string enum_ups, enum_ups_begining;
+	t_enum_string enum_parameter, enum_parameter_begining;
+	t_enum_string enum_flag, enum_flag_begining;
+	t_typed_value value;
+
+	snprintf(fn, sizeof(fn), "%s/nut.conf", confpath());
+	
+	load_config(fn, upsconf_err);
+	
+	// Lets begin with global args
+	value = get_variable("nut.ups.pollinterval");
+	if (value.has_value && value.type == string_type) {
+		poll_interval = atoi(value.value.string_value);
+	}
+	free_typed_value(value);
+	
+	value = get_variable("nut.ups.chroot");
+	if (value.has_value && value.type == string_type) {
 		if (chroot_path)
 			free(chroot_path);
 
-		chroot_path = xstrdup(val);
+		chroot_path = value.value.string_value;
 	}
-
-	if (!strcmp(var, "user")) {
+	
+	value = get_variable("nut.ups.user");
+	if (value.has_value && value.type == string_type) {
 		if (user)
 			free(user);
 
-		user = xstrdup(val);
+		user = value.value.string_value;
 	}
-
-
-	/* unrecognized */
-}
-
-void do_upsconf_args(char *confupsname, char *var, char *val)
-{
-	char	tmp[SMALLBUF];
-
-	/* handle global declarations */
-	if (!confupsname) {
-		do_global_args(var, val);
-		return;
-	}
-
-	/* no match = not for us */
-	if (strcmp(confupsname, upsname) != 0)
-		return;
-
-	upsname_found = 1;
-
-	if (main_arg(var, val))
-		return;
-
-	/* flags (no =) now get passed to the driver-level stuff */
-	if (!val) {
-
-		/* also store this, but it's a bit different */
-		snprintf(tmp, sizeof(tmp), "driver.flag.%s", var);
-		dstate_setinfo(tmp, "enabled");
-
-		storeval(var, NULL);
-		return;
-	}
-
-	/* don't let the user shoot themselves in the foot */
-	if (!strcmp(var, "driver")) {
-		if (strcmp(val, progname) != 0)
+	
+	// Go through the list of UPSs
+	enum_ups_begining = enum_ups = get_ups_list();
+	
+	while (enum_ups != NULL) {
+		// Is that ups for us ?
+		if (strcmp(enum_ups->value, upsname) != 0) {
+			// Not for us, lets go to the next
+			enum_ups = enum_ups->next_value;
+			continue;
+		}
+		
+		upsname_found = 1;
+		search_ups(enum_ups->value);
+		
+		/* don't let the users shoot themselves in the foot */
+		s = get_driver();
+		if (strcmp(s, progname) != 0) {
 			fatalx("Error: UPS [%s] is for driver %s, but I'm %s!\n",
-				confupsname, val, progname);
-		return;
+				enum_ups->value, s, progname);
+		}
+		free(s);
+		
+		enum_parameter_begining = enum_parameter = get_driver_parameter_list();
+		while (enum_parameter != NULL) {
+			
+			value = get_driver_parameter(enum_parameter->value);
+			
+			// Only strings value are handled for the moment
+			if (value.type != string_type) {
+				// Ignore it and go to the next one
+				enum_parameter = enum_parameter->next_value;
+				continue;
+			}
+			
+			// It is a arg for main ?
+			if (main_arg(enum_parameter->value, value.value.string_value)) {
+				// It was ! go to the next
+				enum_parameter = enum_parameter->next_value;
+				continue;
+			}
+			
+			/* allow per-driver overrides of the global setting */
+			if (strcmp(enum_parameter->value, "pollinterval") == 0) {
+				poll_interval = atoi(value.value.string_value);
+				dparam_setinfo("pollinterval", value.value.string_value);
+			}
+			
+			/* everything else must be for the driver */
+			storeval(enum_parameter->value, value.value.string_value);
+			
+			free_typed_value(value);
+			
+			// Let's go to the next parameter
+			enum_parameter = enum_parameter->next_value;
+		}
+		free_enum_string(enum_parameter_begining);
+		
+		// The flags now
+		enum_flag_begining = enum_flag = get_driver_flag_list();
+		
+		while ( enum_flag != NULL) {
+			
+			// It is a flag for main ?
+			if (main_arg(enum_flag->value, NULL)) {
+				// It was ! go to the next
+				enum_flag = enum_flag->next_value;
+				continue;
+			}
+			
+			// If not, it is for the driver
+			snprintf(tmp, sizeof(tmp), "driver.flag.%s", enum_flag->value);
+			dstate_setinfo(tmp, "enabled");
+
+			storeval(enum_flag->value, NULL);
+		}
+		
+		enum_ups = enum_ups->next_value;
 	}
-
-	/* allow per-driver overrides of the global setting */
-	if (!strcmp(var, "pollinterval")) {
-		poll_interval = atoi(val);
-		/* store this too (might override the global one) */
-		dparam_setinfo("pollinterval", val);
-		return;
-	}
-
-	/* everything else must be for the driver */
-
-	storeval(var, val);
+	free_enum_string(enum_ups_begining);
+	
+	drop_config();
 }
 
 /* split -x foo=bar into 'foo' and 'bar' */

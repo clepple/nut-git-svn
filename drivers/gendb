@@ -52,8 +52,8 @@ do
 			;;
 	esac	
 
-	echo "$i: $i.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $EXTRAOBJ \$(LIBDEP)" >> $MFDB
-	echo "	\$(CC) \$(CFLAGS) \$(LDFLAGS) -o $i $i.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $EXTRAOBJ \$(LIBOBJ) $EXTRA" >> $MFDB
+	echo "$i: $i.o main.o serial.o dstate.o ../common/state.o ../common/parseconf.o $EXTRAOBJ \$(LIBDEP)" >> $MFDB
+	echo "	\$(CC) \$(CFLAGS) \$(LDFLAGS) -o $i $i.o main.o serial.o dstate.o ../common/state.o ../common/parseconf.o $EXTRAOBJ \$(LIBOBJ) $EXTRA" >> $MFDB
 done
 
 for i in *.c

@@ -1,3 +1,18 @@
+Fri Aug 4  15:44:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
+
+ - client/upsmon.c : adaptated to use libupsconfig instead of parseconf
+ - drivers/main.ch, upsdrvctl.c : adaptated to use libupsconfig
+ - server/access.ch, conf.c, user.ch : adapted to use libupsconfig
+ - Makefile.in in the client, driver and server directory. gendb in drivers directory
+   Adapted to use libupsconfig instead of parseconf or upsconf
+ - lib/makefile : adapted to make the libupsconfig.a library
+ - lib/libupsconfig.ch : added some functions
+ - common/data_types.c : corrected a omission
+ - data/base_config/nut.conf : Some minor changes
+ - utils/Makefile.in : adapted to use libupsconfig as a library
+ - utils/upsconfig.c : a minor change
+ - Makefile : Changed the order of the subdir to make libupsconfig.a before what need it
+
 Tue Aug 1  17:06:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
 
  - utils/upsconfig.c : fully functionnal and commented version of upsconfig !!

@@ -67,7 +67,8 @@ upsset.cgi: upsset.c $(UPSCLI_OBJ) cgilib.o $(LIBDEP)
 	$(CC) $(NET_CFLAGS) -o upsset.cgi upsset.c $(UPSCLI_OBJ) cgilib.o $(LIBOBJ) $(NET_LDFLAGS)
 
 upsmon: upsmon.c $(UPSCLI_OBJ) $(LIBDEP)
-	$(CC) $(NET_CFLAGS) -o upsmon upsmon.c $(UPSCLI_OBJ) $(LIBOBJ) $(NET_LDFLAGS)
+	$(CC) $(NET_CFLAGS) -o upsmon upsmon.c $(UPSCLI_OBJ) $(LIBOBJ) $(NET_LDFLAGS) \
+							../lib/libupsconfig.a
 
 # other stuff
 

@@ -23,7 +23,8 @@
 #include <arpa/inet.h>
 
 #include "common.h"
-#include "parseconf.h"
+//#include "parseconf.h"
+#include "../lib/libupsconfig.h"
 
 #include "user.h"
 #include "user-data.h"
@@ -110,7 +111,7 @@ static void user_add_allow(const char *host)
 }
 
 /* set password */
-static void user_password(const char *pw)
+static void user_password(char *pw)
 {
 	if (!curr_user) {
 		upslogx(LOG_WARNING, "Ignoring password definition outside "
@@ -124,10 +125,12 @@ static void user_password(const char *pw)
 	if (curr_user->password) {
 		fprintf(stderr, "Ignoring duplicate password for %s\n", 
 			curr_user->username);
+		free(pw);
 		return;
 	}
 
 	curr_user->password = xstrdup(pw);
+	free(pw);
 }
 
 /* attach allowed instcmds to user */
@@ -451,150 +454,75 @@ static void set_upsmon_type(char *type)
 	upslogx(LOG_WARNING, "Unknown upsmon type %s", type);
 }
 
-/* actually do something with the variable + value pairs */
-static void parse_var(char *var, char *val)
+/* Read the users from the configuration */ 
+void read_users(void)
 {
-	if (!strcasecmp(var, "password")) {
-		user_password(val);
-		return;
-	}
+	t_enum_string users, first_user;
+	t_enum_string list, first_value;
+	t_string pw;
+	
+	/* Get the list of users */
+	first_user = users = get_users_list();
+	while (users != NULL) {
 
-	if (!strcasecmp(var, "instcmds")) {
-		user_add_instcmd(val);
-		return;
-	}
-
-	if (!strcasecmp(var, "actions")) {
-		user_add_action(val);
-		return;
-	}
-
-	if (!strcasecmp(var, "allowfrom")) {
-		user_add_allow(val);
-		return;
-	}
-
-	/* someone did 'upsmon = type' - allow it anyway */
-	if (!strcasecmp(var, "upsmon")) {
-		set_upsmon_type(val);
-		return;
-	}
-
-	upslogx(LOG_NOTICE, "Unrecognized user setting %s", var);
-}
-
-/* parse first var+val pair, then flip through remaining vals */
-static void parse_rest(char *var, char *fval, char **arg, int next, int left)
-{
-	int	i;
-
-	/* no globals supported yet, so there's no sense in continuing */
-	if (!curr_user)
-		return;
-
-	parse_var(var, fval);
-
-	if (left == 0)
-		return;
-
-	for (i = 0; i < left; i++)
-		parse_var(var, arg[next + i]);
-}
-
-static void user_parse_arg(int numargs, char **arg)
-{
-	char	*ep;
-
-	if ((numargs == 0) || (!arg))
-		return;
-
-	/* ignore old file format */
-	if (!strcasecmp(arg[0], "user"))
-		return;
-
-	/* handle 'foo=bar' (compressed form) */
-
-	ep = strchr(arg[0], '=');
-	if (ep) {
-		*ep = '\0';
-
-		/* parse first var/val, plus subsequent values (if any) */
-
-		/*      0       1       2  ... */
-		/* foo=bar <rest1> <rest2> ... */
-
-		parse_rest(arg[0], ep+1, arg, 1, numargs - 1);
-		return;
-	}
-
-	/* look for section headers - [username] */
-	if ((arg[0][0] == '[') && (arg[0][strlen(arg[0])-1] == ']')) {
-		arg[0][strlen(arg[0])-1] = '\0';
-		user_add(&arg[0][1]);
-
-		return;
-	}
-
-	if (numargs < 2)
-		return;
-
-	if (!strcasecmp(arg[0], "upsmon"))
-		set_upsmon_type(arg[1]);
-
-	/* everything after here needs arg[1] and arg[2] */
-	if (numargs < 3)
-		return;
-
-	/* handle 'foo = bar' (split form) */
-	if (!strcmp(arg[1], "=")) {
-
-		/*   0 1   2      3       4  ... */
-		/* foo = bar <rest1> <rest2> ... */
-
-		/* parse first var/val, plus subsequent values (if any) */
+		/* Set the current user (for libupsconfig) */
+		search_user(users->value);
 		
-		parse_rest(arg[0], arg[2], arg, 3, numargs - 3);
-		return;
-	}
-
-	/* ... unhandled ... */
-}
-
-/* called for fatal errors in parseconf like malloc failures */
-static void upsd_user_err(const char *errmsg)
-{
-	upslogx(LOG_ERR, "Fatal error in parseconf(upsd.users): %s", errmsg);
-}
-
-void user_load(void)
-{
-	char	fn[SMALLBUF];
-	PCONF_CTX	ctx;
-
-	curr_user = NULL;
-
-	snprintf(fn, sizeof(fn), "%s/upsd.users", confpath());
-
-	check_perms(fn);
-
-	pconf_init(&ctx, upsd_user_err);
-
-	if (!pconf_file_begin(&ctx, fn)) {
-		pconf_finish(&ctx);
-
-		upslogx(LOG_WARNING, "%s", ctx.errmsg);
-		return;
-	}
-
-	while (pconf_file_next(&ctx)) {
-		if (pconf_parse_error(&ctx)) {
-			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
-				fn, ctx.linenum, ctx.errmsg);
+		pw = get_password();
+		
+		if (strcmp(pw, "") == 0 || strcmp(pw, "!") == 0) {
+			upslogx(LOG_ERR, "Invalid password for user %s. Ignoring the user", users->value);
+			users = users->next_value;
 			continue;
 		}
-
-		user_parse_arg(ctx.numargs, ctx.arglist);
+		user_add(users->value);
+		
+		
+		user_password(get_password());
+		
+		/* Add the list of instcmds of the user */
+		first_value = list = get_instcmds();
+		while (list != NULL) {
+			user_add_instcmd(list->value);
+			list = list->next_value;
+		}
+		free_enum_string(first_value);
+		
+		/* Add the list of actions of the user */
+		first_value = list = get_actions();
+		while (list != NULL) {
+			user_add_action(list->value);
+			list = list->next_value;
+		}
+		free_enum_string(first_value);
+		
+		/* Add the list of allowfrom of the user */
+		first_value = list = get_allowfrom();
+		while (list != NULL) {
+			user_add_allow(list->value);
+			list = list->next_value;
+		}
+		free_enum_string(first_value);
+		
+		/* What is the type of the user */
+		switch (get_type()) {
+			case admin :
+				// Add default actions for admin type
+				user_add_action("SET");
+				// Add defaults instcmds for admin type
+				user_add_instcmd("all");
+				break;
+			case upsmon_master :
+				set_upsmon_type("master");
+				break;
+			case upsmon_slave :
+				set_upsmon_type("slave");
+				break;
+			default : ;
+		}
+		
+		users = users->next_value;
 	}
-
-	pconf_finish(&ctx);
+	free_enum_string(first_user);
 }
+
