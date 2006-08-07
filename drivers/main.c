@@ -529,7 +529,7 @@ int main(int argc, char **argv)
 				read_upsconf();
 
 				if (!upsname_found)
-					upslogx(LOG_WARNING, "Warning: Section %s not found in ups.conf",
+					upslogx(LOG_WARNING, "Warning: Section %s not found in your configuration",
 						optarg);
 				break;
 			case 'D':
@@ -571,7 +571,7 @@ int main(int argc, char **argv)
 	/* we need to get the port from somewhere */
 	if (argc < 1) {
 		if (!device_path) {
-			fprintf(stderr, "Error: You must specify a port name in ups.conf or on the command line.\n");
+			fprintf(stderr, "Error: You must specify a port name in your configuration file(s) or on the command line.\n");
 			help();
 		}
 	}

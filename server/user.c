@@ -470,7 +470,7 @@ void read_users(void)
 		
 		pw = get_password();
 		
-		if (strcmp(pw, "") == 0 || strcmp(pw, "!") == 0) {
+		if (strlen(pw) == 0 || strcmp(pw, "!") == 0) {
 			upslogx(LOG_ERR, "Invalid password for user %s. Ignoring the user", users->value);
 			users = users->next_value;
 			continue;

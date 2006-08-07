@@ -531,7 +531,7 @@ void upsdrv_updateinfo(void)
 	hid_info_t *item;
 	char *nutvalue;
 	int retcode, evtCount = 0;
-	HIDItem *eventsList[10];
+	HIDItem *eventsList[20];
 
 	upsdebugx(1, "upsdrv_updateinfo...");
 

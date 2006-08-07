@@ -906,10 +906,10 @@ static void addups(int reloading, const char *sys, int pv,
 
 	/* deal with sys without a upsname - refuse it */
 	if (!strchr(sys, '@')) {
-		upslogx(LOG_WARNING, "Ignoring invalid MONITOR line in ups.conf (%s)",
+		upslogx(LOG_WARNING, "Ignoring invalid MONITOR line in ups configuration (%s)",
 			sys);
 		upslogx(LOG_WARNING, "UPS directives now require a UPS name "
-			"(MONITOR upsname@hostname ...)");
+			"(monitor.upsname@hostname ...)");
 		return;
 	}
 
@@ -1204,15 +1204,15 @@ static void loadconfig(void)
 
 	/* notify messages and flags*/
 	for ( i = ONLINE; i <= NOCOMM; i++ ) {
+		s2 = event_to_string_uc(i);
+		
 		s = get_notify_message(i);
 		if ( s != 0) {
-			s2 = event_to_string(i);
 			set_notifymsg(s2, s);
 			free(s);
 		}
 		if (get_notify_flag(i) != 0) {
 			s = flag_to_string(get_notify_flag(i));
-			s2 = event_to_string(i);
 			set_notifyflag(s2, s);
 		}
 	}

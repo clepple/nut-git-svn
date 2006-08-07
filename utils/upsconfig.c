@@ -18,7 +18,7 @@ void print_usage() {
 	printf("                  [-b <base_config_dir>] [-u <upsd_server>] [-s] [-h]\n");
 	printf("-d, --driver            The driver which support the ups\n");
 	printf("-m, --mode              The mode to run NUT in. standalone | net_server |\n");
-	printf("                        net_client | pm.\n");
+	printf("                        net_client | pm | none.\n");
 	printf("-p, --port              The port in which the ups is plugged. Needed if the\n");
 	printf("                        driver don't support \"auto\". default is \"auto\"\n");
 	printf("-t, --target_dir        Where to save the generated configuration. Default\n");
@@ -30,6 +30,7 @@ void print_usage() {
 	printf("                        Use it for net_client configuration. Default is\n");
 	printf("                        \"localhost\"\n");
 	printf("-s, --single            Save the configuration in a single file\n");
+	printf("-q, --quiet             Don't print anything apart errors\n");
 	printf("-h, --help              Show this help message\n");
 }
 
@@ -41,6 +42,7 @@ int main (int argc, char** argv)  {
 	t_string base_config_dir;
 	t_string server = 0;
 	boolean single = FALSE;
+	boolean quiet = FALSE;
 	int i;
 	t_string conf_file, comm_file, s;
 	FILE* test;
@@ -125,6 +127,10 @@ int main (int argc, char** argv)  {
 			single = TRUE;
 			continue;
 		}
+		if (strcmp(argv[i], "-q") == 0 || strcmp(argv[i], "--quiet") == 0) {
+			quiet = TRUE;
+			continue;
+		}
 		if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
 			print_usage();
 			exit(0);
@@ -132,7 +138,7 @@ int main (int argc, char** argv)  {
 	}
 	
 	// Some parameters are mandatory
-	if (driver == 0) {
+	if (driver == 0 && mode != pm && mode != no_mode) {
 		print_error("\"driver\" option is mandatory");
 		print_usage();
 		exit(EXIT_FAILURE);
@@ -181,7 +187,9 @@ int main (int argc, char** argv)  {
 	}
 	
 	// Load and modify the configuration from the template
-	printf("\nLoading the base configuration from template %s\n\n", conf_file);
+	if (!quiet) {
+		printf("\nLoading the base configuration from template %s\n\n", conf_file);
+	}
 	
 	if (!load_config(conf_file, 0)) {
 		// An errors occured, aborting
@@ -220,51 +228,55 @@ int main (int argc, char** argv)  {
 	
 	
 	// Save the generated configuration
-	printf("Saving your configuration in %s\n", target_dir);
+	if (!quiet) {
+		printf("Saving your configuration in %s\n", target_dir);
 	
-	if (comm_file == 0) {
-		printf("I did not find any comments template file. Your configuration files will not be commented\n\n");
-	} else {
-		printf("I'll use the following comments template file to comment your configuration file : %s\n\n", comm_file);
+		if (comm_file == 0) {
+			printf("I did not find any comments template file. Your configuration files will not be commented\n\n");
+		} else {
+			printf("I'll use the following comments template file to comment your configuration file : %s\n\n", comm_file);
+		}
 	}
 	
 	if (!save_config(target_dir, comm_file, single, print_error)) {
 		exit(EXIT_FAILURE);
 	}
 	
-	// Print some comments about the configuration
-	if (mode == net_server) {
-		if (single) {
-			printf("#   You are in network server configuration\n\n");
-			printf("# Don't forget to modify the acl (in upsd.acl section),\n");
-			printf("# the accept and reject variable (both in upsd section)\n");
-			printf("# and the allowfrom variable of user monslave (in \n");
-			printf("# users.monslave section) to allow him to acces to the.\n");
-			printf("# upsd server.\n\n");
-		} else {
-			printf("#   You are in network server configuration\n\n");
-			printf("# Don't forget to modify the acl (in upsd.conf file),\n");
-			printf("# the accept and reject variable (also in upsd.conf file)\n");
-			printf("# and the allowfrom variable of user monslave (in \n");
-			printf("# users.conf, monslave section) to allow him to acces to.\n");
-			printf("# the upsd server.\n\n");
+	if (!quiet) {
+		// Print some comments about the configuration
+		if (mode == net_server) {
+			if (single) {
+				printf("#   You are in network server configuration\n\n");
+				printf("# Don't forget to modify the acl (in upsd.acl section),\n");
+				printf("# the accept and reject variable (both in upsd section)\n");
+				printf("# and the allowfrom variable of user monslave (in \n");
+				printf("# users.monslave section) to allow him to acces to the.\n");
+				printf("# upsd server.\n\n");
+			} else {
+				printf("#   You are in network server configuration\n\n");
+				printf("# Don't forget to modify the acl (in upsd.conf file),\n");
+				printf("# the accept and reject variable (also in upsd.conf file)\n");
+				printf("# and the allowfrom variable of user monslave (in \n");
+				printf("# users.conf, monslave section) to allow him to acces to.\n");
+				printf("# the upsd server.\n\n");
+			}
 		}
-	}
 	
-	if (getuid() != getpwnam("root")->pw_uid) {
-		printf("#   You are not root\n");
-		printf("# I am not able to modify the ownership and the group of the \n");
-		printf("# created file(s).\n\n");
-	}
-	
-	if (single) {
-		printf("# !!                                                    #\n");
-		printf("# !! DON'T FORGET TO MODIFY PASSWORDS IN USERS SECTION  #\n");
-		printf("# !!                                                    #\n");
-	} else {
-		printf("# !!                                                      #\n");
-		printf("# !! DON'T FORGET TO MODIFY PASSWORDS IN users.conf FILE  #\n");
-		printf("# !!                                                      #\n");
+		if (getuid() != getpwnam("root")->pw_uid) {
+			printf("#   You are not root\n");
+			printf("# I am not able to modify the ownership and the group of the \n");
+			printf("# created file(s).\n\n");
+		}
+		
+		if (single) {
+			printf("# !!                                                    #\n");
+			printf("# !! DON'T FORGET TO MODIFY PASSWORDS IN USERS SECTION  #\n");
+			printf("# !!                                                    #\n");
+		} else {
+			printf("# !!                                                      #\n");
+			printf("# !! DON'T FORGET TO MODIFY PASSWORDS IN users.conf FILE  #\n");
+			printf("# !!                                                      #\n");
+		}
 	}
 	
 	// free memory

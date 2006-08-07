@@ -6,25 +6,49 @@ exec_prefix	= @exec_prefix@
 
 CONFPATH	= $(DESTDIR)@sysconfdir@
 
+COMMENTSDIR = comments
+BASECONFIGDIR = base_config
+BASECONFPATH = $(DESTDIR)@sysconfdir@/$(BASECONFIGDIR)
+COMMENTSPATH = $(DESTDIR)@sysconfdir@/$(BASECONFIGDIR)/$(COMMENTSDIR)
+
 INSTALLCMD  = @INSTALL@
 
-SECFILES = upsmon.conf upsd.conf upsd.users
-PUBFILES = upssched.conf ups.conf
+PUBFILES = upssched.conf
 CGIPUB   = hosts.conf upsset.conf upsstats.html upsstats-single.html
+BASECONFFILES = nut.conf
+COMMENTSFILES = conf.comm.C
 
 all:
 clean:
 
 install:
-	@for f in $(SECFILES) ; do \
-		$(INSTALLCMD) -m 0600 $$f $(CONFPATH)/$$f.sample; \
-	done
-
+	
 	@for f in $(PUBFILES) ; do \
 		$(INSTALLCMD) -m 0644 $$f $(CONFPATH)/$$f.sample; \
 	done
+	
+	@if [ ! -d $(BASECONFPATH) ] ; then \
+		mkdir $(BASECONFPATH); \
+	fi
+	
+	@for f in $(BASECONFFILES) ; do \
+		$(INSTALLCMD) -m 0644 $$f $(BASECONFPATH)/$$f; \
+	done
+	
+	
+	@if [ ! -d $(COMMENTSPATH) ] ; then \
+		mkdir $(COMMENTSPATH); \
+	fi
+	
+	@cd $(COMMENTSDIR); \
+	for f in $(COMMENTSFILES) ; do \
+		$(INSTALLCMD) -m 0644 $$f $(COMMENTSPATH)/$$f; \
+	done; \
+	cd ..
+	
+	@cd ../utils ; ./upsconfig -m none --quiet ; cd ../conf
 
 install-cgi-conf:
-	@for f in $(CGIPUB) ; do \
-		$(INSTALLCMD) -m 0644 $$f $(CONFPATH)/$$f.sample; \
+	for f in $(CGIPUB) ; do \
+		$(INSTALLCMD) -m 0644 comments/$$f $(CONFPATH)/$$f.sample; \
 	done

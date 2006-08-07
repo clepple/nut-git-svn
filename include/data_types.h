@@ -58,7 +58,8 @@ typedef enum {
 	standalone,
 	net_server,
 	net_client,
-	pm
+	pm,
+	no_mode
 } t_modes;
 
 
@@ -281,6 +282,16 @@ t_notify_events string_to_event(t_string s);
  * @return A string that represent the notify event
  */
 t_string event_to_string(t_notify_events event);
+
+
+/**
+ * Convert a notify event into a string in upper case
+ * 
+ * @param event The notify event to convert
+ * 
+ * @return A string that represent the notify event
+ */
+t_string event_to_string_uc(t_notify_events event);
 
 /**
  * Convert a string into a notify flag

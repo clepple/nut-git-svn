@@ -228,6 +228,7 @@ t_modes string_to_mode(t_string s) {
 	if (strcmp(s,"net_server") == 0) return net_server;
 	if (strcmp(s,"net_client") == 0) return net_client;
 	if (strcmp(s,"pm") == 0) return pm;
+	if (strcmp(s,"none") == 0) return no_mode;
 	else return -1;
 }
 
@@ -237,6 +238,7 @@ t_string mode_to_string(t_modes mode) {
 		case net_server : return "net_server";
 		case net_client : return "net_client";
 		case pm : return "pm";
+		case no_mode : return "none";
 		default : return 0;
 	}
 }
@@ -266,6 +268,21 @@ t_string event_to_string(t_notify_events event) {
 		case SHUTDOWN : return "shutdown";
 		case REPLBATT : return "replbatt";
 		case NOCOMM : return "nocomm";
+		default : return 0;
+	}
+}
+
+t_string event_to_string_uc(t_notify_events event) {
+	switch (event) {
+		case ONLINE : return "ONLINE";
+		case ONBATT : return "ONBATT";
+		case LOWBATT : return "LOWBATT";
+		case FSD : return "FSD";
+		case COMMOK : return "COMMOK";
+		case COMMBAD : return "COMMBAD";
+		case SHUTDOWN : return "SHUTDOWN";
+		case REPLBATT : return "REPLBATT";
+		case NOCOMM : return "NOCOMM";
 		default : return 0;
 	}
 }

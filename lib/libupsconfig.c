@@ -55,12 +55,12 @@ FILE* open_file(t_string file_name, t_string mode ,void errhandler(const char*))
 	t_string s;
 	
 	if (errfunction == 0) {
-		errfunction = libupsconfig_print_error;
+		errfunction = &libupsconfig_print_error;
 	}
 	file = fopen(file_name, mode);
 	if (file == 0) {
+		s = xmalloc(sizeof(char) * (32 + strlen(file_name)));
 		switch (errno) {
-			s = xmalloc(sizeof(char) * (32 + strlen(file_name)));
 			case EACCES : 
 				sprintf(s, "Permission denied to access to %s", file_name);
 				errfunction(s);
@@ -149,6 +149,7 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 		if (is_root_user) {
 			chown(nut_conf, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
 		}
+		chmod(nut_conf, S_IRUSR | S_IWUSR | S_IRGRP);
 		
 		sprintf(nut_conf, "%s/ups.conf", directory_dest);
 		unlink(nut_conf);
@@ -170,24 +171,25 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				fwrite("mode = \"standalone\"\n\n", 21, 1, conf_file);
 				
 				write_desc("nut.ups_header_only", conf_file, comm_file);
-				sprintf(s, "ups (\n\tinclude %s/ups.conf\n)\n\n", directory_dest);
+				sprintf(s, "ups (\n\tinclude \"%s/ups.conf\"\n)\n\n", directory_dest);
 				fwrite(s, strlen(s), 1, conf_file);
 				
 				write_desc("nut.users_header_only", conf_file, comm_file);
-				sprintf(s, "users (\n\tinclude %s/users.conf\n)\n\n", directory_dest);
+				sprintf(s, "users (\n\tinclude \"%s/users.conf\"\n)\n\n", directory_dest);
 				fwrite(s, strlen(s), 1, conf_file);
 				
 				write_desc("nut.upsd", conf_file, comm_file);
-				sprintf(s, "upsd (\n\tinclude %s/upsd.conf\n)\n\n", directory_dest);
+				sprintf(s, "upsd (\n\tinclude \"%s/upsd.conf\"\n)\n\n", directory_dest);
 				fwrite(s, strlen(s), 1, conf_file);
 				
 				write_desc("nut.upsmon", conf_file, comm_file);
-				sprintf(s, "upsmon (\n\tinclude %s/upsmon.conf\n)\n\n", directory_dest);
+				sprintf(s, "upsmon (\n\tinclude \"%s/upsmon.conf\"\n)\n\n", directory_dest);
 				fwrite(s, strlen(s), 1, conf_file);
 				fclose(conf_file);
 				if (is_root_user) {
 					chown(nut_conf, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
 				}
+				chmod(nut_conf, S_IRUSR | S_IWUSR | S_IRGRP);
 				
 				sprintf(s, "%s/ups.conf", directory_dest);
 				conf_file = open_file( s, "w", errhandler);
@@ -207,6 +209,7 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				if (is_root_user) {
 					chown(s, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
 				}
+				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
 				
 				sprintf(s, "%s/users.conf", directory_dest);
 				conf_file = open_file( s, "w", errhandler);
@@ -225,6 +228,7 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				if (is_root_user) {
 					chown(s, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
 				}
+				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
 				
 				sprintf(s, "%s/upsd.conf", directory_dest);
 				conf_file = open_file( s, "w", errhandler);
@@ -243,6 +247,7 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				if (is_root_user) {
 					chown(s, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
 				}
+				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
 				
 				sprintf(s, "%s/upsmon.conf", directory_dest);
 				conf_file = open_file( s, "w", errhandler);
@@ -261,6 +266,7 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				if (is_root_user) {
 					chown(s, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
 				}
+				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
 				
 				free(s);
 				break;
@@ -271,24 +277,25 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				fwrite("mode = \"net_server\"\n\n", 21, 1, conf_file);
 				
 				write_desc("nut.ups_header_only", conf_file, comm_file);
-				sprintf(s, "ups (\n\tinclude %s/ups.conf\n)\n\n", directory_dest);
+				sprintf(s, "ups (\n\tinclude \"%s/ups.conf\"\n)\n\n", directory_dest);
 				fwrite(s, strlen(s), 1, conf_file);
 				
 				write_desc("nut.users_header_only", conf_file, comm_file);
-				sprintf(s, "users (\n\tinclude %s/users.conf\n)\n\n", directory_dest);
+				sprintf(s, "users (\n\tinclude \"%s/users.conf\"\n)\n\n", directory_dest);
 				fwrite(s, strlen(s), 1, conf_file);
 				
 				write_desc("nut.upsd", conf_file, comm_file);
-				sprintf(s, "upsd (\n\tinclude %s/upsd.conf\n)\n\n", directory_dest);
+				sprintf(s, "upsd (\n\tinclude \"%s/upsd.conf\"\n)\n\n", directory_dest);
 				fwrite(s, strlen(s), 1, conf_file);
 				
 				write_desc("nut.upsmon", conf_file, comm_file);
-				sprintf(s, "upsmon (\n\tinclude %s/upsmon.conf\n)\n\n", directory_dest);
+				sprintf(s, "upsmon (\n\tinclude \"%s/upsmon.conf\"\n)\n\n", directory_dest);
 				fwrite(s, strlen(s), 1, conf_file);
 				fclose(conf_file);
 				if (is_root_user) {
-					chown(s, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
+					chown(nut_conf, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
 				}
+				chmod(nut_conf, S_IRUSR | S_IWUSR | S_IRGRP);
 				
 				sprintf(s, "%s/ups.conf", directory_dest);
 				conf_file = open_file( s, "w", errhandler);
@@ -307,6 +314,7 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				if (is_root_user) {
 					chown(s, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
 				}
+				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
 				
 				sprintf(s, "%s/users.conf", directory_dest);
 				conf_file = open_file( s, "w", errhandler);
@@ -325,6 +333,7 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				if (is_root_user) {
 					chown(s, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
 				}
+				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
 				
 				sprintf(s, "%s/upsd.conf", directory_dest);
 				conf_file = open_file( s, "w", errhandler);
@@ -343,6 +352,7 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				if (is_root_user) {
 					chown(s, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
 				}
+				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
 				
 				sprintf(s, "%s/upsmon.conf", directory_dest);
 				conf_file = open_file( s, "w", errhandler);
@@ -361,6 +371,7 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				if (is_root_user) {
 					chown(s, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
 				}
+				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
 				
 				free(s);
 				break;
@@ -368,41 +379,20 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				write_desc("nut", conf_file, comm_file);
 				s = xmalloc(sizeof(char) * ( 50 + strlen(directory_dest)));
 				write_desc("nut.mode", conf_file, comm_file);
-				fwrite("mode = \"standalone\"\n\n", 21, 1, conf_file);
-				
-				write_desc("nut.ups_header_only", conf_file, comm_file);
-				sprintf(s, "ups (\n\tinclude %s/ups.conf\n)\n\n", directory_dest);
-				fwrite(s, strlen(s), 1, conf_file);
+				fwrite("mode = \"net_client\"\n\n", 21, 1, conf_file);
 				
 				write_desc("nut.users_header_only", conf_file, comm_file);
-				sprintf(s, "users (\n\tinclude %s/users.conf\n)\n\n", directory_dest);
+				sprintf(s, "users (\n\tinclude \"%s/users.conf\"\n)\n\n", directory_dest);
 				fwrite(s, strlen(s), 1, conf_file);
 				
 				write_desc("nut.upsmon", conf_file, comm_file);
-				sprintf(s, "upsmon (\n\tinclude %s/upsmon.conf\n)\n\n", directory_dest);
+				sprintf(s, "upsmon (\n\tinclude \"%s/upsmon.conf\"\n)\n\n", directory_dest);
 				fwrite(s, strlen(s), 1, conf_file);
 				fclose(conf_file);
 				if (is_root_user) {
-					chown(s, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
+					chown(nut_conf, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
 				}
-				
-				sprintf(s, "%s/ups.conf", directory_dest);
-				conf_file = open_file( s, "w", errhandler);
-				if (conf_file == 0) {
-					return 0;
-				}
-				
-				write_desc("nut.ups", conf_file, comm_file);
-				son = (tree_search(conf, "nut.ups", 1))->son;
-				while (son != 0) {
-					save(son, conf_file, "", comm_file);
-					fwrite("\n", 1, 1, conf_file);
-					son = son->next_brother;
-				}
-				fclose(conf_file);
-				if (is_root_user) {
-					chown(s, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
-				}
+				chmod(nut_conf, S_IRUSR | S_IWUSR | S_IRGRP);
 				
 				sprintf(s, "%s/users.conf", directory_dest);
 				conf_file = open_file( s, "w", errhandler);
@@ -421,6 +411,7 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				if (is_root_user) {
 					chown(s, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
 				}
+				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
 				
 				sprintf(s, "%s/upsmon.conf", directory_dest);
 				conf_file = open_file( s, "w", errhandler);
@@ -439,17 +430,31 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				if (is_root_user) {
 					chown(s, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
 				}
+				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
 				
 				free(s);
 				break;
+				
 			case pm :
 				write_desc("nut", conf_file, comm_file);
 				write_desc("nut.mode", conf_file, comm_file);
-				fwrite("mode = \"pm\"\n", 12, 1, conf_file);
+				fwrite("mode = \"pm\"\n\n", 13, 1, conf_file);
 				fclose(conf_file);
 				if (is_root_user) {
-					chown(s, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
+					chown(nut_conf, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
 				}
+				chmod(nut_conf, S_IRUSR | S_IWUSR | S_IRGRP);
+				
+			case no_mode :
+				write_desc("nut", conf_file, comm_file);
+				write_desc("nut.mode", conf_file, comm_file);
+				fwrite("mode = \"none\"\n\n", 15, 1, conf_file);
+				fclose(conf_file);
+				if (is_root_user) {
+					chown(nut_conf, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
+				}
+				chmod(nut_conf, S_IRUSR | S_IWUSR | S_IRGRP);
+				
 			default : 
 				return 0;
 		}
@@ -501,17 +506,19 @@ t_typed_value get_variable(t_string varname) {
 		t = tree_search(conf, varname, TRUE);
 		if (t == 0) {
 			value.has_value = FALSE;
+			value.type = string_type; // To avoid a warning;
 			return value;
 		}
 		value.has_value = t->has_value;
+		value.type = t->type;
 		if (value.has_value) {
 			value.value = t->value;
-			value.type = t->type;
 		}
 		current.rights_out = t->right;
 		return value;
 	}
 	value.has_value = FALSE;
+	value.type = string_type; // To avoid a warning;
 	return value;
 }
 
@@ -733,6 +740,7 @@ t_typed_value get_driver_parameter(t_string paramname) {
 		free(s);
 		if (t == 0) {
 			value.has_value = FALSE;
+			value.type = string_type; // To avoid a warning
 			return value;
 		}
 		value.has_value = t->has_value;
@@ -746,12 +754,13 @@ t_typed_value get_driver_parameter(t_string paramname) {
 					break;
 				default : value.has_value = FALSE;
 			}
-			value.type = t->type;
 		}
+		value.type = t->type;
 		current.rights_out = t->right;
 		return value;
 	}
 	value.has_value = FALSE;
+	value.type = string_type; // To avoid a warning;
 	return value;
 }
 
@@ -866,17 +875,19 @@ t_typed_value get_ups_variable(t_string varname) {
 		free(s);
 		if (t == 0) {
 			value.has_value = FALSE;
+			value.type = string_type; // To avoid a warning;
 			return value;
 		}
 		value.has_value = t->has_value;
+		value.type = t->type;
 		if (value.has_value) {
 			value.value = t->value;
-			value.type = t->type;
 		}
 		current.rights_out = t->right;
 		return value;
 	}
 	value.has_value = FALSE;
+	value.type = string_type; // To avoid a warning;
 	return value;
 }
 
@@ -1894,7 +1905,7 @@ void set_force_sll(boolean value) {
 
 
 t_string node_to_string(t_tree tree) {
-	t_string last_part, rights, s, s2;
+	t_string last_part, rights, s = 0, s2;
 	int len;
 	
 	last_part = extract_last_part(tree->name);
