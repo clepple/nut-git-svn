@@ -1364,5 +1364,10 @@ void upsdrv_initinfo(void)
 	upsh.instcmd = instcmd;
 }
 
+void upsdrv_print_ups_list(void)
+{
+	printf("List of supported UPSs\n");
+	printf("===\n");
+}
 
 /* vim: set ts=8 noet sts=8 sw=8 */

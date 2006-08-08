@@ -186,3 +186,14 @@ void upsdrv_reconnect(void)
 	sleep(3);
 	upsdrv_initups();	
 }
+
+void upsdrv_print_ups_list(void)
+{
+	printf("List of supported UPSs");
+	printf("===\n");
+	printf("VendorID  : 0x0592\n");
+	printf("ProductID : 0x0002\n");
+	printf("===\n");
+	printf("VendorID  : 0x06da\n");
+	printf("ProductID : 0x0002\n");
+}

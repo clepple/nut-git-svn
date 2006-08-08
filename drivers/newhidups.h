@@ -209,6 +209,8 @@ struct subdriver_s {
 	char *name;                  /* name of this subdriver */
 	int (*claim)(HIDDevice *hd); /* return 1 if device covered by
 				      * this subdriver */
+	void (*print_ups_list)(void); /* Print the ups list of UPSes supported
+	                                by this subdriver */
 	usage_tables_t *utab;        /* points to array of usage tables */
 	hid_info_t *hid2nut;         /* main table of vars and instcmds */
 	int (*shutdown)(int ondelay, int offdelay);
@@ -220,6 +222,11 @@ struct subdriver_s {
 	char *(*format_serial)(HIDDevice *hd); /* readable information    */
 };
 typedef struct subdriver_s subdriver_t;
+
+typedef struct {
+	int VendorID;
+	int ProductID; 
+} usb_ups_t;
 
 
 /* the following functions are exported for the benefit of subdrivers */

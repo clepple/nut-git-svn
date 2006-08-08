@@ -1,6 +1,6 @@
 /* belkin.c - model specific routines for Belkin Smart-UPS units.
 
-   Copyright (C) 2000 Marcus Müller <marcus@ebootis.de>
+   Copyright (C) 2000 Marcus Mller <marcus@ebootis.de>
 
    based on:
 
@@ -443,4 +443,10 @@ void upsdrv_initinfo(void)
 void upsdrv_cleanup(void)
 {
 	ser_close(upsfd, device_path);
+}
+
+void upsdrv_print_ups_list(void)
+{
+	printf("List of supported UPSs\n");
+	printf("===\n");
 }

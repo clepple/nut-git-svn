@@ -33,6 +33,15 @@
 
 #define BELKIN_VENDORID 0x050d
 
+/* --------------------------------------------------------------- */
+/*      Supported UPS                                              */
+/* --------------------------------------------------------------- */
+
+static usb_ups_t belkin_supported_ups[] = {
+	{BELKIN_VENDORID, 0x0980},
+	{-1, -1} // End of the list
+};
+
 /* some conversion functions specific to Belkin */
 
 /* returns statically allocated string - must not use it again before
@@ -382,9 +391,20 @@ static int belkin_claim(HIDDevice *hd) {
         }
 }
 
+void belkin_print_ups_list(void) {
+	int i = 0;
+	while (belkin_supported_ups[i].VendorID != -1 ) {
+		printf("===\n");
+		printf("VendorID  : 0x%04x\n", belkin_supported_ups[i].VendorID);
+		printf("ProductID : 0x%04x\n", belkin_supported_ups[i].ProductID);
+		i++;
+	}
+}
+
 subdriver_t belkin_subdriver = {
 	BELKIN_HID_VERSION,
 	belkin_claim,
+	belkin_print_ups_list,
 	belkin_utab,
         belkin_hid2nut,
 	belkin_shutdown,

@@ -1,0 +1,24 @@
+# Network UPS Tools: utils
+
+CC	= @CC@
+CFLAGS	= -I../include @CFLAGS@
+
+PROGS = print-ups-list
+
+PRINTUPSLISTOBJ = ../common/parseconf.o
+LIBOBJ	= @LIBOBJ@
+
+all: $(PROGS)
+
+print-ups-list: print-ups-list.o
+	$(CC) $(CFLAGS) -o print-ups-list print-ups-list.o $(PRINTUPSLISTOBJ)
+
+print-ups-list.o : print-ups-list.c
+	$(CC) $(CFLAGS) -c print-ups-list.c
+	
+clean:
+	rm -f *~ *.o
+
+distclean: clean
+
+install: all

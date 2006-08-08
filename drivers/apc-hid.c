@@ -35,6 +35,16 @@
 #define APC_VENDORID 0x051d /* APC */
 #define CPS_VENDORID 0x0764 /* CyberPower */
 
+/* --------------------------------------------------------------- */
+/*      Supported UPS                                              */
+/* --------------------------------------------------------------- */
+
+static usb_ups_t apc_supported_ups[] = {
+	{APC_VENDORID, 0x0002},
+	{CPS_VENDORID, 0x0000},
+	{-1, -1} // End of the list
+};
+
 /* some conversion functions specific to CyberPower */
 
 /* returns statically allocated string - must not use it again before
@@ -359,9 +369,20 @@ static int apc_claim(HIDDevice *hd) {
 	}
 }
 
+void apc_print_ups_list(void) {
+	int i = 0;
+	while (apc_supported_ups[i].VendorID != -1 ) {
+		printf("===\n");
+		printf("VendorID  : 0x%04x\n", apc_supported_ups[i].VendorID);
+		printf("ProductID : 0x%04x\n", apc_supported_ups[i].ProductID);
+		i++;
+	}
+}
+
 subdriver_t apc_subdriver = {
 	APC_HID_VERSION,
 	apc_claim,
+	apc_print_ups_list,
 	apc_utab,
         apc_hid2nut,
 	apc_shutdown,

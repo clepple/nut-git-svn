@@ -747,6 +747,15 @@ void upsdrv_cleanup(void)
 	}
 }
 
+void upsdrv_print_ups_list(void)
+{
+	int i;
+	printf("List of supported UPSs\n");
+	for (i=0; subdriver_list[i] != NULL; i++) {
+		subdriver_list[i]->print_ups_list();
+	}
+}
+
 /**********************************************************************
  * Support functions
  *********************************************************************/

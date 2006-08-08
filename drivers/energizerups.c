@@ -491,3 +491,9 @@ void upsdrv_cleanup(void)
 {
     /* No cleanup needed */
 }
+
+void upsdrv_print_ups_list(void)
+{
+	printf("List of supported UPSs\n");
+	printf("===\n");
+}

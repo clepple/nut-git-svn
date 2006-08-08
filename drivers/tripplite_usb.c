@@ -1095,4 +1095,10 @@ void upsdrv_cleanup(void)
 		udev = NULL;
 	}
 }
+
+void upsdrv_print_ups_list(void)
+{
+	printf("List of supported UPSes\n");
+	printf("===\n");
+}
 /* vim:se tw=78: */

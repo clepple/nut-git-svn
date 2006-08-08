@@ -71,6 +71,7 @@ static void help(void)
 
 	printf("  -V             - print version, then exit\n");
 	printf("  -L             - print parseable list of driver variables\n");
+	printf("  -l             - print a list of supported UPS IDs\n");
 	printf("  -a <id>        - autoconfig using ups.conf section <id>\n");
 	printf("                 - note: -x after -a overrides ups.conf settings\n");
 	printf("  -D             - raise debugging level\n");
@@ -472,7 +473,7 @@ int main(int argc, char **argv)
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();
 
-	while ((i = getopt(argc, argv, "+a:kDhx:Lr:u:Vi:")) != EOF) {
+	while ((i = getopt(argc, argv, "+a:kDhx:Lr:lu:Vi:")) != EOF) {
 		switch (i) {
 			case 'a':
 				upsname = optarg;
@@ -495,6 +496,9 @@ int main(int argc, char **argv)
 				break;
 			case 'L':
 				listxarg();
+				exit(EXIT_SUCCESS);
+			case 'l' :
+				upsdrv_print_ups_list();
 				exit(EXIT_SUCCESS);
 			case 'r':
 				chroot_path = xstrdup(optarg);

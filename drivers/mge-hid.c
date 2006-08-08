@@ -33,7 +33,17 @@
 #define MGE_VENDORID 0x0463
 
 /* --------------------------------------------------------------- */
-/*      Vendor-specific usage table */
+/*      Supported UPS                                              */
+/* --------------------------------------------------------------- */
+
+static usb_ups_t mge_supported_ups[] = {
+	{MGE_VENDORID, 0x0001},
+	{MGE_VENDORID, 0xffff},
+	{-1, -1} // End of the list
+};
+
+/* --------------------------------------------------------------- */
+/*      Vendor-specific usage table                                */
 /* --------------------------------------------------------------- */
 
 /* MGE UPS SYSTEMS usage table */
@@ -533,16 +543,32 @@ static char *mge_format_serial(HIDDevice *hd) {
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
 static int mge_claim(HIDDevice *hd) {
-        if (hd->VendorID == MGE_VENDORID) {
-                return 1;
-        } else {
-                return 0;
-        }
+	int i = 0;
+	
+	while (mge_supported_ups[i].VendorID != -1 ) {
+		if (hd->VendorID == mge_supported_ups[i].VendorID
+			&& hd->ProductID == mge_supported_ups[i].ProductID) {
+				return 1;
+			}
+		i++;
+	}
+	return 0;
+}
+
+void mge_print_ups_list(void) {
+	int i = 0;
+	while (mge_supported_ups[i].VendorID != -1 ) {
+		printf("===\n");
+		printf("VendorID  : 0x%04x\n", mge_supported_ups[i].VendorID);
+		printf("ProductID : 0x%04x\n", mge_supported_ups[i].ProductID);
+		i++;
+	}
 }
 
 subdriver_t mge_subdriver = {
 	MGE_HID_VERSION,
 	mge_claim,
+	mge_print_ups_list,
 	mge_utab,
 	mge_hid2nut,
 	mge_shutdown,

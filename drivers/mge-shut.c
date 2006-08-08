@@ -328,6 +328,14 @@ void upsdrv_cleanup(void)
 
 /* --------------------------------------------------------------- */
 
+void upsdrv_print_ups_list(void)
+{
+	printf("List of supported UPSs\n");
+	printf("===\n");
+}
+
+/* --------------------------------------------------------------- */
+
 int instcmd(const char *cmdname, const char *extra)
 {
 	/* Shutdown UPS and return when power is restored */

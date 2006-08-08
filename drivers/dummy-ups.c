@@ -115,6 +115,12 @@ void upsdrv_cleanup(void)
 	/* Nothing to do here... */
 }
 
+void upsdrv_print_ups_list(void)
+{
+	printf("List of supported UPSs\n");
+	printf("===\n");
+}
+
 
 static int setvar(const char *varname, const char *val)
 {

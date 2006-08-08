@@ -79,9 +79,13 @@ static int generic_claim(HIDDevice *hd) {
         }
 }
 
+void generic_print_ups_list(void) {
+}
+
 subdriver_t generic_subdriver = {
 	GENERIC_HID_VERSION,
 	generic_claim,
+	generic_print_ups_list,
 	generic_utab,
 	generic_hid2nut,
 	generic_shutdown,

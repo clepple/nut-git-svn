@@ -166,6 +166,12 @@ void upsdrv_cleanup(void)
 	nut_snmp_cleanup();
 }
 
+void upsdrv_print_ups_list(void)
+{
+	printf("List of supported UPSs\n");
+	printf("===\n");
+}
+
 /* -----------------------------------------------------------
  * SNMP functions.
  * ----------------------------------------------------------- */

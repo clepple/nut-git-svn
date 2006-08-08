@@ -157,3 +157,18 @@ void upsdrv_cleanup(void)
 	/* free(dynamic_mem); */
 	/* ser_close(upsfd, device_path); */
 }
+void upsdrv_print_ups_list(void)
+{
+	printf("List of supported UPSs\n");
+	printf("===\n");
+	/* printf("VendorID  : VendorID1\n")
+	 * printf("ProductId : ProductID1\n");
+	 * printf("===");
+	 * printf("VendorID  : VendorID2\n")
+	 * printf("ProductId : ProductID2\n");
+	 * 
+	 * for instance : 
+	 * printf("VendorID  : 0x0640\n")
+	 * printf("ProductId : 0x0002\n");
+	 */
+}

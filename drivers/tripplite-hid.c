@@ -36,6 +36,15 @@
 /* not all Tripp Lite products are HID, some are "serial over USB". */
 
 /* --------------------------------------------------------------- */
+/*      Supported UPS                                              */
+/* --------------------------------------------------------------- */
+
+static usb_ups_t tripplite_supported_ups[] = {
+	{TRIPPLITE_VENDORID, TRIPPLITE_HID_PRODUCTID},
+	{-1, -1} // End of the list
+};
+
+/* --------------------------------------------------------------- */
 /*	Vendor-specific usage table */
 /* --------------------------------------------------------------- */
 
@@ -212,9 +221,20 @@ static int tripplite_claim(HIDDevice *hd) {
 	return 0;
 }
 
+void tripplite_print_ups_list(void) {
+	int i = 0;
+	while (tripplite_supported_ups[i].VendorID != -1 ) {
+		printf("===\n");
+		printf("VendorID  : 0x%04x\n", tripplite_supported_ups[i].VendorID);
+		printf("ProductID : 0x%04x\n", tripplite_supported_ups[i].ProductID);
+		i++;
+	}
+}
+
 subdriver_t tripplite_subdriver = {
 	TRIPPLITE_HID_VERSION,
 	tripplite_claim,
+	tripplite_print_ups_list,
 	tripplite_utab,
 	tripplite_hid2nut,
 	tripplite_shutdown,

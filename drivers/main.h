@@ -17,6 +17,7 @@ void upsdrv_shutdown(void);	/* make the UPS power off the load */
 void upsdrv_help(void);		/* tack on anything useful for the -h text */
 void upsdrv_banner(void);	/* print your version information */
 void upsdrv_cleanup(void);	/* free any resources before shutdown */
+void upsdrv_print_ups_list(void); /* print the list of supported UPSes */
 
 /* --- details for the variable/value sharing --- */
 
