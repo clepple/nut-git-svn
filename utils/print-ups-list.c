@@ -40,7 +40,7 @@ static struct option long_options[] = {
 
 void print_tux();
 
-void err_handler(char* errtxt) {
+void err_handler(const char* errtxt) {
 	fprintf(stderr, errtxt);
 }
 
@@ -53,34 +53,6 @@ void help() {
 	printf("  -h, --help             - display this help\n");
 }
 
-FILE* open_file(char* file_name, char* mode ,void errhandler(const char*)) {
-	FILE* file;
-	void (*errfunction)(const char*) = errhandler;
-	char* s;
-	
-	if (errfunction == 0) {
-		errfunction = &printf;
-	}
-	file = fopen(file_name, mode);
-	if (file == 0) {
-		s = malloc(sizeof(char) * (32 + strlen(file_name)));
-		switch (errno) {
-			case EACCES : 
-				sprintf(s, "Permission denied to access to %s", file_name);
-				errfunction(s);
-				break;
-			case ENOENT :
-				sprintf(s, "%s does not exist", file_name);
-				errfunction(s);
-				break;
-			default :
-				sprintf(s, "Did not reach to open %s", file_name);
-				errfunction(s);
-		}
-		return 0;
-	}
-	return file;
-}
 
 void print_headers() {
 	
@@ -143,11 +115,14 @@ void print_ups(char* vendorID, char* productID) {
 	}
 }
 
+
+
 void parse(FILE* pipe) {
 	PCONF_CTX* ctx = malloc(sizeof(PCONF_CTX));
 	char *vendorID = 0;
 	char *productID = 0;
 	int new_entry = 0;
+	char* value;
 	
 	pconf_init(ctx, err_handler);
 	
@@ -155,17 +130,25 @@ void parse(FILE* pipe) {
 	
 	while (pconf_file_next(ctx) != 0) {
 		
-		
 		if (strcmp(ctx->arglist[0], "===") == 0) {
 			if (new_entry == 1) {
 				vendorID = 0;
 				productID = 0;
 			}
 			new_entry = 1;
+			continue;
 		}
-		if (strcmp(ctx->arglist[0], "VendorID") == 0) {
+		
+		if (ctx->arglist[0][strlen(ctx->arglist[0]) - 1] == ':') {
+			ctx->arglist[0][strlen(ctx->arglist[0]) - 1] = 0;	
+			value = ctx->arglist[1];
+		} else {
+			value = ctx->arglist[2];
+		}
+		
+		if (strcasecmp(ctx->arglist[0], "VendorID") == 0) {
 			if (!new_entry) continue;
-			vendorID = strdup(ctx->arglist[2]);
+			vendorID = strdup(value);
 			if (productID != 0) {
 				print_ups(vendorID, productID);
 				free(productID);
@@ -174,10 +157,11 @@ void parse(FILE* pipe) {
 				vendorID = 0;
 				new_entry = 0;
 			}
+			continue;
 		}
-		if (strcmp(ctx->arglist[0], "ProductID") == 0) {
+		if (strcasecmp(ctx->arglist[0], "ProductID") == 0) {
 			if (!new_entry) continue;
-			productID = strdup(ctx->arglist[2]);
+			productID = strdup(value);
 			if (vendorID != 0) {
 				print_ups(vendorID, productID);
 				free(productID);
