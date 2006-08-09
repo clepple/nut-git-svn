@@ -55,7 +55,7 @@ FILE* open_file(t_string file_name, t_string mode ,void errhandler(const char*))
 	t_string s;
 	
 	if (errfunction == 0) {
-		errfunction = &libupsconfig_print_error;
+		errfunction = libupsconfig_print_error;
 	}
 	file = fopen(file_name, mode);
 	if (file == 0) {
@@ -120,10 +120,11 @@ void drop_config() {
 int save_config(t_string directory_dest, t_string comm_filename, boolean single, void errhandler(const char*)) {
 	t_string nut_conf;
 	t_string s;
-	FILE *conf_file, *comm_file;
+	FILE *conf_file, *comm_file = 0;
 	t_modes mode;
 	t_tree son;
 	boolean is_root_user = FALSE;
+	struct group* grp;
 	
 	nut_conf = xmalloc(sizeof(char) * (strlen(directory_dest) + 20));
 	sprintf(nut_conf, "%s/nut.conf", directory_dest);
@@ -133,7 +134,9 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 		return 0;
 	}
 	
-	comm_file = open_file(comm_filename, "r", errhandler);
+	if (comm_filename != 0) {
+		comm_file = open_file(comm_filename, "r", errhandler);
+	}
 	
 	is_root_user = (getuid() == getpwnam("root")->pw_uid);
 	
@@ -147,7 +150,11 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 		}
 		fclose(conf_file);
 		if (is_root_user) {
-			chown(nut_conf, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
+			grp = getgrnam(RUN_AS_USER);
+			if (grp == 0) {
+				grp = getgrnam("root");
+			}
+			chown(nut_conf, getpwnam("root")->pw_uid, grp->gr_gid);
 		}
 		chmod(nut_conf, S_IRUSR | S_IWUSR | S_IRGRP);
 		
@@ -207,7 +214,11 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				}
 				fclose(conf_file);
 				if (is_root_user) {
-					chown(s, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
+					grp = getgrnam(RUN_AS_USER);
+					if (grp == 0) {
+						grp = getgrnam("root");
+					}
+					chown(s, getpwnam("root")->pw_uid, grp->gr_gid);
 				}
 				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
 				
@@ -226,7 +237,11 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				}
 				fclose(conf_file);
 				if (is_root_user) {
-					chown(s, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
+					grp = getgrnam(RUN_AS_USER);
+					if (grp == 0) {
+						grp = getgrnam("root");
+					}
+					chown(s, getpwnam("root")->pw_uid, grp->gr_gid);
 				}
 				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
 				
@@ -245,7 +260,11 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				}
 				fclose(conf_file);
 				if (is_root_user) {
-					chown(s, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
+					grp = getgrnam(RUN_AS_USER);
+					if (grp == 0) {
+						grp = getgrnam("root");
+					}
+					chown(s, getpwnam("root")->pw_uid, grp->gr_gid);
 				}
 				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
 				
@@ -264,7 +283,11 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				}
 				fclose(conf_file);
 				if (is_root_user) {
-					chown(s, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
+					grp = getgrnam(RUN_AS_USER);
+					if (grp == 0) {
+						grp = getgrnam("root");
+					}
+					chown(s, getpwnam("root")->pw_uid, grp->gr_gid);
 				}
 				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
 				
@@ -293,7 +316,11 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				fwrite(s, strlen(s), 1, conf_file);
 				fclose(conf_file);
 				if (is_root_user) {
-					chown(nut_conf, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
+					grp = getgrnam(RUN_AS_USER);
+					if (grp == 0) {
+						grp = getgrnam("root");
+					}
+					chown(nut_conf, getpwnam("root")->pw_uid, grp->gr_gid);
 				}
 				chmod(nut_conf, S_IRUSR | S_IWUSR | S_IRGRP);
 				
@@ -312,7 +339,11 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				}
 				fclose(conf_file);
 				if (is_root_user) {
-					chown(s, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
+					grp = getgrnam(RUN_AS_USER);
+					if (grp == 0) {
+						grp = getgrnam("root");
+					}
+					chown(s, getpwnam("root")->pw_uid, grp->gr_gid);
 				}
 				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
 				
@@ -331,7 +362,11 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				}
 				fclose(conf_file);
 				if (is_root_user) {
-					chown(s, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
+					grp = getgrnam(RUN_AS_USER);
+					if (grp == 0) {
+						grp = getgrnam("root");
+					}
+					chown(s, getpwnam("root")->pw_uid, grp->gr_gid);
 				}
 				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
 				
@@ -350,7 +385,11 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				}
 				fclose(conf_file);
 				if (is_root_user) {
-					chown(s, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
+					grp = getgrnam(RUN_AS_USER);
+					if (grp == 0) {
+						grp = getgrnam("root");
+					}
+					chown(s, getpwnam("root")->pw_uid, grp->gr_gid);
 				}
 				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
 				
@@ -369,7 +408,11 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				}
 				fclose(conf_file);
 				if (is_root_user) {
-					chown(s, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
+					grp = getgrnam(RUN_AS_USER);
+					if (grp == 0) {
+						grp = getgrnam("root");
+					}
+					chown(s, getpwnam("root")->pw_uid, grp->gr_gid);
 				}
 				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
 				
@@ -390,7 +433,11 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				fwrite(s, strlen(s), 1, conf_file);
 				fclose(conf_file);
 				if (is_root_user) {
-					chown(nut_conf, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
+					grp = getgrnam(RUN_AS_USER);
+					if (grp == 0) {
+						grp = getgrnam("root");
+					}
+					chown(nut_conf, getpwnam("root")->pw_uid, grp->gr_gid);
 				}
 				chmod(nut_conf, S_IRUSR | S_IWUSR | S_IRGRP);
 				
@@ -409,7 +456,11 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				}
 				fclose(conf_file);
 				if (is_root_user) {
-					chown(s, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
+					grp = getgrnam(RUN_AS_USER);
+					if (grp == 0) {
+						grp = getgrnam("root");
+					}
+					chown(s, getpwnam("root")->pw_uid, grp->gr_gid);
 				}
 				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
 				
@@ -428,7 +479,11 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				}
 				fclose(conf_file);
 				if (is_root_user) {
-					chown(s, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
+					grp = getgrnam(RUN_AS_USER);
+					if (grp == 0) {
+						grp = getgrnam("root");
+					}
+					chown(s, getpwnam("root")->pw_uid, grp->gr_gid);
 				}
 				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
 				
@@ -441,7 +496,11 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				fwrite("mode = \"pm\"\n\n", 13, 1, conf_file);
 				fclose(conf_file);
 				if (is_root_user) {
-					chown(nut_conf, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
+					grp = getgrnam(RUN_AS_USER);
+					if (grp == 0) {
+						grp = getgrnam("root");
+					}
+					chown(nut_conf, getpwnam("root")->pw_uid, grp->gr_gid);
 				}
 				chmod(nut_conf, S_IRUSR | S_IWUSR | S_IRGRP);
 				
@@ -451,7 +510,11 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				fwrite("mode = \"none\"\n\n", 15, 1, conf_file);
 				fclose(conf_file);
 				if (is_root_user) {
-					chown(nut_conf, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
+					grp = getgrnam(RUN_AS_USER);
+					if (grp == 0) {
+						grp = getgrnam("root");
+					}
+					chown(nut_conf, getpwnam("root")->pw_uid, grp->gr_gid);
 				}
 				chmod(nut_conf, S_IRUSR | S_IWUSR | S_IRGRP);
 				
@@ -523,7 +586,7 @@ t_typed_value get_variable(t_string varname) {
 }
 
 void set_variable(t_string varname, void* value, t_types type) {
-	if (current.ups != 0 && current.rights_in != invalid_right) {
+	if (current.rights_in != invalid_right) {
 		if (value == 0) {
 			del_from_tree(conf, varname);
 		} else {

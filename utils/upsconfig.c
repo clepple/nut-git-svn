@@ -1,13 +1,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
+#include <pwd.h> 
 
 #include "data_types.h"
 #include "common.h"
 #include "../lib/libupsconfig.h"
 #include "nutparser.h"
-#include <sys/types.h>
-#include <pwd.h> 
+
 
 void print_error(const char* errtxt) {
 	fprintf(stderr, "Upsconfig error : %s. Aborting\n", errtxt);
@@ -34,13 +35,15 @@ void print_usage() {
 	printf("-h, --help              Show this help message\n");
 }
 
+
+
 int main (int argc, char** argv)  {
 	t_modes mode = standalone;
 	t_string driver = 0;
 	t_string port = "auto";
 	t_string target_dir = 0;
 	t_string base_config_dir;
-	t_string server = 0;
+	t_string server = "localhost";
 	boolean single = FALSE;
 	boolean quiet = FALSE;
 	int i;

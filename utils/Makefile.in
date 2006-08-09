@@ -1,20 +1,24 @@
-# Network UPS Tools: common
+# Network UPS Tools: utils
 
 CC	= @CC@
 CFLAGS	= -I../include @CFLAGS@
 
-PROGS = upsconfig
+PROGS = upsconfig migratetool
 
 UPSCONFIGOBJ = upsconfig.o ../lib/libupsconfig.a
+MIGRATETOOLOBJ = migratetool.o ../lib/libupsconfig.a ../common/parseconf.o
 LIBOBJ	= @LIBOBJ@
 
 all: $(PROGS)
 
 upsconfig: $(UPSCONFIGOBJ) $(LIBOBJ)
 	$(CC) $(CFLAGS) -o upsconfig $(UPSCONFIGOBJ) $(LIBOBJ)
+	
+migratetool : $(MIGRATETOOLOBJ) $(LIBOBJ)
+	$(CC) $(CFLAGS) -o migratetool $(MIGRATETOOLOBJ) $(LIBOBJ)
 
-upsconfig.o : upsconfig.c
-	$(CC) $(CFLAGS) -c upsconfig.c
+migratetool.o : migratetool.c
+	$(CC) $(CFLAGS) -c migratetool.c
 	
 clean:
 	rm -f *~ *.o

@@ -1,3 +1,11 @@
+Wed Aug 9  17:06:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
+
+ - utils/migratetool.c : A tool to migrate from old config format to the new one
+ - utils/Makefile.in : added the rules to compile migratetool
+ - lib/libupsconfig.c : little to prevent a segfault in case the RUN_AS_USER group don't exist
+ - common/datatypes.c : minor changes
+ - utils/upsconfig.c : minor changes
+
 Fri Aug 4  15:44:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
 
  - client/upsmon.c : adaptated to use libupsconfig instead of parseconf

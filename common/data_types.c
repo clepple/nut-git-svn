@@ -184,52 +184,52 @@ t_string enum_string_to_string(t_enum_string enum_string) {
 t_string right_to_string(t_rights right) {
 	
 	switch (right) {
-		case all_rw : return "rw";
-		case all_r : return "r";
-		case admin_rw : return "r*w*";
-		case admin_r : return "r*";
+		case all_rw :         return "rw";
+		case all_r :          return "r";
+		case admin_rw :       return "r*w*";
+		case admin_r :        return "r*";
 		case all_r_admin_rw : return "rw*";
-		default : return "";
+		default :             return "";
 	}
 }
 
 t_rights string_to_right(t_string s) {
 	if ((strcmp(s,"rw") == 0) ||
-		(strcmp(s,"w") == 0)) return all_rw;
+		(strcmp(s,"w") == 0))   return all_rw;
 	if ((strcmp(s,"r") == 0) ||
 		(strcmp(s,"") == 0))	return all_r;
-	if (strcmp(s,"r*w*") == 0) return admin_rw;
-	if (strcmp(s,"r*") == 0) return admin_r;
+	if (strcmp(s,"r*w*") == 0)  return admin_rw;
+	if (strcmp(s,"r*") == 0)    return admin_r;
 	if ((strcmp(s,"rw*") == 0) ||
-		(strcmp(s,"w*") == 0)) return all_r_admin_rw;
-	else return invalid_right;
+		(strcmp(s,"w*") == 0))  return all_r_admin_rw;
+	else                        return invalid_right;
 }
 
 t_string user_type_to_string(t_user_types type) {
 	switch (type) {
-		case admin : return "admin";
+		case admin :         return "admin";
 		case upsmon_master : return "upsmon_master";
-		case upsmon_slave : return "upsmon_slave";
-		case custom : return "custom";
-		default : return 0;
+		case upsmon_slave :  return "upsmon_slave";
+		case custom :        return "custom";
+		default :            return 0;
 	}
 }
 
 t_user_types string_to_user_type(t_string s) {
-	if (strcmp(s,"admin") == 0) return admin;
+	if (strcmp(s,"admin") == 0)         return admin;
 	if (strcmp(s,"upsmon_master") == 0) return upsmon_master;
-	if (strcmp(s,"upsmon_slave") == 0) return upsmon_slave;
-	if (strcmp(s,"custom") == 0) return custom;
-	else return -1;
+	if (strcmp(s,"upsmon_slave") == 0)  return upsmon_slave;
+	if (strcmp(s,"custom") == 0)        return custom;
+	else                                return -1;
 }
 
 t_modes string_to_mode(t_string s) {
 	if (strcmp(s,"standalone") == 0) return standalone;
 	if (strcmp(s,"net_server") == 0) return net_server;
 	if (strcmp(s,"net_client") == 0) return net_client;
-	if (strcmp(s,"pm") == 0) return pm;
-	if (strcmp(s,"none") == 0) return no_mode;
-	else return -1;
+	if (strcmp(s,"pm") == 0)         return pm;
+	if (strcmp(s,"none") == 0)       return no_mode;
+	else                             return -1;
 }
 
 t_string mode_to_string(t_modes mode) {
@@ -237,85 +237,85 @@ t_string mode_to_string(t_modes mode) {
 		case standalone : return "standalone";
 		case net_server : return "net_server";
 		case net_client : return "net_client";
-		case pm : return "pm";
-		case no_mode : return "none";
-		default : return 0;
+		case pm :         return "pm";
+		case no_mode :    return "none";
+		default :         return 0;
 	}
 }
 
 
 t_notify_events string_to_event(t_string s) {
-	if (strcmp(s,"online") == 0) return ONLINE;
-	if (strcmp(s,"onbatt") == 0) return ONBATT;
-	if (strcmp(s,"lowbatt") == 0) return LOWBATT;
-	if (strcmp(s,"fsd") == 0) return FSD;
-	if (strcmp(s,"commok") == 0) return COMMOK;
-	if (strcmp(s,"commbad") == 0) return COMMBAD;
-	if (strcmp(s,"shutdown") == 0) return SHUTDOWN;
-	if (strcmp(s,"replbatt") == 0) return REPLBATT;
-	if (strcmp(s,"nocomm") == 0) return NOCOMM;
+	if (strcmp(s,"online")   == 0 || strcmp(s,"ONLINE")   == 0) return ONLINE;
+	if (strcmp(s,"onbatt")   == 0 || strcmp(s,"ONBATT")   == 0) return ONBATT;
+	if (strcmp(s,"lowbatt")  == 0 || strcmp(s,"LOWBATT")  == 0) return LOWBATT;
+	if (strcmp(s,"fsd")      == 0 || strcmp(s,"FSD")      == 0) return FSD;
+	if (strcmp(s,"commok")   == 0 || strcmp(s,"COMMOK")   == 0) return COMMOK;
+	if (strcmp(s,"commbad")  == 0 || strcmp(s,"COMMBAD")  == 0) return COMMBAD;
+	if (strcmp(s,"shutdown") == 0 || strcmp(s,"SHUTDOWN") == 0) return SHUTDOWN;
+	if (strcmp(s,"replbatt") == 0 || strcmp(s,"REPLBATT") == 0) return REPLBATT;
+	if (strcmp(s,"nocomm")   == 0 || strcmp(s,"NOCOMM")   == 0)  return NOCOMM;
 	else return -1;
 }
 
 t_string event_to_string(t_notify_events event) {
 	switch (event) {
-		case ONLINE : return "online";
-		case ONBATT : return "onbatt";
-		case LOWBATT : return "lowbatt";
-		case FSD : return "fsd";
-		case COMMOK : return "commok";
-		case COMMBAD : return "commbad";
+		case ONLINE :   return "online";
+		case ONBATT :   return "onbatt";
+		case LOWBATT :  return "lowbatt";
+		case FSD :      return "fsd";
+		case COMMOK :   return "commok";
+		case COMMBAD :  return "commbad";
 		case SHUTDOWN : return "shutdown";
 		case REPLBATT : return "replbatt";
-		case NOCOMM : return "nocomm";
-		default : return 0;
+		case NOCOMM :   return "nocomm";
+		default :       return 0;
 	}
 }
 
 t_string event_to_string_uc(t_notify_events event) {
 	switch (event) {
-		case ONLINE : return "ONLINE";
-		case ONBATT : return "ONBATT";
-		case LOWBATT : return "LOWBATT";
-		case FSD : return "FSD";
-		case COMMOK : return "COMMOK";
-		case COMMBAD : return "COMMBAD";
+		case ONLINE :   return "ONLINE";
+		case ONBATT :   return "ONBATT";
+		case LOWBATT :  return "LOWBATT";
+		case FSD :      return "FSD";
+		case COMMOK :   return "COMMOK";
+		case COMMBAD :  return "COMMBAD";
 		case SHUTDOWN : return "SHUTDOWN";
 		case REPLBATT : return "REPLBATT";
-		case NOCOMM : return "NOCOMM";
-		default : return 0;
+		case NOCOMM :   return "NOCOMM";
+		default :       return 0;
 	}
 }
 	
 t_flags string_to_flag(t_string s) {
-	if (strcmp(s,"SYSLOG") == 0) return SYSLOG;
-	if (strcmp(s,"SYSLOG+WALL") == 0) return SYSLOGWALL;
-	if (strcmp(s,"WALL+SYSLOG") == 0) return SYSLOGWALL;
-	if (strcmp(s,"SYSLOG+EXEC") == 0) return SYSLOGEXEC;
-	if (strcmp(s,"EXEC+SYSLOG") == 0) return SYSLOGEXEC;
+	if (strcmp(s,"SYSLOG")           == 0) return SYSLOG;
+	if (strcmp(s,"SYSLOG+WALL")      == 0) return SYSLOGWALL;
+	if (strcmp(s,"WALL+SYSLOG")      == 0) return SYSLOGWALL;
+	if (strcmp(s,"SYSLOG+EXEC")      == 0) return SYSLOGEXEC;
+	if (strcmp(s,"EXEC+SYSLOG")      == 0) return SYSLOGEXEC;
 	if (strcmp(s,"SYSLOG+WALL+EXEC") == 0) return SYSLOGWALLEXEC;
 	if (strcmp(s,"SYSLOG+EXEC+WALL") == 0) return SYSLOGWALLEXEC;
 	if (strcmp(s,"WALL+SYSLOG+EXEC") == 0) return SYSLOGWALLEXEC;
 	if (strcmp(s,"WALL+EXEC+SYSLOG") == 0) return SYSLOGWALLEXEC;
 	if (strcmp(s,"EXEC+WALL+SYSLOG") == 0) return SYSLOGWALLEXEC;
 	if (strcmp(s,"EXEC+SYSLOG+WALL") == 0) return SYSLOGWALLEXEC;
-	if (strcmp(s,"WALL+EXEC") == 0) return WALLEXEC;
-	if (strcmp(s,"WALL") == 0) return WALL;
-	if (strcmp(s,"EXEC") == 0) return EXEC;
-	if (strcmp(s,"IGNORE") == 0) return IGNORE;
+	if (strcmp(s,"WALL+EXEC")        == 0) return WALLEXEC;
+	if (strcmp(s,"WALL")             == 0) return WALL;
+	if (strcmp(s,"EXEC")             == 0) return EXEC;
+	if (strcmp(s,"IGNORE")           == 0) return IGNORE;
 	else return -1;
 }
 
 t_string flag_to_string(t_flags flag) {
 	switch (flag) {
-		case SYSLOG : return "SYSLOG";
-		case SYSLOGWALL : return "SYSLOG+WALL";
-		case SYSLOGEXEC : return "SYSLOG+EXEC";
+		case SYSLOG :         return "SYSLOG";
+		case SYSLOGWALL :     return "SYSLOG+WALL";
+		case SYSLOGEXEC :     return "SYSLOG+EXEC";
 		case SYSLOGWALLEXEC : return "SYSLOG+WALL+EXEC";
-		case WALL : return "WALL";
-		case WALLEXEC : return "WALL+EXEC";
-		case EXEC : return "EXEC";
-		case IGNORE : return "IGNORE";
-		default : return 0;
+		case WALL :           return "WALL";
+		case WALLEXEC :       return "WALL+EXEC";
+		case EXEC :           return "EXEC";
+		case IGNORE :         return "IGNORE";
+		default :             return 0;
 	}
 }
