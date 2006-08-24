@@ -1,0 +1,86 @@
+.TH UPSCONFIG 8 "Wed Aug 23 2006" "" "Network UPS Tools (NUT)" 
+.SH NAME
+upsconfig \- simple UPS configuration tool
+.SH SYNOPSIS
+.B upsconfig \-h
+
+.B upsconfig \-d <driver> [\-m <mode>] [\-p <port>] [\-t <target_dir>] [\-b <base_config_dir>] [\-u <upsd_server>] [\-s] [\-h]
+
+.SH DESCRIPTION
+
+.B upseconfig
+is to be used to configure NUT (version 2.1 or higher) for simple use case.
+That is to say only one UPS. It could be used for more complexe case in
+order to make a "base" and to further modify it.
+
+.SH OPTIONS
+
+.IP "\-b \fItemplate_dir\fR, \-\-base_config_dir \fItemplate_dir\fR"
+Specify the directory where \fBupsconfig\fR should find the configuration template
+to use to generate a new config. Note that this directory should contains a
+directory named comments, containing the comments templates for your configuration
+to be commented.
+
+.IP "\-d \fIdriver\fR, \-\-driver \fIdriver\fR"
+The driver which support your UPS. this option is mandatory
+
+.IP "\-h, \-\-help"
+Display the help text.
+
+.IP "\-m \fImode\fR, \-\-mode \fImode\fR"
+Specify the mode of functionement of NUT. This value was not specified in
+the old format. Valid value are :
+.IP
+.nf
+	none       \(hy NUT is not configured. This is the default value
+	standalone \(hy A computer protected by UPS, without client accessing to the upsd server by network.
+	net_server \(hy This computer run the upsd server so that other computers can acces to it by network.
+	net_client \(hy This computer relies on another computer in the network to run upsd.
+	pm         \(hy NUT is used by power management.
+.fi
+.LP
+
+.IP "\-p \fIport\fR, \-\-port \fIport\fR"
+The port on which your UPS is connected. Mandatory for non USB UPS
+
+.IP "\-q, \-\-quiet"
+\fBmigrateconfig\fR will not print anything other than errors.
+
+.IP "\-s, \-\-single"
+\fBupsconfig\fR will save the configuration in a single file : nut.conf.
+If not specified, \fBupsconfig\fR will use "include" directive and let
+the configuration splited in four files like with the old format (at the exception that
+"upsd.users" has been renamed "users.conf")
+
+.IP "\-t \fIdestination\fR, \-\-target_dir \fIdestination\fR"
+Specify the directory where \fBmigrateconfig\fR will save the configuration
+in the new format.
+
+.IP "\-u \fIserver\fR, \-\-upsd_server \fIserver\fR"
+Specify where run the upsd server in net_client mode. Must be given in the standard address:port
+format. (example : foobox:1234)
+
+.SH WARNING
+
+Be sure to verify the output configuration file before using it. Especially,
+You will need to modify password of the users in order for NUT to accept them (\fBupsconfig\fR set the 
+password at '!', which make NUT to reject the whole user). In net_server mode, you will want to
+modify/add acl and accept/reject variable in the upsd section in order to allow the good computers
+to connect to your upsd server.
+
+To prevent confusion with old files, \fBupsconfig\fR save any configuration file in the target directory
+by adding ".sav" to its name. If files having this name already exist, \fBmigrateconfig\fR exits without
+doing the translation (but some old configuration files may already have been renamed). This apply to files named :
+nut.conf, ups.conf, users.conf, upsd.conf and upsmon.conf
+
+.SH SEE ALSO
+
+.SS Old format configuration files:
+\fBups.conf\fR(5), \fBupsd.conf\fR(5), 
+\fBupsd.users\fR(5), \fBupsmon.conf\fR(5)
+
+.SS New format configuration file:
+\fBnut.conf\fR(8)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

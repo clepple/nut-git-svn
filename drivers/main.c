@@ -1,5 +1,6 @@
 /* main.c - Network UPS Tools driver core
 
+   Copyright (C) 2006  Jonathan Dion <dion.jonathan@gmail.com>
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
 
    This program is free software; you can redistribute it and/or modify
@@ -270,6 +271,12 @@ static void upsconf_err(const char *errmsg)
 	upslogx(LOG_ERR, "Fatal error in configuration file : %s", errmsg);
 }
 
+/* called for variable values error */
+static void variable_value_err(const char *varname)
+{
+	upslogx(LOG_ERR, "Error in configuration file : Variable %s : wrong type or no value. Ignoring it", varname);
+}
+
 void read_upsconf(void) 
 {
 	char	fn[SMALLBUF];
@@ -280,26 +287,26 @@ void read_upsconf(void)
 	t_enum_string enum_flag, enum_flag_begining;
 	t_typed_value value;
 
-	snprintf(fn, sizeof(fn), "%s/nut.conf", confpath());
+	snprintf(fn, sizeof(fn), "%s/nut.conf", CONFPATH);
 	
 	load_config(fn, upsconf_err);
 	
-	// Lets begin with global args
-	value = get_variable("nut.ups.pollinterval");
+	/* Lets begin with global args */
+	value = get_variable("nut.ups.global.pollinterval");
 	if (value.has_value && value.type == string_type) {
 		poll_interval = atoi(value.value.string_value);
-	}
+	} 
 	free_typed_value(value);
 	
-	value = get_variable("nut.ups.chroot");
+	value = get_variable("nut.ups.global.chroot");
 	if (value.has_value && value.type == string_type) {
 		if (chroot_path)
 			free(chroot_path);
 
 		chroot_path = value.value.string_value;
-	}
+	} 
 	
-	value = get_variable("nut.ups.user");
+	value = get_variable("nut.ups.global.user");
 	if (value.has_value && value.type == string_type) {
 		if (user)
 			free(user);
@@ -307,13 +314,14 @@ void read_upsconf(void)
 		user = value.value.string_value;
 	}
 	
-	// Go through the list of UPSs
+	
+	/* Go through the list of UPSs */
 	enum_ups_begining = enum_ups = get_ups_list();
 	
 	while (enum_ups != NULL) {
-		// Is that ups for us ?
+		/* Is that ups for us ? */
 		if (strcmp(enum_ups->value, upsname) != 0) {
-			// Not for us, lets go to the next
+			/* Not for us, lets go to the next */
 			enum_ups = enum_ups->next_value;
 			continue;
 		}
@@ -323,9 +331,14 @@ void read_upsconf(void)
 		
 		/* don't let the users shoot themselves in the foot */
 		s = get_driver();
-		if (strcmp(s, progname) != 0) {
-			fatalx("Error: UPS [%s] is for driver %s, but I'm %s!\n",
-				enum_ups->value, s, progname);
+		if (s == 0) {
+			sprintf(tmp, "nut.ups.%s.driver.name", enum_ups->value);
+			variable_value_err(tmp);
+		} else {
+			if (strcmp(s, progname) != 0) {
+				fatalx("Error: UPS [%s] is for driver %s, but I'm %s!\n",
+					enum_ups->value, s, progname);
+			}
 		}
 		free(s);
 		
@@ -334,16 +347,17 @@ void read_upsconf(void)
 			
 			value = get_driver_parameter(enum_parameter->value);
 			
-			// Only strings value are handled for the moment
+			/* Only strings value are handled for the moment */
 			if (value.type != string_type) {
-				// Ignore it and go to the next one
+				/* Ignore it and go to the next one */
+				variable_value_err(enum_parameter->value);
 				enum_parameter = enum_parameter->next_value;
 				continue;
 			}
 			
-			// It is a arg for main ?
+			/* It is a arg for main ? */
 			if (main_arg(enum_parameter->value, value.value.string_value)) {
-				// It was ! go to the next
+				/* It was ! go to the next */
 				enum_parameter = enum_parameter->next_value;
 				continue;
 			}
@@ -359,24 +373,24 @@ void read_upsconf(void)
 			
 			free_typed_value(value);
 			
-			// Let's go to the next parameter
+			/* Let's go to the next parameter */
 			enum_parameter = enum_parameter->next_value;
 		}
 		free_enum_string(enum_parameter_begining);
 		
-		// The flags now
+		/* The flags now */
 		enum_flag_begining = enum_flag = get_driver_flag_list();
 		
 		while ( enum_flag != NULL) {
 			
-			// It is a flag for main ?
+			/* It is a flag for main ? */
 			if (main_arg(enum_flag->value, NULL)) {
-				// It was ! go to the next
+				/* It was ! go to the next */
 				enum_flag = enum_flag->next_value;
 				continue;
 			}
 			
-			// If not, it is for the driver
+			/* If not, it is for the driver */
 			snprintf(tmp, sizeof(tmp), "driver.flag.%s", enum_flag->value);
 			dstate_setinfo(tmp, "enabled");
 

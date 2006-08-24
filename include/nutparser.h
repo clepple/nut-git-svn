@@ -28,9 +28,9 @@
 #include <stdio.h>
 #include "tree.h"
 
-// Define the max size of words
+/* Define the max size of words */
 #define BUFFER_SIZE 200
-// Define the max depth of imbrication of the configuration file
+/* Define the max depth of imbrication of the configuration file */
 #define STACK_SIZE  50
 
 /**

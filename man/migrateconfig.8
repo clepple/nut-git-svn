@@ -1,0 +1,81 @@
+.TH MIGRATECONFIG 8 "Wed Aug 23 2006" "" "Network UPS Tools (NUT)" 
+.SH NAME
+migrateconfig \- UPS configuration migration tool
+.SH SYNOPSIS
+.B migrateconfig \-h
+
+.B migrateconfig [OPTIONS] 
+
+.SH DESCRIPTION
+
+.B migrateconfig
+is to be used to migrate your configuration file from an old version 
+of NUT (before 2.1) to the new format used since NUT version 2.1
+
+.SH OPTIONS
+
+.IP "\-b \fIold_config_dir\fR, \-\-base_config_dir \fIold_config_dir\fR"
+Specify the directory where \fBmigrateconfig\fR should find the
+old format configuration to migrate.
+
+.IP "\-c \fIcomments_dir\fR, \-\-comments_dir=\fIcomments_dir\fR"
+Specify the directory where \fBmigrateconfig\fR should search for comments
+templates. This directory should contains files named "conf.comm.*" where 
+\'*\' represent a language. Some examples of valid names are :
+.IP
+.nf
+	conf.comm.C     \(hy The default comments file. Standard english
+	conf.comm.fr    \(hy A comments template in standard french
+	conf.comm.fr_FR \(hy A comments template in french from France
+.fi
+.LP
+
+.IP "\-h, \-\-help"
+Display the help text.
+
+.IP "\-m \fImode\fR, \-\-mode \fImode\fR"
+Specify the mode of functionement of NUT. This value was not specified in
+the old format. Valid value are :
+.IP
+.nf
+	none       \(hy NUT is not configured. This is the default value
+	standalone \(hy A computer protected by UPS(s), without client accessing to	the upsd server by network.
+	net_server \(hy This computer run the upsd server so that other computers can acces to it by network.
+	net_client \(hy This computer relies on another computer in the network to run upsd.
+	pm         \(hy NUT is used by power management.
+.fi
+.LP
+
+.IP "\-q, \-\-quiet"
+\fBmigrateconfig\fR will not print anything other than errors.
+
+.IP "\-s, \-\-single"
+\fBmigrateconfig\fR will save the configuration in a single file : nut.conf.
+If not specified, \fBmigrateconfig\fR will use "include" directive and let
+the configuration splited in four files like with the old format (at the exception that
+"upsd.users" has been renamed "users.conf")
+
+.IP "\-t \fIdestination\fR, \-\-target_dir \fIdestination\fR"
+Specify the directory where \fBmigrateconfig\fR will save the configuration
+in the new format.
+
+.SH WARNING
+
+Be sure to verify the output configuration file before using it.
+
+To prevent confusion with old files, \fBmigrateconfig\fR save any configuration file in the target directory
+by adding ".sav" to its name. If files having this name already exist, \fBmigrateconfig\fR exits without
+doing the translation (but some old configuration files may already have been renamed). This apply to files named :
+nut.conf, ups.conf, users.conf, upsd.conf and upsmon.conf
+
+.SH SEE ALSO
+
+.SS Old format configuration files:
+\fBups.conf\fR(5), \fBupsd.conf\fR(5), 
+\fBupsd.users\fR(5), \fBupsmon.conf\fR(5)
+
+.SS New format configuration file:
+\fBnut.conf\fR(8)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

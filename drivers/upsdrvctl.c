@@ -61,9 +61,17 @@ static void upsconf_err(const char *errmsg)
 	upslogx(LOG_ERR, "Fatal error in configuration file : %s", errmsg);
 }
 
+/* called for variable values error */
+static void variable_value_err(const char *varname)
+{
+	upslogx(LOG_ERR, "Error in configuration file : Variable %s : wrong type or no value. Ignoring it", varname);
+}
+
+
 void read_upsconf(void)
 {
 	char	fn[SMALLBUF];
+	char 	tmp[SMALLBUF];
 	t_typed_value value;
 	t_enum_string enum_ups, enum_ups_begining;
 	ups_t *ups;
@@ -73,13 +81,13 @@ void read_upsconf(void)
 	load_config(fn, upsconf_err);
 	
 	// Lets begin with global args
-	value = get_variable("nut.ups.maxstartdelay");
+	value = get_variable("nut.ups.global.maxstartdelay");
 	if (value.has_value && value.type == string_type) {
 		maxstartdelay = atoi(value.value.string_value);
 	}
 	free_typed_value(value);
 	
-	value = get_variable("nut.ups.driverpath");
+	value = get_variable("nut.ups.global.driverpath");
 	if (value.has_value && value.type == string_type) {
 		if (driverpath)
 			free(driverpath);
@@ -97,9 +105,21 @@ void read_upsconf(void)
 		
 		ups->upsname = xstrdup(enum_ups->value);
 		
-		ups->driver = get_driver();	
+		ups->driver = get_driver();
+		if (ups->driver == 0) {
+			sprintf(tmp, "nut.ups.%s.driver.name", enum_ups->value);
+			variable_value_err(tmp);
+			enum_ups = enum_ups->next_value;
+			continue;
+		}
 		
 		ups->port = get_port();
+		if (ups->port == 0) {
+			sprintf(tmp, "nut.ups.%s.driver.parameter.port", enum_ups->value);
+			variable_value_err(tmp);
+			enum_ups = enum_ups->next_value;
+			continue;
+		}
 		
 		ups->next = upstable;
 		

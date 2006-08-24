@@ -59,10 +59,10 @@ t_enum_string add_to_enum_string(t_enum_string enum_string, t_string value) {
 	while(enum_string->next_value != 0) {
 		enum_string = enum_string->next_value; 
 	}
-	// end of the enum string reached, the new value is to be added here
+	/* end of the enum string reached, the new value is to be added here */
 	enum_string->next_value = new_enum_string(value);
 	if (enum_string->next_value == 0) {
-		// There was an error
+		/* There was an error */
 		return 0;
 	}
 	return save;
@@ -76,7 +76,7 @@ void del_from_enum_string(t_enum_string* p_enum_string, t_string value) {
 	}
 	
 	if (strcmp((*p_enum_string)->value, value) == 0) {
-		// The string to delete is at the first place
+		/* The string to delete is at the first place */
 		enum_string2 = (*p_enum_string)->next_value;
 		(*p_enum_string)->next_value = 0;
 		free_enum_string(*p_enum_string);
@@ -135,28 +135,28 @@ t_string enum_string_to_string(t_enum_string enum_string) {
 		return string_copy("");
 	}
 	
-	// We go through the list, so we use save the head pointer
+	/* We go through the list, so we use save the head pointer */
 	enum_string_save = enum_string;
 	
-	//
-	// Calculate the size of the string to create
-	//
+	/*
+	 * Calculate the size of the string to create
+	 */
 	
-	// +2 is for the quotes it add around the value
+	/* +2 is for the quotes it add around the value */
 	string_size = strlen(enum_string->value) + 2;
 	enum_string = enum_string->next_value;
 	
 	while(enum_string !=0) {
-		// +1 for the space and +2 for quotes
+		/* +1 for the space and +2 for quotes */
 		string_size += strlen(enum_string->value) + 1 + 2;
 		enum_string = enum_string->next_value;
 	}
-	// Allocate this size (+1 because its a string)
+	/* Allocate this size (+1 because its a string) */
 	string = (t_string)xmalloc(sizeof(char) * (string_size + 1));
 	
-	//
-	// Create the concatenation of the strings (+ added quotes and spaces)
-	//
+	/*
+	 * Create the concatenation of the strings (+ added quotes and spaces)
+	 */
 	
 	enum_string = enum_string_save;
 	
@@ -177,7 +177,7 @@ t_string enum_string_to_string(t_enum_string enum_string) {
 		enum_string = enum_string->next_value;
 	}
 	
-	// done ^_^
+	/* done ^_^ */
 	return string;
 }
 

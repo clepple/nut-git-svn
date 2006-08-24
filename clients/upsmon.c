@@ -27,7 +27,6 @@
 #include "upsmon.h"
 #include "../lib/libupsconfig.h"
 #include "data_types.h"
-//#include "parseconf.h"
 #include "timehead.h"
 #
 #ifdef HAVE_STDARG_H
@@ -892,12 +891,10 @@ static void redefine_ups(utype *ups, int pv, const char *un,
 static void addups(int reloading, const char *sys, int pv, 
 		const char *un, const char *pw, const char *master)
 {
-	//int	pv;
 	utype	*tmp, *last;
 
 	/* the username is now required - no more host-based auth */
 
-	//if ((!sys) || (!pvs) || (!pw) || (!master) || (!un)) {
 	if ((!sys) || (!pw) || (!master) || (!un)) {
 		upslogx(LOG_WARNING, "Ignoring invalid MONITOR line in upsmon.conf!");
 		upslogx(LOG_WARNING, "MONITOR configuration directives require five arguments.");
@@ -913,7 +910,6 @@ static void addups(int reloading, const char *sys, int pv,
 		return;
 	}
 
-//	pv = strtol(pvs, (char **) NULL, 10);
 
 	if (pv < 0) {
 		upslogx(LOG_WARNING, "UPS [%s]: ignoring invalid power value [%d]", 
@@ -1016,7 +1012,7 @@ static void set_notifymsg(const char *name, const char *msg)
 static void set_notifyflag(const char *ntype, char *flags)
 {
 	int	i, pos;
-	char	*ptr, *tmp;
+	char	*ptr, *tmp, *begining;
 
 	/* find ntype */
 
@@ -1033,7 +1029,7 @@ static void set_notifyflag(const char *ntype, char *flags)
 		return;
 	}
 
-	ptr = flags;
+	begining = ptr = xstrdup(flags);
 
 	/* zero existing flags */
 	notifylist[pos].flags = 0;
@@ -1042,8 +1038,10 @@ static void set_notifyflag(const char *ntype, char *flags)
 		int	newflag;
 
 		tmp = strchr(ptr, '+');
-		if (tmp)
-			*tmp++ = '\0';
+		if (tmp) {
+			*tmp = '\0';
+			tmp++;
+		}
 
 		newflag = 0;
 
@@ -1063,6 +1061,7 @@ static void set_notifyflag(const char *ntype, char *flags)
 
 		ptr = tmp;
 	}
+	free(begining);
 }
 
 /* in split mode, the parent doesn't hear about reloads */
@@ -1092,7 +1091,7 @@ static void checkmode(char *cfgentry, char *oldvalue, char *newvalue,
 /* called for fatal errors in parseconf like malloc failures */
 static void upsmon_err(const char *errmsg)
 {
-	upslogx(LOG_ERR, "Fatal error in parseconf(upsmon.conf): %s", errmsg);
+	upslogx(LOG_ERR, "Fatal error in nutparser : %s", errmsg);
 }
 
 static void loadconfig(void)
@@ -1103,7 +1102,9 @@ static void loadconfig(void)
 
 	snprintf(fn, sizeof(fn), "%s/nut.conf", confpath());
 
-	load_config(fn, upsmon_err);
+	if (!load_config(fn, upsmon_err)) {
+		exit(EXIT_FAILURE);
+	}
 	
 	/* shutdown command */
 	s = get_shutdown_command();
@@ -1222,23 +1223,33 @@ static void loadconfig(void)
 		search_monitor_rule(i);
 		s = get_monitor_system();
 		s2 = get_monitor_user();
+		if (s2 == 0) {
+			upslogx(LOG_ERR, "Missing user name in monitor rules %d. Ignoring the rule", i);
+			free(s); free(s2);
+			continue;
+		}
 		if (!search_user(s2)) {
-			upslogx(LOG_ERR, "Non declared user %s used in monitor rules. Ignoring the rule", s2);
+			upslogx(LOG_ERR, "Non declared user \"%s\" used in monitor rules %d. Ignoring the rule", s2, i);
 			free(s); free(s2);
 			continue;
 		}
 		s3 = get_password();
+		if (s3 == 0) {
+			upslogx(LOG_ERR, "Missing password for user \"%s\" in monitor rules %d. Ignoring the rule", s2, i);
+			free(s); free(s2); free(s3);
+			continue;
+		}
 		if ( get_type() == upsmon_master) {
 			addups(reload_flag, s, get_monitor_powervalue(), s2, s3, "master");
 		} else if ( get_type() == upsmon_slave ) {
 			addups(reload_flag, s, get_monitor_powervalue(), s2, s3, "slave");
 		} else {
-			upslogx(LOG_ERR, "User %s is not an upsmon master or slave. Ignoring the rule", s2);
+			upslogx(LOG_ERR, "User \"%s\" in monitor rule %d is not an upsmon master or slave. Ignoring the rule", s2, i);
 		}
 		free(s); free(s2); free(s3);
 	}
 	
-	// free the memory
+	/* free the memory */
 	drop_config();
 
 }

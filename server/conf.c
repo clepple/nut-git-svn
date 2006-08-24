@@ -146,7 +146,7 @@ static void ups_update(const char *fn, const char *name, const char *desc)
 /* called for fatal errors in parseconf like malloc failures */
 static void upsd_conf_err(const char *errmsg)
 {
-	upslogx(LOG_ERR, "Fatal error in parseconf (upsd.conf): %s", errmsg);
+	upslogx(LOG_ERR, "Fatal error in nutparser : %s", errmsg);
 }
 
 static void read_upsdconf(int reloading)
@@ -220,7 +220,7 @@ void read_upsconf() {
 	t_enum_string enum_ups, enum_ups_begining;
 	ups_t *ups;
 	
-	// Lets make the upstable 
+	/* Lets make the upstable  */
 	enum_ups_begining = enum_ups = get_ups_list();
 	
 	while (enum_ups != NULL) {
@@ -421,9 +421,6 @@ void conf_reload(void)
 	if (firstups == NULL)
 		upslogx(LOG_WARNING, "Warning: no UPSes currently defined!");
 
-//	/* and also make sure upsd.users can be read... */
-//	if (!check_file("upsd.users"))
-//		return;
 
 	/* delete all users */
 	user_flush();
@@ -443,7 +440,9 @@ void conf_load(void)
 	
 	check_perms(fn);
 	
-	load_config(fn, upsd_conf_err);
+	if (!load_config(fn, upsd_conf_err)) {
+		exit(EXIT_FAILURE);;
+	}
 	
 	/* upsd.conf */
 	read_upsdconf(0);	/* 0 = initial */

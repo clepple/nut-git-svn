@@ -114,6 +114,15 @@ t_rights get_rights();
 void set_rights(t_rights right);
 
 /**
+ * Return the list of variable that is under the given path
+ * 
+ * @param path The path to list the variable of
+ * 
+ * @return the list of found variables
+ */
+t_enum_string get_variable_list(t_string path);
+
+/**
  * Return the value of a variable in the NUT tree
  * 
  * @param varname The name of the variable to return the value of
@@ -198,7 +207,7 @@ t_string get_ups_name();
  * It need to modify the name of each sons of the ups.
  * Use add_ups then remove_ups for the moment
  */
-//void set_ups_name(t_string upsname);
+/*void set_ups_name(t_string upsname); */
 
 /**
  * Return the name of the driver of the current UPS
@@ -397,7 +406,7 @@ t_string get_name();
  * It need to modify the name of each sons of the user.
  * Use add_user then remove_user for the moment
  */
-//void set_name(t_string username);
+/*void set_name(t_string username); */
 
 /**
  * Return the type of the current user

@@ -23,10 +23,9 @@ void print_usage() {
 	printf("-p, --port              The port in which the ups is plugged. Needed if the\n");
 	printf("                        driver don't support \"auto\". default is \"auto\"\n");
 	printf("-t, --target_dir        Where to save the generated configuration. Default\n");
-	printf("                        is the default nut configuration dir\n");
+	printf("                        is %s\n", CONFPATH);
 	printf("-b, --base_config_dir   The directory where are the templates and comments\n");
-	printf("                        files. Default is the default base configuration\n");
-	printf("                        directory of nut\n");
+	printf("                        files. Default is %s\n", CONFPATH);
 	printf("-u, --upsd_server       Where is the upsd server, in host[:port] format\n");
 	printf("                        Use it for net_client configuration. Default is\n");
 	printf("                        \"localhost\"\n");
@@ -51,14 +50,14 @@ int main (int argc, char** argv)  {
 	FILE* test;
 	
 	
-	// Value by default
+	/* Value by default */
 	target_dir = CONFPATH;
 	base_config_dir = xmalloc(sizeof(char) * (strlen(CONFPATH) + 13));
 	sprintf(base_config_dir, "%s/base_config", CONFPATH);
 	
 	
 	
-	// Parse the parameters
+	/* Parse the parameters */
 	for (i = 1; i <= (argc - 1); i++ ) {
 		if (strcmp(argv[i], "-m") == 0 || strcmp(argv[i], "--mode") == 0) {
 			if (i != argc - 1) {
@@ -140,7 +139,7 @@ int main (int argc, char** argv)  {
 		}
 	}
 	
-	// Some parameters are mandatory
+	/* Some parameters are mandatory */
 	if (driver == 0 && mode != pm && mode != no_mode) {
 		print_error("\"driver\" option is mandatory");
 		print_usage();
@@ -154,11 +153,11 @@ int main (int argc, char** argv)  {
 	}
 	
 	
-	// Generate the name of the template file to use
+	/* Generate the name of the template file to use */
 	conf_file = xmalloc(sizeof(char) * (strlen(base_config_dir) + 10));
 	sprintf(conf_file, "%s/nut.conf", base_config_dir);
 	
-	// Generate the name of the comments file to use
+	/* Generate the name of the comments file to use */
 	s = xmalloc(sizeof(char) * 20);
 	strcpy(s, getenv("LANG"));
 	s[5] = 0;
@@ -189,20 +188,20 @@ int main (int argc, char** argv)  {
 		fclose(test);
 	}
 	
-	// Load and modify the configuration from the template
+	/* Load and modify the configuration from the template */
 	if (!quiet) {
 		printf("\nLoading the base configuration from template %s\n\n", conf_file);
 	}
 	
 	if (!load_config(conf_file, 0)) {
-		// An errors occured, aborting
+		/* An errors occured, aborting */
 		exit(EXIT_FAILURE);
 	}
 	
-	// Set the mode
+	/* Set the mode */
 	set_mode(mode);
 	
-	// Fill the ups section with the good values
+	/* Fill the ups section with the good values */
 	search_ups("myups");
 	set_driver(driver);
 	set_port(port);
@@ -210,14 +209,14 @@ int main (int argc, char** argv)  {
 	set_run_as_user(RUN_AS_USER);
 	
 	if (mode == net_client) {
-		// net_client configuration don't need some part of the tree
+		/* net_client configuration don't need some part of the tree */
 		remove_user("nutadmin");
 		remove_user("monmaster");
 		search_user("monslave");
-		// To remove the allowfrom variable :
+		/* To remove the allowfrom variable : */
 		set_allowfrom(0);
-		// Want to modify the host of the monitor rule.
-		// Create the one wanted then delete the first
+		/* Want to modify the host of the monitor rule. 
+		   Create the one wanted then delete the first */
 		search_monitor_rule(1);
 		s = get_monitor_ups();
 		add_monitor_rule(s, server, get_monitor_powervalue(), "monslave");
@@ -230,7 +229,7 @@ int main (int argc, char** argv)  {
 	}
 	
 	
-	// Save the generated configuration
+	/* Save the generated configuration */
 	if (!quiet) {
 		printf("Saving your configuration in %s\n", target_dir);
 	
@@ -246,7 +245,7 @@ int main (int argc, char** argv)  {
 	}
 	
 	if (!quiet) {
-		// Print some comments about the configuration
+		/* Print some comments about the configuration */
 		if (mode == net_server) {
 			if (single) {
 				printf("#   You are in network server configuration\n\n");
@@ -282,12 +281,6 @@ int main (int argc, char** argv)  {
 		}
 	}
 	
-	// free memory
-	if (server != 0) free(server);
-	if (comm_file != 0) free(comm_file);
-	free(conf_file);
-	if (target_dir != CONFPATH) free(target_dir);
-	free(driver);
 	drop_config();
 	
 	return 0;

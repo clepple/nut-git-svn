@@ -97,25 +97,25 @@ char* extract_next_part(char* name, char* current_name) {
 	char* next_part;
 	
 	if (strncmp(name, current_name, first_size) != 0) {
-		// the first_size first bytes of name don't match current_name
+		/* the first_size first bytes of name don't match current_name */
 		return 0;
 	}
 	
 	if (name[first_size] != '.') {
-		// name is not an extension of current_name
+		/* name is not an extension of current_name */
 		return 0;
 	}
 	next_size = first_size +1;
 	
-	// Calculates the length of the next part
+	/* Calculates the length of the next part */
 	while((name[next_size] != '.') && (name[next_size] != 0)) {
 		next_size++;
 	}
 	
-	// Allocates required memory
+	/* Allocates required memory */
 	next_part = (char *)xmalloc(sizeof(char) * (next_size + 1));
 	
-	// Sets the string to its value
+	/* Sets the string to its value */
 	memcpy(next_part, name, next_size);
 	next_part[next_size] = 0;
 	
@@ -128,44 +128,44 @@ t_tree go_to_node(t_tree tree, char* name) {
 	t_tree next_tree;
 	
 	if (tree == 0) {
-		// Non initialized tree
+		/* Non initialized tree */
 		pconf_error("in go_to_node : Non initialized tree");
 		return 0;
 	}
 	
 	if (strcmp(tree->name, name) == 0) {
-		// tree is the searched node
+		/* tree is the searched node */
 		return tree;
 	}
 	
-	// else we search throught the sons of tree
+	/* else we search throught the sons of tree */
 	
-	// get the name of the son to go to
+	/* get the name of the son to go to */
 	next_step = extract_next_part(name, tree->name);
 	if (next_step == 0) {
-		// paths don't match
+		/* paths don't match */
 		pconf_error("in go_to_node : path don't match");
 		return 0;
 	}
 	
 	next_tree = tree->son;
 	if (next_tree == 0) {
-		// There is no sons to search through
+		/* There is no sons to search through */
 		free(next_step);
 		return 0;
 	}
 	
-	// itterate through the sons
+	/* itterate through the sons */
 	while(strcmp(next_tree->name, next_step) != 0) {
 		next_tree = next_tree->next_brother;
 		if (next_tree == 0) {
-			// There is no other sons to search through
+			/* There is no other sons to search through */
 			free(next_step);
 			return 0;
 		}	
 	}
-	// Here next_tree->name == next_name, we progressed of one step in the tree
-	// Let's make the next step :
+	/* Here next_tree->name == next_name, we progressed of one step in the tree
+	 * Let's make the next step : */
 	free(next_step);
 	return go_to_node(next_tree, name);
 	
@@ -176,52 +176,52 @@ t_tree go_to_node_or_create(t_tree tree, char* name) {
 	t_tree next_tree;
 	
 	if (tree == 0) {
-		// Non initialized tree
+		/* Non initialized tree */
 		pconf_error("in go_to_node_or_create : Non initialized tree");
 		return 0;
 	}
 	
 	if (strcmp(tree->name, name) == 0) {
-		// tree is the searched node
+		/* tree is the searched node */
 		return tree;
 	}
 	
-	// else we search throught the sons of tree
+	/* else we search throught the sons of tree */
 	
-	// get the name of the son to go to
+	/* get the name of the son to go to */
 	next_step = extract_next_part(name, tree->name);
 	if (next_step == 0) {
-		// paths don't match
+		/* paths don't match */
 		pconf_error("in go_to_node_or_create : paths don't match");
 		return 0;
 	}
 	
 	next_tree = tree->son;
 	if (next_tree == 0) {
-		// There is no sons to search through, we will create it
+		/* There is no sons to search through, we will create it */
 		tree->son = new_node(next_step, 0, 0);
 		tree->son->father = tree;
-		// then let's make the next step
+		/* then let's make the next step */
 		free(next_step);
 		return go_to_node_or_create(tree->son, name);
 	}
 	
-	// itterate through the sons
+	/* itterate through the sons */
 	while(strcmp(next_tree->name, next_step) != 0) {
 		
 		if (next_tree->next_brother == 0) {
-			// There is no more sons to search through, we will create it
+			/* There is no more sons to search through, we will create it */
 			next_tree->next_brother = new_node(next_step, 0, 0);
 			next_tree->next_brother->previous_brother = next_tree;
 			next_tree->next_brother->father = next_tree->father;
-			// then let's make the next step
+			/* then let's make the next step */
 			free(next_step);
 			return go_to_node_or_create(next_tree->next_brother, name);
 		}	
 		next_tree = next_tree->next_brother;
 	}
-	// Here next_tree->name == next_name, we progressed of one step in the tree
-	// Let's make the next step :
+	/* Here next_tree->name == next_name, we progressed of one step in the tree
+	 * Let's make the next step : */
 	free(next_step);
 	return go_to_node_or_create(next_tree, name);
 	
@@ -261,7 +261,7 @@ int modify_node_value(t_tree node, void* new_value, t_types new_type, int admin)
 	if (admin && (node->right != admin_rw) && (node->right != all_r_admin_rw)) return 0;
 	
 	if (new_value != 0) {
-		// Free the old value
+		/* Free the old value */
 		if (node->has_value) {
 			switch(node->type) {
 				case string_type :
@@ -311,7 +311,7 @@ void free_tree(t_tree tree) {
 		return;
 	}
 	
-	// Kill all the sons
+	/* Kill all the sons */
 	son1 = tree->son;
 	while (son1 != 0) {
 		son2 = son1->next_brother;
@@ -319,7 +319,7 @@ void free_tree(t_tree tree) {
 		son1 = son2;
 	}
 	
-	// Then commit suicide
+	/* Then commit suicide (yes, programming can be sad sometime ;-)*/
 	free(tree->name);
 	if (tree->has_value) {
 		switch (tree->type) {
@@ -382,7 +382,7 @@ void add_tree_to_tree(t_tree tree1, t_tree tree2) {
 	
 }
 
-// FOR DEBUG USE ONLY
+/* FOR DEBUG USE ONLY */
 void print_tree(t_tree tree){
 	t_tree son;
 	t_string s;

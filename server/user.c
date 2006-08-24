@@ -23,7 +23,6 @@
 #include <arpa/inet.h>
 
 #include "common.h"
-//#include "parseconf.h"
 #include "../lib/libupsconfig.h"
 
 #include "user.h"
@@ -470,7 +469,7 @@ void read_users(void)
 		
 		pw = get_password();
 		
-		if (strlen(pw) == 0 || strcmp(pw, "!") == 0) {
+		if (pw = 0 || strlen(pw) == 0 || strcmp(pw, "!") == 0) {
 			upslogx(LOG_ERR, "Invalid password for user %s. Ignoring the user", users->value);
 			users = users->next_value;
 			continue;
@@ -478,7 +477,7 @@ void read_users(void)
 		user_add(users->value);
 		
 		
-		user_password(get_password());
+		user_password(pw);
 		
 		/* Add the list of instcmds of the user */
 		first_value = list = get_instcmds();
@@ -507,9 +506,9 @@ void read_users(void)
 		/* What is the type of the user */
 		switch (get_type()) {
 			case admin :
-				// Add default actions for admin type
+				/* Add default actions for admin type */
 				user_add_action("SET");
-				// Add defaults instcmds for admin type
+				/* Add defaults instcmds for admin type */
 				user_add_instcmd("all");
 				break;
 			case upsmon_master :

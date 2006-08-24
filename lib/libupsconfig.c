@@ -34,8 +34,8 @@
 
 struct {
 	t_tree ups;
-	t_rights rights_in; // The right to give to value when we set it
-	t_rights rights_out; // The right value of the last variable get
+	t_rights rights_in; /* The right to give to value when we set it */
+	t_rights rights_out; /* The right value of the last variable get */
 	t_tree user;
 	t_tree monitor_rule;
 } current;
@@ -117,6 +117,127 @@ void drop_config() {
  *                 SAVING SECTION                  *
  ***************************************************/
 
+static void write_section( t_string section, t_string filename, FILE* comm_file, void errhandler(const char*)) {	
+	FILE* conf_file;
+	t_tree son;
+	boolean is_root_user = FALSE;
+	struct group* grp;
+	
+	conf_file = open_file( filename, "w", errhandler);
+			
+	if (conf_file == 0) {
+		return;
+	}
+			
+	son = tree_search(conf, section, 1);
+	if (son == 0) return;
+	son = son->son;
+	write_desc( section, conf_file, comm_file);
+	while (son != 0) {
+		save(son, conf_file, "", comm_file);
+		fwrite("\n", 1, 1, conf_file);
+		son = son->next_brother;
+	}
+	fclose(conf_file);
+	if (is_root_user) {
+		grp = getgrnam(RUN_AS_USER);
+		if (grp == 0) {
+			grp = getgrnam("root");
+		}
+		chown(filename, getpwnam("root")->pw_uid, grp->gr_gid);
+	}
+	chmod(filename, S_IRUSR | S_IWUSR | S_IRGRP);
+}
+
+int is_fatal_error(t_string fn, t_string new_fn, void errhandler(const char*)) {
+	char s[300];
+	
+	switch (errno) {
+		case ENOENT : return 0;
+		case EEXIST : 
+			sprintf(s, "file %s : %m", new_fn);
+			errhandler(s);
+			return 1;
+		default :
+			sprintf(s, "file %s, trying to save as %s : %m", fn, new_fn);
+			errhandler(s);
+			return 1;
+	}
+}
+
+int save_existant_files(t_string directory, void errhandler(const char*)) {
+	t_string fn, new_fn;
+	int error = 0;
+	int ret;
+	struct stat *st = malloc(sizeof(struct stat));
+	
+	fn = xmalloc(sizeof(char) * (strlen(directory) + 50));
+	new_fn = xmalloc(sizeof(char) * (strlen(directory) + 50));
+	
+	
+	sprintf(fn, "%s/nut.conf", directory);
+	sprintf(new_fn, "%s/nut.conf.save", directory);
+	
+	ret = stat(fn, st);
+	if (ret != 0 || errno != ENOENT) {
+		if (link(fn, new_fn) == -1 && is_fatal_error(fn, new_fn, errhandler)) {
+			error = 1;
+		} else if (unlink(fn) == -1 && is_fatal_error(fn, new_fn, errhandler)) {
+			error = 1;
+		}
+	}
+	
+	sprintf(fn, "%s/ups.conf", directory);
+	sprintf(new_fn, "%s/ups.conf.save", directory);
+	ret = stat(fn, st);
+	if (ret != 0 || errno != ENOENT) {
+		if (link(fn, new_fn) == -1 && is_fatal_error(fn, new_fn, errhandler)) {
+			error = 1;
+		} else if (unlink(fn) == -1 && is_fatal_error(fn, new_fn, errhandler)) {
+			error = 1;
+		}
+	}
+	
+	sprintf(fn, "%s/users.conf", directory);
+	sprintf(new_fn, "%s/users.conf.save", directory);
+	ret = stat(fn, st);
+	if (ret != 0 || errno != ENOENT) {
+		if (link(fn, new_fn) == -1 && is_fatal_error(fn, new_fn, errhandler)) {
+			error = 1;
+		} else if (unlink(fn) == -1 && is_fatal_error(fn, new_fn, errhandler)) {
+			error = 1;
+		}
+	}
+	
+	sprintf(fn, "%s/upsd.conf", directory);
+	sprintf(new_fn, "%s/upsd.conf.save", directory);
+	ret = stat(fn, st);
+	if (ret != 0 || errno != ENOENT) {
+		if (link(fn, new_fn) == -1 && is_fatal_error(fn, new_fn, errhandler)) {
+			error = 1;
+		} else if (unlink(fn) == -1 && is_fatal_error(fn, new_fn, errhandler)) {
+			error = 1;
+		}
+	}
+	
+	sprintf(fn, "%s/upsmon.conf", directory);
+	sprintf(new_fn, "%s/upsmon.conf.save", directory);
+	ret = stat(fn, st);
+	if (ret != 0 || errno != ENOENT) {
+		if (link(fn, new_fn) == -1 && is_fatal_error(fn, new_fn, errhandler)) {
+			error = 1;
+		} else if (unlink(fn) == -1 && is_fatal_error(fn, new_fn, errhandler)) {
+			error = 1;
+		}
+	}
+	
+	if (error) {
+		errhandler("Unable to successfully save your old configurations files.");
+		return 0;
+	}
+	return 1;
+}
+
 int save_config(t_string directory_dest, t_string comm_filename, boolean single, void errhandler(const char*)) {
 	t_string nut_conf;
 	t_string s;
@@ -125,6 +246,14 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 	t_tree son;
 	boolean is_root_user = FALSE;
 	struct group* grp;
+	
+	if (errhandler == 0) {
+		errhandler = libupsconfig_print_error;
+	}
+	
+	if (!save_existant_files(directory_dest, errhandler)) {
+		return 0;
+	}
 	
 	nut_conf = xmalloc(sizeof(char) * (strlen(directory_dest) + 20));
 	sprintf(nut_conf, "%s/nut.conf", directory_dest);
@@ -158,17 +287,8 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 		}
 		chmod(nut_conf, S_IRUSR | S_IWUSR | S_IRGRP);
 		
-		sprintf(nut_conf, "%s/ups.conf", directory_dest);
-		unlink(nut_conf);
-		sprintf(nut_conf, "%s/users.conf", directory_dest);
-		unlink(nut_conf);
-		sprintf(nut_conf, "%s/upsd.conf", directory_dest);
-		unlink(nut_conf);
-		sprintf(nut_conf, "%s/upsmon.conf", directory_dest);
-		unlink(nut_conf);
 		
-		
-	} else { // Not single file mode
+	} else { /* Not single file mode*/
 		mode = string_to_mode((tree_search(conf, "nut.mode", 1))->value.string_value);
 		switch (mode) {
 			case standalone :
@@ -194,102 +314,26 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				fwrite(s, strlen(s), 1, conf_file);
 				fclose(conf_file);
 				if (is_root_user) {
-					chown(nut_conf, getpwnam("root")->pw_uid, getgrnam(RUN_AS_USER)->gr_gid);
+					grp = getgrnam(RUN_AS_USER);
+					if (grp == 0) {
+						grp = getgrnam("root");
+					}
+					chown(nut_conf, getpwnam("root")->pw_uid, grp->gr_gid);
 				}
 				chmod(nut_conf, S_IRUSR | S_IWUSR | S_IRGRP);
 				
 				sprintf(s, "%s/ups.conf", directory_dest);
-				conf_file = open_file( s, "w", errhandler);
-				
-				if (conf_file == 0) {
-					return 0;
-				}
-				
-				write_desc("nut.ups", conf_file, comm_file);
-				son = (tree_search(conf, "nut.ups", 1))->son;
-				while (son != 0) {
-					save(son, conf_file, "", comm_file);
-					fwrite("\n", 1, 1, conf_file);
-					son = son->next_brother;
-				}
-				fclose(conf_file);
-				if (is_root_user) {
-					grp = getgrnam(RUN_AS_USER);
-					if (grp == 0) {
-						grp = getgrnam("root");
-					}
-					chown(s, getpwnam("root")->pw_uid, grp->gr_gid);
-				}
-				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
+				write_section("nut.ups", s, comm_file, errhandler);
 				
 				sprintf(s, "%s/users.conf", directory_dest);
-				conf_file = open_file( s, "w", errhandler);
-				if (conf_file == 0) {
-					return 0;
-				}
-				
-				write_desc("nut.users", conf_file, comm_file);
-				son = (tree_search(conf, "nut.users", 1))->son;
-				while (son != 0) {
-					save(son, conf_file, "", comm_file);
-					fwrite("\n", 1, 1, conf_file);
-					son = son->next_brother;
-				}
-				fclose(conf_file);
-				if (is_root_user) {
-					grp = getgrnam(RUN_AS_USER);
-					if (grp == 0) {
-						grp = getgrnam("root");
-					}
-					chown(s, getpwnam("root")->pw_uid, grp->gr_gid);
-				}
-				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
-				
+				write_section("nut.users", s, comm_file, errhandler);
+
 				sprintf(s, "%s/upsd.conf", directory_dest);
-				conf_file = open_file( s, "w", errhandler);
-				if (conf_file == 0) {
-					return 0;
-				}
-				
-				write_desc("nut.upsd", conf_file, comm_file);
-				son = (tree_search(conf, "nut.upsd", 1))->son;
-				while (son != 0) {
-					save(son, conf_file, "", comm_file);
-					fwrite("\n", 1, 1, conf_file);
-					son = son->next_brother;
-				}
-				fclose(conf_file);
-				if (is_root_user) {
-					grp = getgrnam(RUN_AS_USER);
-					if (grp == 0) {
-						grp = getgrnam("root");
-					}
-					chown(s, getpwnam("root")->pw_uid, grp->gr_gid);
-				}
-				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
-				
+				write_section("nut.upsd", s, comm_file, errhandler);
+
 				sprintf(s, "%s/upsmon.conf", directory_dest);
-				conf_file = open_file( s, "w", errhandler);
-				if (conf_file == 0) {
-					return 0;
-				}
-				
-				write_desc("nut.upsmon", conf_file, comm_file);
-				son = (tree_search(conf, "nut.upsmon", 1))->son;
-				while (son != 0) {
-					save(son, conf_file, "", comm_file);
-					fwrite("\n", 1, 1, conf_file);
-					son = son->next_brother;
-				}
-				fclose(conf_file);
-				if (is_root_user) {
-					grp = getgrnam(RUN_AS_USER);
-					if (grp == 0) {
-						grp = getgrnam("root");
-					}
-					chown(s, getpwnam("root")->pw_uid, grp->gr_gid);
-				}
-				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
+				write_section("nut.upsmon", s, comm_file, errhandler);
+
 				
 				free(s);
 				break;
@@ -325,99 +369,23 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				chmod(nut_conf, S_IRUSR | S_IWUSR | S_IRGRP);
 				
 				sprintf(s, "%s/ups.conf", directory_dest);
-				conf_file = open_file( s, "w", errhandler);
-				if (conf_file == 0) {
-					return 0;
-				}
-				
-				write_desc("nut.ups", conf_file, comm_file);
-				son = (tree_search(conf, "nut.ups", 1))->son;
-				while (son != 0) {
-					save(son, conf_file, "", comm_file);
-					fwrite("\n", 1, 1, conf_file);
-					son = son->next_brother;
-				}
-				fclose(conf_file);
-				if (is_root_user) {
-					grp = getgrnam(RUN_AS_USER);
-					if (grp == 0) {
-						grp = getgrnam("root");
-					}
-					chown(s, getpwnam("root")->pw_uid, grp->gr_gid);
-				}
-				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
+				write_section("nut.ups", s, comm_file, errhandler);
 				
 				sprintf(s, "%s/users.conf", directory_dest);
-				conf_file = open_file( s, "w", errhandler);
-				if (conf_file == 0) {
-					return 0;
-				}
-				
-				write_desc("nut.users", conf_file, comm_file);
-				son = (tree_search(conf, "nut.users", 1))->son;
-				while (son != 0) {
-					save(son, conf_file, "", comm_file);
-					fwrite("\n", 1, 1, conf_file);
-					son = son->next_brother;
-				}
-				fclose(conf_file);
-				if (is_root_user) {
-					grp = getgrnam(RUN_AS_USER);
-					if (grp == 0) {
-						grp = getgrnam("root");
-					}
-					chown(s, getpwnam("root")->pw_uid, grp->gr_gid);
-				}
-				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
-				
+				write_section("nut.users", s, comm_file, errhandler);
+
 				sprintf(s, "%s/upsd.conf", directory_dest);
-				conf_file = open_file( s, "w", errhandler);
-				if (conf_file == 0) {
-					return 0;
-				}
-				
-				write_desc("nut.upsd", conf_file, comm_file);
-				son = (tree_search(conf, "nut.upsd", 1))->son;
-				while (son != 0) {
-					save(son, conf_file, "", comm_file);
-					fwrite("\n", 1, 1, conf_file);
-					son = son->next_brother;
-				}
-				fclose(conf_file);
-				if (is_root_user) {
-					grp = getgrnam(RUN_AS_USER);
-					if (grp == 0) {
-						grp = getgrnam("root");
-					}
-					chown(s, getpwnam("root")->pw_uid, grp->gr_gid);
-				}
-				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
-				
+				write_section("nut.upsd", s, comm_file, errhandler);
+
 				sprintf(s, "%s/upsmon.conf", directory_dest);
-				conf_file = open_file( s, "w", errhandler);
-				if (conf_file == 0) {
-					return 0;
-				}
+				write_section("nut.upsmon", s, comm_file, errhandler);
 				
-				write_desc("nut.upsmon", conf_file, comm_file);
-				son = (tree_search(conf, "nut.upsmon", 1))->son;
-				while (son != 0) {
-					save(son, conf_file, "", comm_file);
-					fwrite("\n", 1, 1, conf_file);
-					son = son->next_brother;
-				}
-				fclose(conf_file);
-				if (is_root_user) {
-					grp = getgrnam(RUN_AS_USER);
-					if (grp == 0) {
-						grp = getgrnam("root");
-					}
-					chown(s, getpwnam("root")->pw_uid, grp->gr_gid);
-				}
-				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
 				
 				free(s);
 				break;
+				
+				
+				
 			case net_client :
 				write_desc("nut", conf_file, comm_file);
 				s = xmalloc(sizeof(char) * ( 50 + strlen(directory_dest)));
@@ -442,50 +410,10 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				chmod(nut_conf, S_IRUSR | S_IWUSR | S_IRGRP);
 				
 				sprintf(s, "%s/users.conf", directory_dest);
-				conf_file = open_file( s, "w", errhandler);
-				if (conf_file == 0) {
-					return 0;
-				}
-				
-				write_desc("nut.users", conf_file, comm_file);
-				son = (tree_search(conf, "nut.users", 1))->son;
-				while (son != 0) {
-					save(son, conf_file, "", comm_file);
-					fwrite("\n", 1, 1, conf_file);
-					son = son->next_brother;
-				}
-				fclose(conf_file);
-				if (is_root_user) {
-					grp = getgrnam(RUN_AS_USER);
-					if (grp == 0) {
-						grp = getgrnam("root");
-					}
-					chown(s, getpwnam("root")->pw_uid, grp->gr_gid);
-				}
-				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
-				
+				write_section("nut.users", s, comm_file, errhandler);
+
 				sprintf(s, "%s/upsmon.conf", directory_dest);
-				conf_file = open_file( s, "w", errhandler);
-				if (conf_file == 0) {
-					return 0;
-				}
-				
-				write_desc("nut.upsmon", conf_file, comm_file);
-				son = (tree_search(conf, "nut.upsmon", 1))->son;
-				while (son != 0) {
-					save(son, conf_file, "", comm_file);
-					fwrite("\n", 1, 1, conf_file);
-					son = son->next_brother;
-				}
-				fclose(conf_file);
-				if (is_root_user) {
-					grp = getgrnam(RUN_AS_USER);
-					if (grp == 0) {
-						grp = getgrnam("root");
-					}
-					chown(s, getpwnam("root")->pw_uid, grp->gr_gid);
-				}
-				chmod(s, S_IRUSR | S_IWUSR | S_IRGRP);
+				write_section("nut.upsmon", s, comm_file, errhandler);
 				
 				free(s);
 				break;
@@ -503,6 +431,7 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 					chown(nut_conf, getpwnam("root")->pw_uid, grp->gr_gid);
 				}
 				chmod(nut_conf, S_IRUSR | S_IWUSR | S_IRGRP);
+				break;
 				
 			case no_mode :
 				write_desc("nut", conf_file, comm_file);
@@ -565,11 +494,11 @@ t_typed_value get_variable(t_string varname) {
 	t_tree t;
 	t_typed_value value;
 	
-	if (current.ups != 0) {
+	if (current.ups != 0 && varname != 0) {
 		t = tree_search(conf, varname, TRUE);
 		if (t == 0) {
 			value.has_value = FALSE;
-			value.type = string_type; // To avoid a warning;
+			value.type = string_type; /* To avoid a warning; */
 			return value;
 		}
 		value.has_value = t->has_value;
@@ -581,12 +510,12 @@ t_typed_value get_variable(t_string varname) {
 		return value;
 	}
 	value.has_value = FALSE;
-	value.type = string_type; // To avoid a warning;
+	value.type = string_type; /* To avoid a warning; */
 	return value;
 }
 
 void set_variable(t_string varname, void* value, t_types type) {
-	if (current.rights_in != invalid_right) {
+	if (current.rights_in != invalid_right && varname != 0) {
 		if (value == 0) {
 			del_from_tree(conf, varname);
 		} else {
@@ -595,6 +524,26 @@ void set_variable(t_string varname, void* value, t_types type) {
 	}	
 }
 
+t_enum_string get_variable_list(t_string path) {
+	t_enum_string enum_string;
+	t_tree t;
+	t_string s;
+	
+	t = tree_search(conf, path, TRUE);
+	if (t != 0) {
+		t = t->son;
+		enum_string = 0;
+		while (t != 0) {
+			s = extract_last_part(t->name);
+			enum_string = add_to_enum_string(enum_string, s);
+			free(s);
+			t = t->next_brother;
+		}
+		
+		return enum_string;
+	}
+	return 0;
+}
 
 /***************************************************
  *                   UPS SECTION                   *
@@ -612,6 +561,10 @@ t_enum_string get_ups_list() {
 		enum_string = 0;
 		while (t != 0) {
 			s = extract_last_part(t->name);
+			if (strcmp(s, "global") == 0) {
+				t = t->next_brother;
+				continue;
+			}
 			enum_string = add_to_enum_string(enum_string, s);
 			free(s);
 			t = t->next_brother;
@@ -691,7 +644,7 @@ t_string get_driver() {
 		sprintf( s, "%s.driver.name", current.ups->name);
 		t = tree_search(conf, s, TRUE);
 		free(s);
-		if (t == 0) return 0;
+		if (t == 0 || t->type != string_type) return 0;
 		return string_copy(t->value.string_value);
 	}
 	return 0;
@@ -717,7 +670,7 @@ t_string get_port() {
 		sprintf( s, "%s.driver.parameter.port", current.ups->name);
 		t = tree_search(conf, s, TRUE);
 		free(s);
-		if (t == 0) return 0;
+		if (t == 0 || t->type != string_type) return 0;
 		current.rights_out = t->right;
 		return string_copy(t->value.string_value);
 	}
@@ -744,7 +697,7 @@ t_string get_desc() {
 		sprintf( s, "%s.desc", current.ups->name);
 		t = tree_search(conf, s, TRUE);
 		free(s);
-		if (t == 0) return 0;
+		if (t == 0 || t->type != string_type) return 0;
 		current.rights_out = t->right;
 		return string_copy(t->value.string_value);
 	}
@@ -779,7 +732,7 @@ t_enum_string get_driver_parameter_list() {
 		sprintf(s, "%s.driver.parameter", current.ups->name);
 		t =tree_search(conf, s, TRUE);
 		free(s);
-		if (t ==0) return 0;
+		if (t == 0) return 0;
 		t = t->son;
 		while (t !=0) {
 			enum_string = add_to_enum_string(enum_string, extract_last_part(t->name));
@@ -803,7 +756,7 @@ t_typed_value get_driver_parameter(t_string paramname) {
 		free(s);
 		if (t == 0) {
 			value.has_value = FALSE;
-			value.type = string_type; // To avoid a warning
+			value.type = string_type; /* To avoid a warning */
 			return value;
 		}
 		value.has_value = t->has_value;
@@ -823,7 +776,7 @@ t_typed_value get_driver_parameter(t_string paramname) {
 		return value;
 	}
 	value.has_value = FALSE;
-	value.type = string_type; // To avoid a warning;
+	value.type = string_type; /* To avoid a warning; */
 	return value;
 }
 
@@ -853,7 +806,7 @@ t_enum_string get_driver_flag_list() {
 		sprintf(s, "%s.driver.flag", current.ups->name);
 		t =tree_search(conf, s, TRUE);
 		free(s);
-		if (t ==0) return 0;
+		if (t == 0) return 0;
 		t = t->son;
 		while (t !=0) {
 			enum_string = add_to_enum_string(enum_string, extract_last_part(t->name));
@@ -893,7 +846,7 @@ t_enum_string get_ups_variable_list() {
 	if (current.ups != 0) {
 		enum_string = 0;
 		t =tree_search(conf, current.ups->name, TRUE);
-		if (t ==0) return 0;
+		if (t == 0 ) return 0;
 		t = t->son;
 		while (t !=0) {
 			enum_string = add_to_enum_string(enum_string, extract_last_part(t->name));
@@ -915,7 +868,7 @@ t_enum_string get_ups_subvariable_list(t_string varname) {
 		sprintf(s, "%s.%s", current.ups->name, varname);
 		t =tree_search(conf, s, TRUE);
 		free(s);
-		if (t ==0) return 0;
+		if (t == 0) return 0;
 		t = t->son;
 		while (t !=0) {
 			enum_string = add_to_enum_string(enum_string, extract_last_part(t->name));
@@ -938,7 +891,7 @@ t_typed_value get_ups_variable(t_string varname) {
 		free(s);
 		if (t == 0) {
 			value.has_value = FALSE;
-			value.type = string_type; // To avoid a warning;
+			value.type = string_type; /* To avoid a warning; */
 			return value;
 		}
 		value.has_value = t->has_value;
@@ -950,7 +903,7 @@ t_typed_value get_ups_variable(t_string varname) {
 		return value;
 	}
 	value.has_value = FALSE;
-	value.type = string_type; // To avoid a warning;
+	value.type = string_type; /* To avoid a warning; */
 	return value;
 }
 
@@ -968,6 +921,8 @@ void set_ups_variable(t_string varname, void* value, t_types type) {
 		free(s);
 	}	
 }
+
+
 
 
 
@@ -1053,13 +1008,13 @@ t_string get_name() {
 }
 
 
-// NIY : It need to modify the name of each sons of the user. Use add_user then remove_user for the moment
-//void set_name(t_string username) {
-//	if (current.user != 0 && current.rights_in != invalid_right) {
-//		free(current.user->name);
-//		current.user->name = string_copy(username);
-//	}	
-//}
+/* NIY : It need to modify the name of each sons of the user. Use add_user then remove_user for the moment
+void set_name(t_string username) {
+	if (current.user != 0 && current.rights_in != invalid_right) {
+		free(current.user->name);
+		current.user->name = string_copy(username);
+	}	
+} */
 
 
 t_user_types get_type() {
@@ -1071,7 +1026,7 @@ t_user_types get_type() {
 		sprintf( s, "%s.type", current.user->name);
 		t = tree_search(conf, s, TRUE);
 		free(s);
-		if (t == 0) return 0;
+		if (t == 0  || t->type != string_type) return 0;
 		current.rights_out = t->right;
 		return string_to_user_type(t->value.string_value);
 	}
@@ -1101,7 +1056,7 @@ t_string get_password() {
 		sprintf( s, "%s.password", current.user->name);
 		t = tree_search(conf, s, TRUE);
 		free(s);
-		if (t == 0) return 0;
+		if (t == 0  || t->type != string_type) return 0;
 		return string_copy(t->value.string_value);
 	}
 	return 0;
@@ -1129,7 +1084,7 @@ t_enum_string get_allowfrom() {
 		sprintf( s, "%s.allowfrom", current.user->name);
 		t = tree_search(conf, s, TRUE);
 		free(s);
-		if (t == 0) return 0;
+		if (t == 0  || t->type != enum_string_type) return 0;
 		if (t->type == enum_string_type) {
 			current.rights_out = t->right;
 			return enum_string_copy(t->value.enum_string_value);
@@ -1164,7 +1119,7 @@ t_enum_string get_actions() {
 		sprintf( s, "%s.actions", current.user->name);
 		t = tree_search(conf, s, TRUE);
 		free(s);
-		if (t == 0) return 0;
+		if (t == 0  || t->type != enum_string_type) return 0;
 		if (t->type == enum_string_type) {
 			current.rights_out = t->right;
 			return enum_string_copy(t->value.enum_string_value);
@@ -1199,7 +1154,7 @@ t_enum_string get_instcmds() {
 		sprintf( s, "%s.instcmds", current.user->name);
 		t = tree_search(conf, s, TRUE);
 		free(s);
-		if (t == 0) return 0;
+		if (t == 0  || t->type != enum_string_type) return 0;
 		if (t->type == enum_string_type) {
 			current.rights_out = t->right;
 			return enum_string_copy(t->value.enum_string_value);
@@ -1269,7 +1224,7 @@ t_string get_acl_value(t_string aclname) {
 	sprintf( s, "nut.upsd.acl.%s", aclname);
 	t = tree_search(conf, s, TRUE);
 	free(s);
-	if (t == 0) return 0;
+	if (t == 0  || t->type != string_type) return 0;
 	current.rights_out = t->right;
 	return string_copy(t->value.string_value);
 }
@@ -1291,7 +1246,7 @@ t_enum_string get_accept() {
 	t_tree t;
 	
 	t = tree_search(conf, "nut.upsd.accept", TRUE);
-	if (t == 0) return 0;
+	if (t == 0  || t->type != enum_string_type) return 0;
 	if (t->type == enum_string_type) {
 		current.rights_out = t->right;
 		return enum_string_copy(t->value.enum_string_value);
@@ -1311,7 +1266,7 @@ t_enum_string get_reject() {
 	t_tree t;
 	
 	t = tree_search(conf, "nut.upsd.reject", TRUE);
-	if (t == 0) return 0;
+	if (t == 0  || t->type != enum_string_type) return 0;
 	if (t->type == enum_string_type) {
 		current.rights_out = t->right;
 		return enum_string_copy(t->value.enum_string_value);
@@ -1344,8 +1299,8 @@ void set_maxage(int value) {
 	t_string s;
 	
 	if (current.rights_in != invalid_right) {
-		// an int can need 10 char to be represented (without the sign)
-		// I put 15 to be sure
+		/* an int can need 10 char to be represented (without the sign)
+		 I put 15 to be sure */
 		s = xmalloc(sizeof(char) * 15);
 		sprintf(s, "%d", value);
 		add_to_tree(conf, "nut.upsd.maxage", s, string_type, current.rights_in);
@@ -1375,8 +1330,37 @@ int get_number_of_monitor_rules() {
 	return 0;
 }
 
+/* There is a little problem if the host of a monitor rule*/ 
+/* Contains dot (interpreted as tree node) This function  */
+/* pass the node until it arrive to the node that contains*/
+/* powervalue and user informations                       */
 
-// created in last.
+/* The parameter is the node to begin the search from     */
+t_tree find_monitor_rule(t_tree begining) {
+	t_string s;
+	t_tree t;
+	
+	if (begining == 0) return 0;
+	
+	t = begining->son;
+	
+	if (t == 0) return 0;
+	
+	s = extract_last_part(t->name);
+	if (strcmp(s, "powervalue") == 0 )  {
+		if (t->next_brother == 0) return find_monitor_rule(t);
+		free(s);
+		s = extract_last_part(t->next_brother->name);
+		if (strcmp(s, "user") == 0) {
+			free(s);
+			return begining;
+		}
+	}
+	free(s);
+	return find_monitor_rule(t);
+}
+
+/* created in last. */
 void add_monitor_rule(t_string upsname, t_string host, int powervalue, t_string username) {
 	t_string s, s2;
 	
@@ -1395,7 +1379,7 @@ void add_monitor_rule(t_string upsname, t_string host, int powervalue, t_string 
 	
 	
 int remove_monitor_rule(int rulenumber) {
-	t_tree t;
+	t_tree t, temp;
 	int i = 0;
 	
 	t = tree_search(conf, "nut.upsmon.monitor", TRUE);
@@ -1404,7 +1388,8 @@ int remove_monitor_rule(int rulenumber) {
 		while (t != 0) {
 			i++;
 			if (i == rulenumber) {
-				if (t == current.monitor_rule) current.monitor_rule = 0;
+				temp = find_monitor_rule(t);
+				if (temp == current.monitor_rule) current.monitor_rule = 0;
 				i = del_from_tree(conf, t->name);	
 				return i;
 			}
@@ -1414,7 +1399,6 @@ int remove_monitor_rule(int rulenumber) {
 	}
 	return 0;
 }
-
 
 
 int search_monitor_rule(int rulenumber) {
@@ -1427,7 +1411,7 @@ int search_monitor_rule(int rulenumber) {
 		while (t != 0) {
 			i++;
 			if (i == rulenumber) {
-				current.monitor_rule = t;
+				current.monitor_rule = find_monitor_rule(t);
 				return 1;
 			}
 			t = t->next_brother;
@@ -1581,7 +1565,7 @@ t_flags get_notify_flag(t_notify_events event) {
 	sprintf(s, "nut.upsmon.notifyflag.%s", s2);
 	t = tree_search(conf, s, TRUE);
 	free(s);
-	if (t != 0) {
+	if (t != 0  || t->type != string_type) {
 		current.rights_out = t->right;
 		return string_to_flag(t->value.string_value);
 	}
@@ -1610,7 +1594,7 @@ t_string get_notify_message(t_notify_events event) {
 	sprintf(s, "nut.upsmon.notifymsg.%s", s2);
 	t = tree_search(conf, s, TRUE);
 	free(s);
-	if (t != 0) {
+	if (t != 0  && t->type == string_type) {
 		current.rights_out = t->right;
 		return string_copy(t->value.string_value);
 	}
@@ -1639,7 +1623,7 @@ t_string get_notify_command() {
 	t_tree t;
 	
 	t = tree_search(conf, "nut.upsmon.notifycmd", TRUE);
-	if (t != 0 || t->type != string_type) {
+	if (t != 0 && t->type == string_type) {
 		current.rights_out = t->right;
 		return string_copy(t->value.string_value);
 	}
@@ -2072,7 +2056,7 @@ void write_desc(t_string name, FILE* conf_file, FILE* comm_file) {
 		return;
 	}
 	
-	// Two special cases :
+	/* Two special cases : */
 	if (strcmp(name, "nut.ups") == 0 ) {
 		write_desc("nut.ups_header_only", conf_file, comm_file);
 		write_desc("nut.ups_desc", conf_file, comm_file);
@@ -2100,7 +2084,7 @@ void write_desc(t_string name, FILE* conf_file, FILE* comm_file) {
 			}
 			c = fgetc(comm_file);
 		} 
-		// It matchs for the name_length first char. Does it end here ?
+		/* It matchs for the name_length first char. Does it end here ? */
 		if (match && c == '\n') {
 			c = fgetc(comm_file);
 			while (c != '\\' && c != EOF) {
@@ -2109,7 +2093,7 @@ void write_desc(t_string name, FILE* conf_file, FILE* comm_file) {
 			}
 			return;
 		}
-		// It didn't match, lets try the next
+		/* It didn't match, lets try the next */
 		c = getc(comm_file);
 		while ( c != '\\' && c != EOF) {
 			c = getc(comm_file);

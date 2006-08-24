@@ -183,7 +183,7 @@ void free_tree(t_tree tree);
 t_string extract_last_part(t_string string);
 
 
-// FOR DEBUG USE ONLY
+/* FOR DEBUG USE ONLY */
 void print_tree(t_tree tree);
 
 

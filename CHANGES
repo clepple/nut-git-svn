@@ -1,3 +1,12 @@
+Thu Aug 24 14:54:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
+
+ - Many files I created : cleaning to replace // comment by /* */ comments
+ - drivers/main.c upsdrvctl : global variable for ups.conf are now in nut.ups.global.
+ - lib/libupsconfig.c : When saving, only try to save existant configuration files 
+   (not all configuration files possible XD)
+ - utils : renaming migratetool into migrateconfig
+ - man : added manual for migrateconfig and upsconfig
+
 Wed Aug 9  17:06:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
 
  - utils/migratetool.c : A tool to migrate from old config format to the new one

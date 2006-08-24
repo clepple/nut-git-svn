@@ -24,7 +24,7 @@
 #ifndef DATA_TYPES_H_
 #define DATA_TYPES_H_
 
-// Some basic types
+/* Some basic types */
 typedef int boolean;
 typedef char* t_string;
 
