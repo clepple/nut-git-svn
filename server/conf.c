@@ -187,18 +187,18 @@ static void read_upsdconf(int reloading)
 		certfile = value.value.string_value;
 	}
 	
-	/* accept { <aclname> [<aclname>...] } */
-	enum_acl_begining = enum_acl = get_accept();
+	/* reject { <aclname> [<aclname>...] } */
+	enum_acl_begining = enum_acl = get_reject();
 	while (enum_acl != NULL) {
-		access_append(ACCESS_ACCEPT, enum_acl->value);
+		access_append(ACCESS_REJECT, enum_acl->value);
 		enum_acl = enum_acl->next_value;
 	}
 	free_enum_string(enum_acl_begining);
 	
-	/* rejectt { <aclname> [<aclname>...] } */
-	enum_acl_begining = enum_acl = get_reject();
+	/* accept { <aclname> [<aclname>...] } */
+	enum_acl_begining = enum_acl = get_accept();
 	while (enum_acl != NULL) {
-		access_append(ACCESS_REJECT, enum_acl->value);
+		access_append(ACCESS_ACCEPT, enum_acl->value);
 		enum_acl = enum_acl->next_value;
 	}
 	free_enum_string(enum_acl_begining);

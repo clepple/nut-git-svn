@@ -111,10 +111,10 @@ USB cabling, or inspect the network path in the case of a SNMP UPS.
 
 .SH FILES
 
-The general upsd configuration file is \fBupsd.conf\fR(5).  The
+upsd has is own section (upsd) in \fBnut.conf\fR(5).  The
 administrative functions like SET and INSTCMD for users are defined and
-controlled in \fBupsd.users\fR(5).  UPS definitions are found in
-\fBups.conf\fR(5).
+controlled the users section of the same file.  UPS definitions are found in
+the ups section.
 
 .SH ENVIRONMENT VARIABLES
 

@@ -364,7 +364,7 @@ int parse_users() {
 	return 1;
 }
 
-static int parse_upsd_conf_args(int numargs, char **arg)
+static int parse_upsd_conf_args(int numargs, char **arg, t_enum_string accept_list, t_enum_string reject_list)
 {
 	t_enum_string enum_string;
 	int i;
@@ -401,10 +401,8 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 	if (!strcmp(arg[0], "ACCEPT")) {
 		enum_string = get_accept();
 		for (i = 1; i < numargs; i++) {
-			enum_string = add_to_enum_string(enum_string, arg[i]);
+			accept_list = add_to_enum_string(accept_list, arg[i]);
 		}
-		set_accept(enum_string);
-		free_enum_string(enum_string);
 		return 1;
 	}
 
@@ -412,10 +410,9 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 	if (!strcmp(arg[0], "REJECT")) {
 		enum_string = get_reject();
 		for (i = 1; i < numargs; i++) {
-			enum_string = add_to_enum_string(enum_string, arg[i]);
+			if ( strcmp(arg[i], "all") == 0 ) continue; 
+			reject_list = add_to_enum_string(reject_list, arg[i]);
 		}
-		set_reject(enum_string);
-		free_enum_string(enum_string);
 		return 1;
 	}
 
@@ -445,6 +442,7 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 int parse_upsd() {
 	char	fn[SMALLBUF];
 	PCONF_CTX	ctx;
+	t_enum_string accept_list = 0, reject_list = 0;
 
 	snprintf(fn, sizeof(fn), "%s/upsd.conf", current_dir);
 
@@ -469,7 +467,7 @@ int parse_upsd() {
 		if (ctx.numargs < 1)
 			continue;
 
-		if (!parse_upsd_conf_args(ctx.numargs, ctx.arglist)) {
+		if (!parse_upsd_conf_args(ctx.numargs, ctx.arglist, accept_list, reject_list)) {
 			unsigned int	i;
 			char	errmsg[SMALLBUF];
 
@@ -483,6 +481,14 @@ int parse_upsd() {
 			printf("%s", errmsg);
 		}
 
+	}
+	if (reject_list) {
+		set_reject(reject_list);
+		free_enum_string(reject_list);
+	}
+	if (accept_list) {
+		set_accept(accept_list);
+		free_enum_string(accept_list);
 	}
 
 	pconf_finish(&ctx);

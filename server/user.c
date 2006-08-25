@@ -512,9 +512,11 @@ void read_users(void)
 				user_add_instcmd("all");
 				break;
 			case upsmon_master :
+				user_add_action("FSD");
 				set_upsmon_type("master");
 				break;
 			case upsmon_slave :
+				user_add_action("FSD");
 				set_upsmon_type("slave");
 				break;
 			default : ;

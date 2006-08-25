@@ -73,10 +73,14 @@ RUN_AS_USER directive.
 .SH UPS DEFINITIONS
 
 In the \fBupsmon.conf\fR(5), you must specify at least one UPS that will
-be monitored.  Use the MONITOR directive.
+be monitored.  Use the monitor directive.
 
-	MONITOR \fIsystem\fR \fIpowervalue\fR \fIusername\fR
-\fIpassword\fR \fItype\fR
+.nf
+	upsmon.monitor.\fIsystem\fR (
+		powervalue = "\fIpowervalue\fR"
+		user = "\fIusername\fR"
+	)
+.fi
 
 The \fIsystem\fR refers to a \fBupsd\fR(8) server, in the form
 upsname@hostname[:port].  Some examples follow:
@@ -91,13 +95,10 @@ The \fIpowervalue\fR refers to how many power supplies on this system are
 being driven this UPS.  This is typically set to 1, but see the section
 on power values below.
 
-The \fIusername\fR is a section in your \fBupsd.users\fR(5) file.
-Whatever password you set in that section must match the \fIpassword\fR
-set in this file.  
+The \fIusername\fR is a section in your users section in your configuration file.
 
-The type set in that section must also match the \fItype\fR here \(hy
-\fBmaster\fR or \fBslave\fR.  In general, a master process is one
-running on the system with the UPS actually plugged into a serial
+The type of the user must be upsmon_master ot upsmon_slave. In general, a master process 
+is one running on the system with the UPS actually plugged into a serial
 port, and a slave is drawing power from the UPS but can't talk to it
 directly.  See the section on UPS types for more.
 
@@ -105,7 +106,7 @@ directly.  See the section on UPS types for more.
 
 upsmon senses several events as it monitors each UPS.  They are called
 notify events as they can be used to tell the users and admins about the
-change in status.  See the additional NOTIFY\(hyrelated sections below for
+change in status.  See the additional notify\(hyrelated sections below for
 information on customizing the delivery of these messages.
 
 .IP ONLINE
@@ -137,21 +138,19 @@ The UPS can't be contacted for monitoring.
 
 .SH NOTIFY COMMAND
 
-In \fBupsmon.conf\fR(5), you can configure a program called the NOTIFYCMD
+In \fBupsmon.conf\fR(5), you can configure a program called the notifycmd
 that will handle events that occur.  
 
-	NOTIFYCMD "\fIpath to program\fR"
+	upsmon.notifycmd = "\fIpath to program\fR"
 
-	NOTIFYCMD "/usr/local/bin/notifyme"
+	upsmon.notifycmd = "/usr/local/bin/notifyme"
 
-Remember to wrap the path in "quotes" if it contains any spaces.
-
-The program you run as your NOTIFYCMD can use the environment variables
+The program you run as your notifycmd can use the environment variables
 NOTIFYTYPE and UPSNAME to know what has happened and on which UPS.  It
 also receives the notification message (see below) as the first (and
 only) argument, so you can deliver a preformatted message too.
 
-Note that the NOTIFYCMD will only be called for a given event when you set
+Note that the notifycmd will only be called for a given event when you set
 the EXEC flag by using the notify flags, below:
 
 .SH NOTIFY FLAGS
@@ -160,15 +159,15 @@ By default, all notify events (see above) generate a global message
 (wall) to all users, plus they are logged via the syslog.  You can change
 this with the NOTIFYFLAG directive in the configuration file:
 
-	NOTIFYFLAG \fInotifytype\fR \fIflags\fR
+	upsmon.notyflag.\fInotifytype\fR = "\fIflags\fR"
 
 	Examples:
 
-	NOTIFYFLAG ONLINE SYSLOG
+	upsmon.notifyflag.online = "SYSLOG"
 
-	NOTIFYFLAG ONBATT SYSLOG+WALL
-
-	NOTIFYFLAG LOWBATT SYSLOG+WALL+EXEC
+	upsmon.notifyflag.onbatt = "SYSLOG+WALL"
+	
+	upsmon.notifyflag.lowbatt = "SYSLOG+WALL+EXEC"
 
 The flags that can be set on a given notify event are:
 
@@ -192,13 +191,13 @@ event.
 upsmon comes with default messages for each of the NOTIFY events.  These
 can be changed with the NOTIFYMSG directive.
 
-	NOTIFYMSG \fItype\fR "\fImessage\fR"
+	upsmon.notifymsg.\fItype\fR = "\fImessage\fR"
 
 	Examples:
 
-	NOTIFYMSG ONLINE "UPS %s is getting line power"
+	upsmon.notifymsg.online = "UPS %s is getting line power"
 
-	NOTIFYMSG ONBATT "Someone pulled the plug on %s"
+	upsmon.notifymsg.onbatt = "Someone pulled the plug on %s"
 
 The first instance of %s is replaced with the identifier of the UPS that
 generated the event.  These messages are used when sending walls to the
@@ -212,45 +211,69 @@ UPS that is either on line or just on battery contributes to this
 number.  If a UPS is critical (on battery and low battery) or has been
 put into "forced shutdown" mode, it no longer contributes.
 
-A "power value" on a MONITOR line in the config file is the number of
+A "power value" on a monitor section in the config file is the number of
 power supplies that the UPS runs on the current system.  
 
-	MONITOR \fIupsname\fR \fIpowervalue\fR \fIusername\fR \fIpassword\fR \fItype\fR
+.nf
+	upsmon.monitor.\fIsystem\fR (
+		powervalue = "\fIpowervalue\fR"
+		user = "\fIusername\fR"
+	)
+.fi
 
 Normally, you only have one power supply, so it will be set to 1.  
 
-	MONITOR myups@myhost 1 username mypassword master
+.nf
+	upsmon.monitor.myups@myhost (
+		powervalue = "1"
+		user = "monuser"
+	)
+.fi
 
 On a large server with redundant power supplies, the power value for a UPS
 may be greater than 1.  You may also have more than one of them defined.
 
-	MONITOR ups\-alpha@myhost 2 username mypassword master
-
-	MONITOR ups\-beta@myhost 2 username mypassword master
+.nf
+	upsmon.monitor (
+		ups\-alpha@myhost (
+			powervalue = "2"
+			user = "monuser"
+		)
+		ups\-beta@myhost (
+			powervalue = "2"
+			user = "monuser"
+		)
+	)
+.fi
 
 You can also set the power value for a UPS to 0 if it does not supply any
 power to that system.  This is generally used when you want to use the
 upsmon notification features for a UPS even though it's not actually
-running the system that hosts upsmon.  Don't set this to "master" unless
+running the system that hosts upsmon.  Don't use a "master" user unless
 you really want to power this UPS off when this instance of upsmon needs
 to shut down for its own reasons.
 
-	MONITOR faraway@anotherbox 0 username mypassword slave
+.nf
+	upsmon.monitor.myups@myhost (
+		powervalue = "0"
+		user = "monuser"
+	)
+.fi
 
 The "minimum power value" is the number of power supplies that must be
 receiving power in order to keep the computer running.  
 
-	MINSUPPLIES \fIvalue\fR
+	upsmon.minsupplies = "\fIvalue\fR"
 
 Typical PCs only have 1, so most users will leave this at the default. 
 
-	MINSUPPLIES 1
+	upsmon.minsupplies = "1"
 
 If you have a server or similar system with redundant power, then this
 value will usually be set higher.  One that requires three power supplies
 to be running at all times would simply set it to 3.
 
-	MINSUPPLIES 3
+	upsmon.minsupplies = "3"
 
 When the current overall power value drops below the minimum power value,
 upsmon starts the shutdown sequence.  This design allows you to lose some
@@ -360,14 +383,14 @@ before the critical stage through some external means, such as
 .SH DEAD UPSES
 
 In the event that upsmon can't reach \fBupsd\fR(8), it declares that UPS
-"dead" after some interval controlled by DEADTIME in the
+"dead" after some interval controlled by deadtime in the
 \fBupsmon.conf\fR(5).  If this happens while that UPS was last known to be
 on battery, it is assumed to have gone critical and no longer contributes
 to the overall power value.
 
 upsmon will alert you to a UPS that can't be contacted for monitoring
 with a "NOCOMM" notifier by default every 300 seconds.  This can be
-changed with the NOCOMMWARNTIME setting.
+changed with the nocommwarntime setting.
 
 .SH RELOADING NUANCES
 
@@ -383,7 +406,7 @@ user just for this purpose, as making the file readable by "nobody"
 
 See the RUN_AS_USER section in \fBupsmon.conf\fR(8) for more on this topic.
 
-Additionally, you can't change the SHUTDOWNCMD or POWERDOWNFLAG
+Additionally, you can't change the shutdowncmd or powerdownflag
 definitions with a reload due to the split\(hyprocess model.  If you change
 those values, you \fBmust\fR stop upsmon and start it back up.  upsmon
 will warn you in the syslog if you make changes to either of those
@@ -403,7 +426,7 @@ equipment, and it beats crawling under a desk to find the plug.
 
 .SH FILES
 
-\fBupsmon.conf\fR(5)
+\fBnut.conf\fR(5)
 
 .SH SEE ALSO
 

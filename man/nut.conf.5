@@ -1,0 +1,845 @@
+.TH NUT.CONF 5 "Wed Aug 23 2006" "" "Network UPS Tools (NUT)" 
+.SH NAME
+ups.conf \- UPS definitions for Network UPS Tools
+
+.SH DESCRIPTION
+
+This file contains the configuration of NUT, whether directly in itself or by 
+"include" directives linking to others files.
+This file is read by the driver controller \fBupsdrvctl\fR(8), the UPS drivers
+that use the common core (see \fBnutupsdrv\fR(8)), the server \fBupsd\fR(8) and
+the client \fBupsmon\fR(8).
+
+The file contains for the moment up to 4 sections, respectively ups, users, upsd and upsmon
+
+.SH GENERAL FORMAT NOTIONS
+
+Comments begins with a sharp ('#') and goes until the end of the line.
+
+The formalism is common for all the section. It represente a tree, whose root name is nut.
+Variable is this tree have names that looks like :
+.IP
+.nf
+	nut.ups.myups.driver.name
+	nut.users.myadmin.password
+	nut.upsd.acl.localhost
+.fi
+.LP
+As the "nut" root is common for all variables, it is not represented in \fBnut.conf\fR. Thus
+variable names in \fBnut.conf\fR are like :
+.IP
+.nf
+	ups.myups.driver.name
+	users.myadmin.password
+	upsd.acl.localhost
+.fi
+.LP
+Those variables can be given value with the '=' sign. Values are for the moment of two type :
+.IP "\fBstring\fR"
+The string value have to be given quoted ("like this for instance"). As integer or float are not
+yet implemented, they have to be passed as string for the moment.
+
+.IP "\fBenumeration of string\fR"
+Some value like allowfrom, accept, reject and so on can be given a list of string value.
+The lists are to be in braces ( {"list" "of" "4" "strings"} )
+.LP
+If some variables have a common base name, they can be regrouped as follow :
+.IP
+.nf
+	ups.myups.driver.name = "mydriver"
+	ups.myups.driver.parameter.port = "the port"
+	ups.myups.desc = "my desc"
+.fi
+.LP
+can be regrouped as :
+.IP
+.nf
+	ups.myups (
+		driver (
+			name = "mydriver"
+			parameter.port = "the port"
+		)
+		desc = "my desc"
+	)
+.fi
+.LP
+Note that you can also use a combination of the too, or put the line in any order.
+The following is totaly valid, but not recommended :
+.IP
+.nf
+	ups (
+		myups (
+			driver.parameter.port = "the port"
+		)
+		myups.desc = "my desc"
+	)
+	ups.myups.driver.name = "mydriver"	
+.fi
+.LP
+
+.SH WARNING ABOUT DUPLICATE VARIABLE
+If the same variable is specified twice in a configuration file, only the
+last value will have any effect, the firts will simply be ignored.
+
+.SH INCLUDE
+To be able to keep the configuration splited like with the old format, or to be able to
+store sensible information (like password) in separate files (with eventually different 
+access rights), an "include" directive have been added. The syntax is :
+.IP
+.nf
+	include "filename"
+.fi
+.LP
+It has the same effect than to paste the content of "filename" at the place of the include
+directive, that is to say that if the include directive is in a bloc after bracket, all the 
+variable declaration in the included file will inherit the path of the bloc.
+.IP
+.nf
+	users (
+		include "passwords"
+	)
+.fi
+.LP
+If the content of the file passwords is :
+.IP
+.nf
+	myadmin.password = "foo1"
+	myuser.password = "foo2"
+.fi
+.LP
+It is equivalant to :
+.IP
+.nf
+	users (
+		myadmin.password = "foo1"
+		myuser.password = "foo2"
+	)
+.fi
+.LP
+
+.SH RIGHTS
+For later evolution, a notion of rights have been introduced in the configuration file
+The configuration would be able to be changed in live, by an interface, without having to
+manually modify the configuration file.
+Thus the notion of "setable" variables that already exist for UPs internal variable have been
+extended to configuration variable.
+The notion of "readable" variables has been added, especially for variable like user passwords
+
+Therefore, after the value of a variable can now figures the right of this variable. Valid values are :
+
+.IP "r"
+This variable is readable for all but not writable
+
+.IP "r*"
+This variable is only readable by NUT administrators, and not writable
+
+.IP "rw*"
+This variable is readable by all but only NUT administrtors can write it
+
+.IP "r*w*"
+This variable is readable and writable only by NUT administrator. Perfect right for passwords.
+
+.SH UPS section
+
+You must define the "driver" and "port" elements for each entry.  Anything
+after that in a section is optional.  A simple example might look like
+this:
+
+.IP
+.nf
+	ups. (
+		myups (
+			driver (
+				name = "fentonups"
+				parameter.port = "/dev/ttyS0"
+			)
+			desc = "Web server UPS"
+		)
+	)
+.fi
+.LP
+
+A slightly more complicated version includes some extras for the
+hardware\(hyspecific part of the driver:
+
+.IP
+.nf
+	ups. (
+		bigups (
+			driver (
+				name = "apcsmart"
+				parameter (
+					port = "/dev/ttyS0"
+					cable = "940\-0095B"
+					sdtype = "2"
+			)
+			desc = "Database server UPS"
+		)
+	)
+.fi
+.LP
+
+In this case, the \fBapcsmart\fR(8) driver will receive variables called
+"cable" and "sdtype" which have special meanings.  See the man pages of
+your driver(s) to learn which variables are supported and what they do.
+
+.SS "GLOBAL DIRECTIVES"
+
+Global directives are to be put in ups.global section
+
+.IP chroot
+
+ups.global.chroot = "\fIdirectory\fR"
+	
+Optional.  The driver will \fBchroot\fR(2) to this directory during
+initialization.  This can be useful when securing systems.
+
+.IP driverpath
+
+ups.global.driverpath = "\fIdirectory\fR"
+	
+Optional.  Path name of the directory in which the UPS driver executables
+reside.  If you don't specify this, the programs look in a built\(hyin default
+directory, which is often /usr/local/ups/bin.
+
+.IP maxstartdelay
+
+ups.global.maxstartdelay = "\fIseconds\fR"
+
+Optional.  Same as the UPS field of the same name, but this is the
+default for UPSes that don't have the field.
+
+.IP pollinterval
+
+ups.global.pollinterval = "\fIseconds\fR"
+	
+Optional.  The status of the UPS will be refreshed after a maximum
+delay which is controlled by this setting.  This is normally 2 seconds.
+This may be useful if the driver is creating too much of a load on your
+system or network.
+
+.IP user
+
+ups.global.user = "\fIusername\fR"
+
+Optional.  If started as root, the driver will \fBsetuid\fR(2) to the 
+user id associated with \fIusername\fR.
+
+.SS "UPS SECTION"
+
+the UPS declaration is to be put in ups. For instance, if you want to declare
+a UPS nammed myups, the corresponding section will be ups.myups. All the following
+variable are to be put in a UPS section
+
+.IP driver.name
+
+ups.\fIupsname\fR.driver.name = "\fIdrivername\fR"
+
+Required.  This specifies which program will be monitoring this UPS.  You
+need to specify the one that is compatible with your hardware.  See
+\fBnutupsdrv\fR(8) for more information on drivers in general and pointers
+to the man pages of specific drivers.
+
+.IP driver.parameter.port
+	
+ups.\fIupsname\fR.driver.parameter.port = "\fIport\fR"
+
+Required.  This is the serial port where the UPS is connected.  On a Linux
+system, the first serial port usually is /dev/ttyS0.  On FreeBSD and
+similar systems, it probably will be /dev/cuaa0.
+
+.IP sdorder
+
+ups.\fIupsname\fR.sorder = "\fInumber\fR"
+
+Optional.  When you have multiple UPSes on your system, you usually need
+to turn them off in a certain order.  upsdrvctl shuts down all the 0s,
+then the 1s, 2s, and so on.  To exclude a UPS from the shutdown sequence,
+set this to \-1.
+
+The default value for this parameter is 0.
+
+.IP desc
+
+ups.\fIupsname\fR.desc = "\fIDescription\fR"
+
+Optional.  This allows you to set a brief description that upsd will
+provide to clients that ask for a list of connected equipment.
+
+.IP flag.nolock
+
+ups.\fIupsname\fR.flag.nolock = "enabled"
+
+Optional.  When you specify this, the driver skips the port locking
+routines every time it starts.  This may allow other processes to seize
+the port if you start more than one accidentally. You must give it the value
+"enabled" for the flag to take effect
+.IP
+You should only use this if your system won't work without it.
+.IP
+This may be needed on Mac OS X systems.
+
+.IP maxstartdelay
+	
+ups.\fIupsname\fR.maxstartdelay = "\fIseconds\fR"
+
+Optional.  This can be set as a global variable above your first UPS
+definition and it can also be set in a UPS section.  This value controls
+how long upsdrvctl will wait for the driver to finish starting.  This
+keeps your system from getting stuck due to a broken driver or UPS.
+.IP
+The default is 45 seconds.
+
+.IP "If you need to pass a variable directly to the driver, put it in driver.parameter."
+.IP "See the manuals of drivers you use for the list of what is allowed."
+
+
+.SH Users section
+
+Administrative commands such as setting variables and the instant
+commands are powerful, and access to them needs to be restricted.  This
+file defines who may access them, and what is available.
+
+Each user gets its own section.  The fields in that section set the 
+parameters associated with that user's privileges.  The user sections
+are to be put in users.
+
+Here are some examples to get you started:
+
+.IP
+.nf
+	users (
+		myadmin (
+			type = "admin"
+			password = "foo" r*
+			allowfrom = {"localhost" "adminbox"}
+		)
+		monmaster (
+			type = "upsmon_master"
+			password = "foo" r*
+			allowfrom = {"localhost"}
+		)
+	)
+.fi
+.LP
+
+.SS FIELDS
+.nf
+.IP type
+
+users.\fIusername\fR.type = "\fItype\fR"
+
+Specify the type of the user. There are 4 possible types :
+.nf
+\fBadmin\fR         : they have by default actions = {"SET"} and instcmds = {"all"}
+\fBupsmon_master\fR : they have by default actions = {"FSD"} 
+\fBupsmon_slave\fR  : they have by default actions = {"FSD"}
+\fBcustom\fR        : They don't have actions or instcmds by default
+.fi
+
+.IP password
+
+users.\fIusername\fR.passwoer = "\fIpassword\fR"
+
+Set the password for this user. value "" or "!" are invalid and cause
+the software to ignore the user
+
+.IP "allowfrom"
+
+users.\fIusername\fR.allowfrom = {"\fIacl1\fR" "\fIacl2\fR" ... }
+
+List of IP address from where the user should be granted access.  The values for
+this field are the names of your ACLs in the \fBupsd.conf\fR(5).
+
+.IP actions
+
+users.\fIusername\fR.actions = {"\fIaction1\fR" "\fIaction2\fR" ...}
+
+List of actions the user is allowed to do with upsd. 
+Valid actions are:
+
+	"SET" \(hy change the value of certain variables in the UPS
+
+	"FSD" \(hy set the forced shutdown flag in the UPS.  This is 
+equivalent to an "on battery + low battery" situation for the purposes
+of monitoring.
+
+The list of actions is expected to grow in the future.
+
+.IP instcmds
+
+users.\fIusername\fR.instcmds = {"\fIinstcmds1\fR" "\fIinstcmds2\fR" ...}
+
+List of specific instant commands a user can initiate.  Use {"all"} to grant all
+commands automatically.  For the full list of what your UPS supports,
+use "upscmd \-l".  
+
+The \fBcmdvartab\fR file supplied with the distribution contains a list
+of most of the known command names.
+
+Do not attempt to assign actions to upsmon by hand, as you may miss
+something important.  This method of designating a "upsmon user" was
+created so internal capabilities could be changed later on without
+breaking existing installations.
+.fi
+.LP
+
+
+.SH Upsd section
+
+upsd uses this file to control access to the server and set some other
+miscellaneous configuration values.  This file contains details on
+access controls, so keep it secure.  Ideally, only the upsd process
+should be able to read it.
+
+.SS ACCESS CONTROL CONFIGURATION
+
+
+.IP acl
+
+upsd.acl.\fIname\fR = "\fInetblock\fR"
+
+Define an Access Control List (ACL) called \fIname\fR. \fInetblock\fR is
+a network address.  The network address can be either the old style, such
+as this for a traditional "class C":
+
+	upsd.acl.mynet = "192.168.50.0/255.255.255.0"
+
+Or, you can use new\(hystyle "CIDR format":
+
+	upsd.acl.mynet = "192.168.50.0/24"
+
+To just list one host, it would look like one of these:
+
+	upsd.acl.mybox = "192.168.50.1/255.255.255.255"
+
+	upsd.acl.mybox = "192.168.50.1/32"
+
+acls are used whenever you need to refer to a network or host, such as
+in accept/below definitions (below) and with "allowfrom" in
+the user section
+
+.IP reject
+
+upsd.reject = { "acl1" "acl2" ... }
+
+Like accept (see below), but it denies access instead.  upsd will close the
+connection without reading any data from the network.
+
+Note: you should still use firewall rules if your system provides them.
+That provides another level of coverage.
+
+	upsd.reject badbox
+
+.IP accept
+
+upsd.accept = { "acl1" "acl2" ... }
+
+accept let clients on the hosts or networks defined by the list of acl name
+given as value connect to upsd.
+
+	upsd.accept = { "localhost" "mybox" }
+	
+
+.LP
+.SS "ACCESS CONTROL EXAMPLES"
+
+Here is an example configuration to show some of what is possible.
+
+"bigserver" has a UPS attached to a serial port.  It runs the driver,
+upsd, and upsmon in master mode.  This definition is also referenced
+with an "allowfrom" in the users section.
+
+"workstation" draws from the same UPS as "bigserver", but has to monitor
+it over the network.  It runs upsmon in slave mode.   It is also
+referenced with an "allowfrom" in the users section.
+
+"webserver" doesn't get power from this UPS at all, but it runs the CGI
+programs so it can make nice status displays.
+
+An abuser's host is explicitly denied.
+
+Everything else is rejected.
+
+.IP
+.nf
+	upsd (
+		acl (
+			bigserver = "10.20.30.1/32"
+			workstation = "10.20.30.2/32"
+			webserver = "10.20.30.3/32"
+			abuser = "192.168.255.128/32"
+			all = "0.0.0.0/0"
+		)
+
+		reject = { "abuser" }
+		accept = { "bigserver" "workstation" "webserver" }
+	)
+.fi
+.LP
+
+
+.SS "ACCESS CONTROL MATCHING"
+
+accept and reject directives are now checked in the following order : reject then
+accept. The first acl which matches a client causes the action to be taken. 
+Any IP address which does not match one of your directives will default to reject. 
+
+If you really want the whole world to have access to upsd, you can do
+upsd.accept = {"all"}, but that is not recommended.
+
+.SS "OTHER CONFIGURATION DIRECTIVES"
+
+.IP "maxage"
+
+upsd.maxage = "\fIseconds\fR"
+
+upsd usually allows a driver to stop responding for up to 15 seconds
+before declaring the data "stale".  If your driver takes a very long
+time to process updates but is otherwise operational, you can use maxage
+to make upsd wait longer.
+
+Most users should leave this at the default value.
+
+.IP statpath
+
+upsd.statpath = "\fIpath\fR"
+
+Tell upsd to look for the driver state sockets in the given path
+rather than the default that was compiled into the program.
+
+.SH Upsmon section
+
+This file's primary job is to define the systems that \fBupsmon\fR(8)
+will monitor and to tell it how to shut down the system when necessary.
+Ideally,only the upsmon process should be able to read it.
+
+Additionally, other optional configuration values can be set in this
+file.
+
+.SS "CONFIGURATION DIRECTIVES"
+
+
+.IP "deadtime"
+
+upsd.deadtime = "\fIseconds\fR"
+
+upsmon allows a UPS to go missing for this many seconds before declaring
+it "dead".  The default is 15 seconds.
+
+upsmon requires a UPS to provide status information every few seconds 
+(see pollfreq and pollfreqalert) to keep things updated.  If the status
+fetch fails, the UPS is marked stale.  If it stays stale for more than 
+deadtime seconds, the UPS is marked dead.
+
+A dead UPS that was last known to be on battery is assumed to have
+changed to a low battery condition.  This may force a shutdown if it is 
+providing a critical amount of power to your system.  This seems
+disruptive, but the alternative is barreling ahead into oblivion and
+crashing when you run out of power.
+
+Note: deadtime should be a multiple of pollfreq and pollfreqalert. 
+Otherwise,  you'll have "dead" UPSes simply because upsmon isn't polling
+them quickly enough.  Rule of thumb: take the larger of the two pollfreq
+values, and multiply by 3.
+
+.IP "finaldelay"
+
+upsd.finaldelay = "\fIseconds\fR"
+
+When running in master mode, upsmon waits this long after sending the
+NOTIFY_SHUTDOWN to warn the users.  After the timer elapses, it then
+runs your shutdowncmd.  By default this is set to 5 seconds.
+
+If you need to let your users do something in between those events,
+increase this number.  Remember, at this point your UPS battery is
+almost depleted, so don't make this too big.
+
+Alternatively, you can set this very low so you don't wait around when 
+it's time to shut down.  Some UPSes don't give much warning for low 
+battery and will require a value of 0 here for a safe shutdown.
+
+Note: If finaldelay on the slave is greater than HOSTSYNC on the master,
+the master will give up waiting for the slave to disconnect.
+
+.IP "hostsync"
+
+upsd.hostsync = "\fIseconds\fR"
+
+upsmon will wait up to this many seconds in master mode for the slaves
+to disconnect during a shutdown situation.  By default, this is 15
+seconds.
+
+When a UPS goes critical (on battery + low battery, or "FSD" \(hy forced
+shutdown), the slaves are supposed to disconnect and shut down right
+away.  The HOSTSYNC timer keeps the master upsmon from sitting there
+forever if one of the slaves gets stuck.
+
+This value is also used to keep slave systems from getting stuck if
+the master fails to respond in time.  After a UPS becomes critical,
+the slave will wait up to hostsync seconds for the master to set the
+FSD flag.  If that timer expires, the slave will assume that the master
+is broken and will shut down anyway.
+
+This keeps the slaves from shutting down during a short\(hylived status
+change to "OB LB" that the slaves see but the master misses.
+
+.IP "minsupplies"
+
+upsd.minsupplies = "\fIpowersupply\fR"
+
+Set the number of power supplies that must be receiving power to keep
+this system running.  Normal computers have just one power supply, so
+the default value of 1 is acceptable.
+
+Large/expensive server type systems usually have more, and can run
+with a few missing.  The HP NetServer LH4 can run with 2 out of 4, for
+example, so you'd set it to 2.  The idea is to keep the box running
+as long as possible, right?
+
+Obviously you have to put the redundant supplies on different UPS
+circuits for this to make sense!  See big\(hyservers.txt in the docs
+subdirectory for more information and ideas on how to use this
+feature.
+
+Also see the section on "power values" in \fBupsmon\fR(8).
+
+.IP "monitor"
+
+.nf
+upsmon.monitor.\fIsystem\fR (
+	powervalue = "\fIpowervalue\fR"
+	user = "\fIusername\fR"
+)
+.fi
+
+Each UPS that you need to be monitor should have a MONITOR line.  Not
+all of these need supply power to the system that is running upsmon.
+You may monitor other systems if you want to be able to send
+notifications about status changes on them.
+
+You must have at least one monitor directive in this file.
+
+\fIsystem\fR is a UPS identifier.  It is in this form:
+
+	<upsname>@<hostname>[:<port>]
+
+Some examples:
+
+ \(hy "su700@mybox" means a UPS called "su700" on a system called "mybox".
+This is the normal form.
+
+ \(hy "fenton@bigbox:5678" is a UPS called "fenton" on a system called
+"bigbox" which runs \fBupsd\fR(8) on port "5678".
+
+\fIpowervalue\fR is an integer representing the number of power supplies
+that the UPS feeds on this system.  Most normal computers have one power
+supply, and the UPS feeds it, so this value will be 1.  You need a very
+large or special system to have anything higher here.
+
+You can set the \fIpowervalue\fR to 0 if you want to monitor a UPS that
+doesn't actually supply power to this system.  This is useful when you
+want to have upsmon do notifications about status changes on a UPS
+without shutting down when it goes critical.
+
+The \fIusername\fR on this line must match an entry in the user section
+in that system's \fBupsd.users\fR(5). Moreover, the type of this user
+must be upsmon_master or upsmon_slave. See \fBupsmon\fR(8) for more information
+on the meaning of these modes.
+
+.IP "nocommwarntime"
+
+upsd.nocommwarntime = "\fIseconds\fR"
+
+upsmon will trigger a NOTIFY_NOCOMM after this many seconds if it can't
+reach any of the UPS entries in this configuration file.  It keeps
+warning you until the situation is fixed.  By default this is 300
+seconds.
+
+.IP "notifycmd"
+
+upsd.notifycmd = "\fIcommand\fR"
+
+upsmon calls this to send messages when things happen.
+
+This command is called with the full text of the message as one 
+argument.  The environment string NOTIFYTYPE will contain the type
+string of whatever caused this event to happen.
+
+If you need to use \fBupssched\fR(8), then you must make it your
+notifycmd by listing it here.
+
+Note that this is only called for NOTIFY events that have EXEC set with
+notifyflag.  See notifyflag below for more details.
+
+Making this some sort of shell script might not be a bad idea.  For
+more information and ideas, see pager.txt in the docs directory.
+
+This script is run in the background \(hy that is, upsmon forks before it
+calls out to start it.  This means that your notifycmd may have multiple
+instances running simultaneously if a lot of stuff happens all at once.
+Keep this in mind when designing complicated notifiers.
+
+.IP "notifymsg"
+
+upsd.notifymsg.\fInotify_type\fR = "\fImessage\fR\"
+
+upsmon comes with a set of stock messages for various events.  You can
+change them if you like.
+
+	upsd.notifymsg.online = "UPS %s is getting line power"
+
+	upsd.notifymsg.onbatt = "Someone pulled the plug on %s"
+
+Note that %s is replaced with the identifier of the UPS in question.
+
+Possible values for \fInotify_type\fR:
+
+	online \(hy UPS is back online
+
+	onbatt \(hy UPS is on battery
+
+	lowbatt \(hy UPS is on battery and has a low battery (is critical)
+
+	fsd \(hy UPS is being shutdown by the master (FSD = "Forced Shutdown")
+
+	commok \(hy Communications established with the UPS
+
+	commbad \(hy Communications lost to the UPS
+
+	shutdown \(hy The system is being shutdown
+
+	replbatt \(hy The UPS battery is bad and needs to be replaced
+
+	nocomm \(hy A UPS is unavailable (can't be contacted for monitoring) 
+
+.IP "NOTIFYFLAG"
+
+upsd.notifyflag.\fInotify_type\fR = "\fIflag\fR[+\fIflag\fR][+\fIflag\fR]"
+
+By default, upsmon sends walls global messages to all logged in users)
+via /bin/wall and writes to the syslog when things happen.  You can
+change this. 
+
+Examples:
+
+	upsd.notifyflag.online = "SYSLOG"
+
+	upsd.notifyflag.onbatt = "SYSLOG+WALL+EXEC"
+
+Possible values for the flags:
+
+	SYSLOG \(hy Write the message to the syslog
+
+	WALL \(hy Write the message to all users with /bin/wall
+
+	EXEC \(hy Execute NOTIFYCMD (see above) with the message
+
+	IGNORE \(hy Don't do anything
+
+If you use IGNORE, don't use any other flags on the same line.
+
+.IP "pollfreq"
+
+upsd.pollfreq = "\fIseconds\fR"
+
+Normally upsmon polls the \fBupsd\fR(8) server every 5 seconds.  If this
+is flooding your network with activity, you can make it higher.  You can
+also make it lower to get faster updates in some cases.
+
+There are some catches.  First, if you set the pollfreq too high, you
+may miss short\(hylived power events entirely.  You also risk triggering
+the deadtime (see above) if you use a very large number.
+
+Second, there is a point of diminishing returns if you set it too low.
+While upsd normally has all of the data available to it instantly, most
+drivers only refresh the UPS status once every 2 seconds.  Polling any
+more than that usually doesn't get you the information any faster.
+
+.IP "pollfreqalert"
+
+upsd.pollfreqalert =  "\fIseconds\fR"
+
+This is the interval that upsmon waits between polls if any of its UPSes
+are on battery.  You can use this along with POLLFREQ above to slow down
+polls during normal behavior, but get quicker updates when something bad
+happens.
+
+This should always be equal to or lower than the POLLFREQ value.  By
+default it is also set 5 seconds.
+pollfreqPOLLFREQ entry about too\(hyhigh and too\(hylow values
+also apply here.
+
+.IP "powerdownflag"
+
+upsd.powerdownflag =  "\fIfilename\fR"
+
+upsmon creates this file when running in master mode when the UPS needs
+to be powered off.  You should check for this file in your shutdown
+scripts and call \fBupsdrvctl shutdown\fR if it exists.
+
+This is done to forcibly reset the slaves, so they don't get stuck at
+the "halted" stage even if the power returns during the shutdown
+process.  This usually does not work well on contact\(hyclosure UPSes that
+use the genericups driver.
+
+See the shutdown.txt file in the docs subdirectory for more information.
+
+.IP "rbwarntime"
+
+ upsd.rbwarntime = "\fIseconds\fR"
+
+When a UPS says that it needs to have its battery replaced, upsmon will
+generate a NOTIFY_REPLBATT event.  By default this happens every 43200
+seconds \(hy 12 hours.
+
+If you need another value, set it here.
+
+.IP "run_as_user"
+
+upsd.run_as_user = "\fIusername\fR"
+
+upsmon normally runs the bulk of the monitoring duties under another user
+ID after dropping root privileges.  On most systems this means it runs
+as "nobody", since that's the default from compile\(hytime.
+
+The catch is that "nobody" can't read your upsmon.conf, since by default
+it is installed so that only root can open it.  This means you won't be
+able to reload the configuration file, since it will be unavailable.
+
+The solution is to create a new user just for upsmon, then make it run
+as that user.  I suggest "nutmon", but you can use anything that isn't
+already taken on your system.  Just create a regular user with no special
+privileges and an impossible password.
+
+Then, tell upsmon to run as that user, and make upsmon.conf readable by it.
+Your reloads will work, and your config file will stay secure.
+
+This file should not be writable by the upsmon user, as it would be 
+possible to exploit a hole, change the SHUTDOWNCMD to something
+malicious, then wait for upsmon to be restarted.
+
+.IP "shutdowncmd"
+
+upsd.shutdowncmd = "\fIcommand\fR"
+
+upsmon runs this command when the system needs to be brought down.  If
+it is a slave, it will do that immediately whenever the current overall
+power value drops below the MINSUPPLIES value above.
+
+When upsmon is a master, it will allow any slaves to log out before
+starting the local shutdown procedure.
+
+Note that the command needs to be one element in the config file.  If
+your shutdown command includes spaces, then put it in quotes to keep it
+together, i.e.:
+
+	upsd.shutdowncmd = "/sbin/shutdown \-h +0"
+	
+
+
+.SH SEE ALSO
+\fBnutupsdrv\fR(8), \fBupsd\fR(8), \fBupsmon\fR(8) .
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
