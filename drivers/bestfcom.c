@@ -68,6 +68,13 @@
 #include <string.h>
 #include <unistd.h>
 
+static ups_info_t bestfcom_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Best Power", "Fortress/Ferrups", "f-command support", 0},
+	
+	{0, 0, 0, 0} /* End of list */
+};
+
 /* Blob of UPS configuration data from the formatconfig string */
 struct {
 	int valid;			/* set to 1 when this is filled in */
@@ -758,6 +765,19 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (bestfcom_supported_ups[i].Vendor != 0 &&  bestfcom_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (bestfcom_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", bestfcom_supported_ups[i].Name);
+		if (bestfcom_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", bestfcom_supported_ups[i].Vendor);
+		if (bestfcom_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", bestfcom_supported_ups[i].ExtraInfo);
+		if (bestfcom_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", bestfcom_supported_ups[i].Desc);
+		i++;
+	}
 }

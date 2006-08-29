@@ -63,6 +63,16 @@
 
 int rhino_cmd = 0;
 
+static ups_info_t rhino_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Microsol", "Rhino 6.0",  "6000VA",  0},
+	{"Microsol", "Rhino 7.5",  "7500VA",  0},
+	{"Microsol", "Rhino 10.0", "10000VA", 0},
+	{"Microsol", "Rhino 20.0", "20000VA", 0},
+			
+	{0, 0, 0, 0} /* End of list */
+};
+
 static int
 AutonomyCalc( int ia ) /* all models */
 {
@@ -166,16 +176,16 @@ ScanReceivePack( void )
   if(  RecPack[0] ==0xC2 )
     {
       LimInfBattSrc = 174;
-      LimSupBattSrc = 192;//180????? carregador eh 180 (SCOPOS)
+      LimSupBattSrc = 192;/*180????? carregador eh 180 (SCOPOS)*/
       LimInfBattInv = 174;
-      LimSupBattInv = 192;//170????? (SCOPOS)
+      LimSupBattInv = 192;/*170????? (SCOPOS)*/
     }
   else
     {
       LimInfBattSrc = 138;
-      LimSupBattSrc = 162;//180????? carregador eh 180 (SCOPOS)
+      LimSupBattSrc = 162;/*180????? carregador eh 180 (SCOPOS)*/
       LimInfBattInv = 126;
-      LimSupBattInv = 156;//170????? (SCOPOS)
+      LimSupBattInv = 156;/*170????? (SCOPOS)*/
     }
   
   BattNonValue = 144;
@@ -205,10 +215,10 @@ ScanReceivePack( void )
   if(  BypassOn )
     OutVoltage = ( InVoltage * 1.0 / 2 ) + 5;
   
-  if(  SourceFail && RedeAnterior ) // falha pela primeira vez
+  if(  SourceFail && RedeAnterior ) /* falha pela primeira vez */
     OcorrenciaDeFalha = true;
   
-  if(  !( SourceFail ) && !( RedeAnterior ) ) // retorno da rede
+  if(  !( SourceFail ) && !( RedeAnterior ) ) /* retorno da rede */
     RetornoDaRede = true;
   
   if( !( SourceFail ) == RedeAnterior )
@@ -238,7 +248,7 @@ ScanReceivePack( void )
       RecPack[8] = 99; /* ??????????????????????????????????? */
     }
   
-  if(  OutputOn )     // Output Status
+  if(  OutputOn )     /* Output Status */
     StatusSaida = 2;
   else
     StatusSaida = 1;
@@ -246,7 +256,7 @@ ScanReceivePack( void )
   if(  OverCharge )
     StatusSaida = 3;
   
-  if(  CriticBatt ) // Battery Status
+  if(  CriticBatt ) /* Battery Status */
     StatusBateria = 4;
   else
     StatusBateria = 1;
@@ -399,7 +409,7 @@ send_command( int cmd )
 	  if( i == 1)
 	    chk = cmd;
 	  else
-	    chk = 0x00; // 0x20;
+	    chk = 0x00; /* 0x20; */
 	}
 
       ch = chk;
@@ -416,7 +426,7 @@ send_command( int cmd )
   kount = 0;
   while ( kount < 5 )
     {
-      /* ret = ser_send_buf_pace(upsfd, UPSDELAY, psend, sizes );// optional delay */
+      /* ret = ser_send_buf_pace(upsfd, UPSDELAY, psend, sizes );/* optional delay */
       
       for(i=0; i < 19; i++)
 	{
@@ -467,7 +477,7 @@ static void getbaseinfo(void)
 	while ( ( !detected ) && ( j < 10 ) )
 	  {
 
-	    temp[0] = 0; // flush temp buffer
+	    temp[0] = 0; /* flush temp buffer */
 	    tam = ser_get_buf_len(upsfd, temp, pacsize, 3, 0);
 	    if( tam == 37 )
 	      {
@@ -527,10 +537,10 @@ static void getbaseinfo(void)
 	dstate_setinfo("input.transfer.high", "%03.1f", InUpLim); LimSupBattInv ?
 	*/
 
-	dstate_addcmd("shutdown.stayoff");	// CMD_SHUT
+	dstate_addcmd("shutdown.stayoff");	/* CMD_SHUT */
 	/* there is no reserved words for CMD_INON and CMD_INOFF yet */
-	/* dstate_addcmd("input.on");	// CMD_INON    = 1 */
-	/* dstate_addcmd("input.off");	// CMD_INOFF   = 2 */
+	/* dstate_addcmd("input.on");	/* CMD_INON    = 1 */
+	/* dstate_addcmd("input.off");	/* CMD_INOFF   = 2 */
 	dstate_addcmd("load.on");	/* CMD_OUTON   = 3 */
 	dstate_addcmd("load.off");	/* CMD_OUTOFF  = 4 */
 	dstate_addcmd("bypass.start");	/* CMD_PASSON  = 5 */
@@ -570,7 +580,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	
 	if (!strcasecmp(cmdname, "shutdown.stayoff"))
 	  {
-	    // shutdown now (one way)
+	    /* shutdown now (one way) */
 	    /* send_command( CMD_SHUT ); */
 	    sendshut();
 	    return STAT_INSTCMD_HANDLED;
@@ -578,7 +588,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "load.on"))
 	  {
-	    // liga Saida
+	    /* liga Saida */
 	    ret = send_command( 3 );
 	    if ( ret < 1 )
 	      upslogx(LOG_ERR, "send_command 3 failed");
@@ -587,7 +597,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "load.off"))
 	  {
-	    // desliga Saida
+	    /* desliga Saida */
 	    ret = send_command( 4 );
 	    if ( ret < 1 )
 	      upslogx(LOG_ERR, "send_command 4 failed");
@@ -596,7 +606,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "bypass.start"))
 	  {
-	    // liga Bypass
+	    /* liga Bypass */
 	    ret = send_command( 5 );
 	    if ( ret < 1 )
 	      upslogx(LOG_ERR, "send_command 5 failed");
@@ -605,7 +615,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "bypass.stop"))
 	  {
-	    // desliga Bypass
+	    /* desliga Bypass */
 	    ret = send_command( 6 );
 	    if ( ret < 1 )
 	      upslogx(LOG_ERR, "send_command 6 failed");
@@ -671,7 +681,7 @@ void upsdrv_shutdown(void)
 	/* on line: send normal shutdown, ups will return by itself on utility */
 	/* on battery: send shutdown+return, ups will cycle and return soon */
 
-	if (!SourceFail)     // on line
+	if (!SourceFail)     /* on line */
 	  {
 	    printf("On line, forcing shutdown command...\n");
 	    send_command( CMD_SHUT );
@@ -723,6 +733,19 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (rhino_supported_ups[i].Vendor != 0 &&  rhino_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (rhino_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", rhino_supported_ups[i].Name);
+		if (rhino_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", rhino_supported_ups[i].Vendor);
+		if (rhino_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", rhino_supported_ups[i].ExtraInfo);
+		if (rhino_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", rhino_supported_ups[i].Desc);
+		i++;
+	}
 }

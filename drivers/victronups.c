@@ -68,6 +68,16 @@ static int exist_battery_runtime = 0;
 
 static int test_in_progress = VICTRON_NO_TEST;
 
+
+static ups_info_t victronups_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Victron/IMV", "(various)", 0, 0},
+
+	{0, 0, 0, 0} /* End of list */
+};
+
+
+
 static int get_data (const char *out_string, char *in_string)
 {
 	int ret_code;
@@ -550,6 +560,19 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (victronups_supported_ups[i].Vendor != 0 &&  victronups_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (victronups_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", victronups_supported_ups[i].Name);
+		if (victronups_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", victronups_supported_ups[i].Vendor);
+		if (victronups_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", victronups_supported_ups[i].ExtraInfo);
+		if (victronups_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", victronups_supported_ups[i].Desc);
+		i++;
+	}
 }

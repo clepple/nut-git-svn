@@ -12,6 +12,14 @@
 
 #define DRV_VERSION	"0.01"
 
+static ups_info_t skel_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	/* for instance :*/		
+/*  {"MGE UPS SYSTEM", "Ellipse Office 1500", "Serial cable", 0},	*/
+
+	{0, 0, 0, 0} /* End of list */
+};
+
 void upsdrv_initinfo(void)
 {
 	/* try to detect the UPS here - call fatal_with_errno() if it fails */
@@ -159,16 +167,19 @@ void upsdrv_cleanup(void)
 }
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
-	/* printf("VendorID  : VendorID1\n")
-	 * printf("ProductId : ProductID1\n");
-	 * printf("===");
-	 * printf("VendorID  : VendorID2\n")
-	 * printf("ProductId : ProductID2\n");
-	 * 
-	 * for instance : 
-	 * printf("VendorID  : 0x0640\n")
-	 * printf("ProductId : 0x0002\n");
-	 */
+	while (skel_supported_ups[i].Vendor != 0 &&  skel_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (skel_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", skel_supported_ups[i].Name);
+		if (skel_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", skel_supported_ups[i].Vendor);
+		if (skel_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", skel_supported_ups[i].ExtraInfo);
+		if (skel_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", skel_supported_ups[i].Desc);
+		i++;
+	}
 }

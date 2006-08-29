@@ -106,6 +106,33 @@
 #define UPS_VERSION_CHARS 10
 
 
+static ups_info_t megatec_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Ablerex",         "MS-RT",                      0,                   0},
+	{"ActivePower",     "1400VA",                     0,                   0},
+	{"Belkin",          "Universal UPS",              "F6H500ukUNV",       0},
+	{"Maxxtro",         "UPS 600 VA",                 "serial port",       0},
+	{"Mustek",          "Various",                    0,                   0},
+	{"Mustek",          "Powermust",                  "400VA Plus",        0},
+	{"Mustek",          "Powermust",                  "600VA Plus",        0},
+	{"Mustek",          "Powermust",                  "800VA Pro",         0},
+	{"Mustek",          "Powermust",                  "1000VA Plus",       0},
+	{"Mustek",          "Powermust",                  "1400VA Plus",       0},
+	{"Mustek",          "Powermust",                  "2000VA USB",        0},
+	{"OnLite",          "AQUA",                       "50",                0},
+	{"Power Walker",    "Line-Interactive VI1000",     0,                  0},
+	{"Soyntec",         "Sekury C 500",                0,                  0},
+	{"Soyntec",         "Sekury C 800",                0,                  0},
+	{"SquareOne Power", "QP1000",                      0,                  0},
+	{"Sweex",           "BC100060 800VA",              0,                  0},
+	{"Tecnoware",       "Easy Power 1200",             0,                  0},
+	{"Trust",           "UPS 1000 Management PW-4105", 0,                  0},
+	{"UNITEK",          "Alpha 500 ipE",               0,                  0},
+	{"Various",         "(various)",                   "Megatec protocol", 0},
+	
+	{0, 0, 0, 0} /* End of list */
+};
+
 /* The values returned by the UPS for an "I" query */
 typedef struct {
 	char mfr[UPS_MFR_CHARS + 1];
@@ -705,8 +732,21 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (megatec_supported_ups[i].Vendor != 0 &&  megatec_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (megatec_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", megatec_supported_ups[i].Name);
+		if (megatec_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", megatec_supported_ups[i].Vendor);
+		if (megatec_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", megatec_supported_ups[i].ExtraInfo);
+		if (megatec_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", megatec_supported_ups[i].Desc);
+		i++;
+	}
 }
 
 

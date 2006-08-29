@@ -24,6 +24,14 @@
 
 static	unsigned char	upstype = 0;
 
+static ups_info_t everups_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Ever UPS", "NET *-DPC", 0, 0},
+	{"Ever UPS", "AP *-PRO",  0, 0},
+
+	{0, 0, 0, 0} /* End of list */
+};
+
 static void init_serial(void)
 {
         int     clr_bit = TIOCM_DTR | TIOCM_RTS;
@@ -198,6 +206,19 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (everups_supported_ups[i].Vendor != 0 &&  everups_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (everups_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", everups_supported_ups[i].Name);
+		if (everups_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", everups_supported_ups[i].Vendor);
+		if (everups_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", everups_supported_ups[i].ExtraInfo);
+		if (everups_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", everups_supported_ups[i].Desc);
+		i++;
+	}
 }

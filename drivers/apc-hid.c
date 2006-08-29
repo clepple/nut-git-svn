@@ -39,10 +39,15 @@
 /*      Supported UPS                                              */
 /* --------------------------------------------------------------- */
 
-static usb_ups_t apc_supported_ups[] = {
-	{APC_VENDORID, 0x0002},
-	{CPS_VENDORID, 0x0000},
-	{-1, -1} // End of the list
+static usb_ups_info_t apc_supported_ups[] = {
+	/* {{Vendor, Product, extra info, Description }, vendorID, ProductID }*/
+	{{"APC", "Back-UPS Pro USB",       0, 0}, APC_VENDORID, 0x0002},
+	{{"APC", "Back-UPS USB",           0, 0}, APC_VENDORID, 0x0002},
+	{{"APC", "Back-UPS ES/CyberFort",  0, 0}, APC_VENDORID, 0x0002},
+	{{"APC", "Back-UPS BF500",         0, 0}, APC_VENDORID, 0x0002},
+	{{"APC", "Smart-UPS USB",          0, 0}, APC_VENDORID, 0x0002},
+	{{"Cyber Power Systems", "685AVR", 0, 0}, CPS_VENDORID, 0x0000},
+	{{0, 0, 0, 0}, -1, -1} /* End of the list */
 };
 
 /* some conversion functions specific to CyberPower */
@@ -373,8 +378,18 @@ void apc_print_ups_list(void) {
 	int i = 0;
 	while (apc_supported_ups[i].VendorID != -1 ) {
 		printf("===\n");
-		printf("VendorID  : 0x%04x\n", apc_supported_ups[i].VendorID);
-		printf("ProductID : 0x%04x\n", apc_supported_ups[i].ProductID);
+		if (apc_supported_ups[i].global_info.Name != 0)
+			printf("Name      : %s\n", apc_supported_ups[i].global_info.Name);
+		if (apc_supported_ups[i].global_info.Vendor != 0)
+			printf("Vendor    : %s\n", apc_supported_ups[i].global_info.Vendor);
+		if (apc_supported_ups[i].global_info.ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", apc_supported_ups[i].global_info.ExtraInfo);
+		if (apc_supported_ups[i].global_info.Desc != 0)
+			printf("Desc      : %s\n", apc_supported_ups[i].global_info.Desc);
+		if (apc_supported_ups[i].VendorID != -1) {
+			printf("VendorID  : 0x%04x\n", apc_supported_ups[i].VendorID);
+			printf("ProductID : 0x%04x\n", apc_supported_ups[i].ProductID);
+		}
 		i++;
 	}
 }

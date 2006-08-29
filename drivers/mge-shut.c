@@ -84,6 +84,52 @@ extern long FormatValue(long Value, u_char Size);
 static char *hu_find_infoval(info_lkp_t *hid2info, long value);
 
 /* --------------------------------------------------------------- */
+/*                    List of supported UPSs                       */
+/* --------------------------------------------------------------- */
+
+static ups_info_t mge_shut_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"MGE UPS SYSTEMS",	"NOVA AVR 600 Serial",         0,                                0},
+	{"MGE UPS SYSTEMS",	"NOVA AVR 1100 Serial",        0,                                0},
+	{"MGE UPS SYSTEMS",	"Pulsar Ellipse USBS",         "Serial cable",                   0},
+	{"MGE UPS SYSTEMS",	"Pulsar Ellipse S",            0,                                0},
+	{"MGE UPS SYSTEMS",	"Pulsar Ellipse Premium USBS", "Serial cable",                   0},
+	{"MGE UPS SYSTEMS",	"Pulsar Ellipse Premium S",    0,                                0},
+	{"MGE UPS SYSTEMS",	"Ellipse Office 600",          "Serial cable",                   0},
+	{"MGE UPS SYSTEMS",	"Ellipse Office 750",          "Serial cable",                   0},
+	{"MGE UPS SYSTEMS",	"Ellipse Office 1000",         "Serial cable",                   0},
+	{"MGE UPS SYSTEMS",	"Ellipse Office 1500",         "Serial cable",                   0},
+	{"MGE UPS SYSTEMS",	"Pulsar EXtreme C / EX RT",    0,                                0},
+	{"MGE UPS SYSTEMS",	"Comet EX RT",                 "Serial port",                    0},
+	{"MGE UPS SYSTEMS",	"Comet EX RT 3:1",             "Serial port",                    0},
+	{"MGE UPS SYSTEMS",	"Pulsar Esprit",               0,                                0},
+	{"MGE UPS SYSTEMS",	"Evolution 650",               "Serial port",                    0},
+	{"MGE UPS SYSTEMS",	"Evolution 850",               "Serial port",                    0},
+	{"MGE UPS SYSTEMS",	"Evolution 1150",              "Serial port",                    0},
+	{"MGE UPS SYSTEMS",	"Evolution S 1250",            "Serial port",                    0},
+	{"MGE UPS SYSTEMS",	"Evolution 1550",              "Serial port",                    0},
+	{"MGE UPS SYSTEMS",	"Evolution S 1750",            "Serial port",                    0},
+	{"MGE UPS SYSTEMS",	"Evolution 2000",              "Serial port",                    0},
+	{"MGE UPS SYSTEMS",	"Evolution S 2500",            "Serial port",                    0},
+	{"MGE UPS SYSTEMS",	"Evolution S 3000",            "Serial port",                    0},
+	{"MGE UPS SYSTEMS",	"Pulsar M 2200",               "Serial port",                    0},
+	{"MGE UPS SYSTEMS",	"Pulsar M 3000",               "Serial port",                    0},
+	{"MGE UPS SYSTEMS",	"Pulsar M 3000 XL",            "Serial port",                    0},
+	{"MGE UPS SYSTEMS",	"Pulsar 700",                  "Serial port",                    0},
+	{"MGE UPS SYSTEMS",	"Pulsar 1000",                 "Serial port",                    0},
+	{"MGE UPS SYSTEMS",	"Pulsar 1500",                 "Serial port",                    0},
+	{"MGE UPS SYSTEMS",	"Pulsar 1000 RT2U",            "Serial port",                    0},
+	{"MGE UPS SYSTEMS",	"Pulsar 1500 RT2U",            "Serial port",                    0},
+	{"MGE UPS SYSTEMS",	"Pulsar MX 4000 RT",           "Serial port",                    0},
+	{"MGE UPS SYSTEMS",	"Pulsar MX 5000 RT",           "Serial port",                    0},
+	{"MGE UPS SYSTEMS",	"Pulsar Evolution",            "Serial port",                    0},
+	{"MGE UPS SYSTEMS",	"Pulsar EXtreme C",            0,                                0},
+	{"MGE UPS SYSTEMS",	"Comet / Galaxy (Serial)",    "HID COM Serial Card (ref 66066)", 0},
+	
+	{0, 0, 0, 0} /* End of list */
+};
+
+/* --------------------------------------------------------------- */
 /*                    UPS Driver Functions                         */
 /* --------------------------------------------------------------- */
 
@@ -330,8 +376,21 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (mge_shut_supported_ups[i].Vendor != 0 &&  mge_shut_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (mge_shut_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", mge_shut_supported_ups[i].Name);
+		if (mge_shut_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", mge_shut_supported_ups[i].Vendor);
+		if (mge_shut_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", mge_shut_supported_ups[i].ExtraInfo);
+		if (mge_shut_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", mge_shut_supported_ups[i].Desc);
+		i++;
+	}
 }
 
 /* --------------------------------------------------------------- */

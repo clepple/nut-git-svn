@@ -78,6 +78,25 @@ static struct {
 
 
 /* --------------------------------------------------------------- */
+/*                    List of supported UPSs                       */
+/* --------------------------------------------------------------- */
+
+static ups_info_t mge_utalk_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"MGE UPS SYSTEMS",	"Pulsar ES+",              0,                               0},
+	{"MGE UPS SYSTEMS",	"Pulsar ESV+",             0,                               0},
+	{"MGE UPS SYSTEMS",	"Pulsar SV",               0,                               0},
+	{"MGE UPS SYSTEMS",	"Pulsar ESV",              0,                               0},
+	{"MGE UPS SYSTEMS",	"Pulsar EX",               0,                               0},
+	{"MGE UPS SYSTEMS",	"Pulsar EXL",              0,                               0},
+	{"MGE UPS SYSTEMS",	"Pulsar PSX",              0,                               0},
+	{"MGE UPS SYSTEMS",	"Pulsar SX",               0,                               0},
+	{"MGE UPS SYSTEMS",	"Pulsar EXtreme",          0,                               0},
+	{"MGE UPS SYSTEMS",	"Comet EXtreme",           0,                               0},
+	{"MGE UPS SYSTEMS",	"Comet / Galaxy (Serial)", "Utalk Serial Card (ref 66060)", 0},
+	{0, 0, 0, 0} /* End of list */
+};
+/* --------------------------------------------------------------- */
 /*             Declaration of internal functions                   */
 /* --------------------------------------------------------------- */
 
@@ -899,6 +918,19 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (mge_utalk_supported_ups[i].Vendor != 0 &&  mge_utalk_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (mge_utalk_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", mge_utalk_supported_ups[i].Name);
+		if (mge_utalk_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", mge_utalk_supported_ups[i].Vendor);
+		if (mge_utalk_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", mge_utalk_supported_ups[i].ExtraInfo);
+		if (mge_utalk_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", mge_utalk_supported_ups[i].Desc);
+		i++;
+	}
 }

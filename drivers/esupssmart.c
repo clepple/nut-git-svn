@@ -57,6 +57,17 @@ static	char    strdelayshut[3];
 static	float   minbattvolt = -1;
 static	float   maxbattvolt = -1;
 
+static ups_info_t esupssmart_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Energy Sistem", "(various)", 0, 0},
+	{"Infosec",       "iPEL 350",  0, 0},
+	{"Infosec",       "iPEL 500",  0, 0},
+	{"Infosec",       "iPEL 750",  0, 0},
+	{"Infosec",       "iPEL 1000", 0, 0},
+
+	{0, 0, 0, 0} /* End of list */
+};
+
 
 /**********************************************************************
 * Checks that a string contains a number between 'min' and 'max' 
@@ -743,6 +754,19 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (esupssmart_supported_ups[i].Vendor != 0 &&  esupssmart_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (esupssmart_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", esupssmart_supported_ups[i].Name);
+		if (esupssmart_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", esupssmart_supported_ups[i].Vendor);
+		if (esupssmart_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", esupssmart_supported_ups[i].ExtraInfo);
+		if (esupssmart_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", esupssmart_supported_ups[i].Desc);
+		i++;
+	}
 }

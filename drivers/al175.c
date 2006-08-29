@@ -47,6 +47,13 @@ typedef	unsigned char	byte_t;
 #define XTRACE(fmt, ...) do {} while (0)
 #endif
 
+static ups_info_t al175_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Eltek", "any with AL175 alarm module", 0, 0},
+	
+	{0, 0, 0, 0} /* End of list */
+};
+
 /************
  * RAW DATA *
  ************/
@@ -1366,8 +1373,21 @@ void upsdrv_initinfo(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (al175_supported_ups[i].Vendor != 0 &&  al175_supported_ups[i].Name != 0) {
+		printf("===\n");
+		if (al175_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", al175_supported_ups[i].Name);
+		if (al175_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", al175_supported_ups[i].Vendor);
+		if (al175_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", al175_supported_ups[i].ExtraInfo);
+		if (al175_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", al175_supported_ups[i].Desc);
+		i++;
+	}
 }
 
 /* vim: set ts=8 noet sts=8 sw=8 */

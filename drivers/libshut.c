@@ -449,7 +449,7 @@ int libshut_get_report(shut_dev_handle *devp, int ReportId,
 	{
 		return shut_control_msg(devp,
 			REQUEST_TYPE_GET_REPORT,
-			// == USB_ENDPOINT_IN + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+			/* == USB_ENDPOINT_IN + USB_TYPE_CLASS + USB_RECIP_INTERFACE, */
 			 0x01,
 			 ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
 			 0, raw_buf, ReportSize, SHUT_TIMEOUT);

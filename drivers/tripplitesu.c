@@ -204,6 +204,13 @@ static struct {
 #define VOLTAGE_SENSITIVITY          "VSN" /* poll/set */
 #define WATCHDOG                     "WDG" /* poll/set */
 
+static ups_info_t tripplitesu_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Tripp-Lite", "SmartOnline", 0, 0},
+
+	{0, 0, 0, 0} /* End of list */
+};
+
 
 static int do_command(char type, const char *command,
                       const char *parameters, char *response)
@@ -822,6 +829,19 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (tripplitesu_supported_ups[i].Vendor != 0 &&  tripplitesu_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (tripplitesu_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", tripplitesu_supported_ups[i].Name);
+		if (tripplitesu_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", tripplitesu_supported_ups[i].Vendor);
+		if (tripplitesu_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", tripplitesu_supported_ups[i].ExtraInfo);
+		if (tripplitesu_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", tripplitesu_supported_ups[i].Desc);
+		i++;
+	}
 }

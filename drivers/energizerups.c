@@ -43,6 +43,20 @@
 
 #define RETRIES 3
 
+/* The structure that contains all information about supported UPS */
+typedef struct {
+	ups_info_t global_info;
+	int VendorID;
+	int ProductID; 
+} usb_ups_info_t;
+
+static usb_ups_info_t energizerups_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{{"Energizer", "(various)"	"USB", 0, 0}, -1, -1},
+	
+	{{0, 0, 0, 0}, -1, -1} /* End of list */
+};
+
 /* Response to I identification queries is in the following format:
  *
  * 012345678901234567890123456789012345678
@@ -224,10 +238,10 @@ void get_hid_usage(int fd, unsigned char *data)
 int hidcmd(unsigned char *pCmd, unsigned char *pRsp, int l)
 {
     unsigned int i;
-    int fd, /*rd, j,*/ k;//, hid;
+    int fd, /*rd, j,*/ k;/*, hid;*/
     fd_set rdfs;
     struct timeval tv;
-    //struct hiddev_event ev[NUM_EVTS];
+    /* struct hiddev_event ev[NUM_EVTS]; */
     struct hiddev_usage_ref uref;
     unsigned char data[8];
 
@@ -494,6 +508,22 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (energizerups_supported_ups[i].global_info.Vendor != 0 &&  energizerups_supported_ups[i].global_info.Name != 0) {		printf("===\n");
+		if (energizerups_supported_ups[i].global_info.Name != 0)
+			printf("Name      : %s\n", energizerups_supported_ups[i].global_info.Name);
+		if (energizerups_supported_ups[i].global_info.Vendor != 0)
+			printf("Vendor    : %s\n", energizerups_supported_ups[i].global_info.Vendor);
+		if (energizerups_supported_ups[i].global_info.ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", energizerups_supported_ups[i].global_info.ExtraInfo);
+		if (energizerups_supported_ups[i].global_info.Desc != 0)
+			printf("Desc      : %s\n", energizerups_supported_ups[i].global_info.Desc);
+		if (energizerups_supported_ups[i].VendorID != -1) {
+			printf("VendorID  : 0x%04x\n", energizerups_supported_ups[i].VendorID);
+			printf("ProductID : 0x%04x\n", energizerups_supported_ups[i].ProductID);
+		}
+		i++;
+	}
 }

@@ -38,6 +38,14 @@
 #include "serial.h"
 #include "oneac.h"
 
+static ups_info_t oneac_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Oneac", "EG/ON Series", "advanced interface", 0},
+
+	{0, 0, 0, 0} /* End of list */
+};
+
+
 void do_battery_test(void)
 {
 	char buffer[256];
@@ -302,6 +310,19 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (oneac_supported_ups[i].Vendor != 0 &&  oneac_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (oneac_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", oneac_supported_ups[i].Name);
+		if (oneac_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", oneac_supported_ups[i].Vendor);
+		if (oneac_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", oneac_supported_ups[i].ExtraInfo);
+		if (oneac_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", oneac_supported_ups[i].Desc);
+		i++;
+	}
 }

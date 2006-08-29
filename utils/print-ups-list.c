@@ -23,12 +23,101 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#include "parseconf.h"
+#include "common.h"
+
+#define LINE_BUFFER_SIZE 200
+
+#define NAME_SIGN 1
+#define VENDOR_SIGN 2
+#define EXTRAINFO_SIGN 4
+#define VENDORID_SIGN 8
+#define PRODUCTID_SIGN 16
+#define DESC_SIGN 32
+#define TYPE_SIGN 64
+
+typedef struct _ups_record {
+	char* name;
+	char* vendor;
+	char* extrainfo;
+	int vendorid;
+	int productid;
+	char* desc;
+	char* driver;
+	char* type; /* For genericups supported UPS */
+	int sign;
+	struct _ups_record* next;
+} *ups_record;
+
+typedef struct _id_list {
+	int vendorid;
+	int productid;
+	struct _id_list* next;
+} *id_list;
 
 int fdi = 0;
 int udev = 0;
 int hotplug = 0;
 int html = 0;
+char* driver;
+char* vendor;
+char* color;
+id_list id_already_printed = NULL;
+ups_record record_list = 0, last = 0;
+
+static char* usb_driver_list[] = {
+	"newhidups",
+	"tripplite_usb",
+	"bcmxcp_usb",
+	0 /* End */
+};
+
+static char* driver_list[] = {
+	"al175",
+	"apcsmart",
+	"bcmxcp",
+	"bcmxcp_usb",
+	"belkin",
+	"belkinunv",
+	"bestfcom",
+	"bestuferrups",
+	"bestups",
+	"blazer",
+	"cpsups",
+	"cyberpower",
+	"energizerups",
+	"esupssmart",
+	"etapro",
+	"everups",
+	"fentonups",
+	"gamatronic",
+	"genericups",
+	"ippon",
+	"isbmex",
+	"liebert",
+	"masterguard",
+	"megatec",
+	"metasys",
+	"mge-shut",
+	"mge-utalk",
+	"mustek",
+	"newhidups",
+	"nitram",
+	"oneac",
+	"optiups",
+	"powercom",
+	"rhino",
+	"safenet",
+	"sms",
+	"snmp-ups",
+	"solis",
+	"tripplite",
+	"tripplitesu",
+	"tripplite_usb",
+	"upscode2",
+	"victronups",
+	0 /* End */
+};
+
 
 static struct option long_options[] = {
 	{"fdi-hal",          no_argument,       0, 'f'},
@@ -37,6 +126,29 @@ static struct option long_options[] = {
 	{"html-array",       no_argument,       0, 'a'},
 	{"help",             no_argument,       0, 'h'}
 };
+
+int compare(ups_record ups1, ups_record ups2) {
+	int ret;
+	
+	ret = strcmp(ups1->vendor, ups2->vendor);
+	if (ret != 0) {
+		return ret;
+	}
+	
+	ret = strcmp(ups1->name, ups2->name);
+	if (ret != 0) {
+		return ret;
+	}
+	
+	if (ups1->extrainfo == 0) return -1;
+	ret = strcmp(ups1->extrainfo, ups2->extrainfo);
+	if (ret != 0) {
+		return ret;
+	}
+	
+	ret = strcmp(ups1->driver, ups2->driver);
+	return ret;
+}
 
 void print_tux();
 
@@ -75,6 +187,16 @@ void print_headers() {
 		printf("# Sample entry (replace 0xVVVV and 0xPPPP with vendor ID and product ID respectively) :\n");
 		printf("# usb module         match_flags idVendor idProduct bcdDevice_lo bcdDevice_hi bDeviceClass bDeviceSubClass bDeviceProtocol bInterfaceClass bInterfaceSubClass bInterfaceProtocol driver_info\n\n");
 	}
+	
+	if (html) {
+		printf("<TABLE BORDER=\"1\" CELLPADDING=\"5\" CELLSPACING=\"1\" ALIGN=\"CENTER\" BGCOLOR=\"#FFFFFF\">\n");
+
+        /* print header */
+        printf("<TR BGCOLOR=\"#959595\">\n");
+        printf("<TH>Manufacturer</TH>\n");
+        printf("<TH>Model</TH>\n");
+        printf("<TH>NUT driver</TH>\n</TR>\n");
+	}
 }
 
 void print_footers() {
@@ -89,15 +211,40 @@ void print_footers() {
 		printf("\nLABEL=\"nut-usbups_rules_end\"\n");
 	}
 	
-	// no footer for hotplug
+	/* no footer for hotplug */
+	
+	if (html) {
+		printf("</TABLE>\n");
+	}
 }
 
-void print_ups(char* vendorID, char* productID) {
-	char* s;
+int is_already_printed(int vendorid, int productid, id_list *list) {
+	if (*list == NULL) {
+		*list = malloc(sizeof(struct _id_list));
+		(*list)->vendorid = vendorid;
+		(*list)->productid = productid;
+		(*list)->next = NULL;
+		return 0;
+	}
+	if ( (*list)->vendorid == vendorid && (*list)->productid == productid ) {
+		return 1;
+	}
+	return is_already_printed(vendorid, productid, &((*list)->next));
+}
+
+void print_record(ups_record record) {
+	int sign = record->sign;
+	int i = 1;
+	ups_record aux;
+	int changed_vendor = 0;
+	
 	if (fdi) {
-		s = malloc(200);
-		printf("      <match key=\"usb_device.vendor_id\" int=\"%s\">\n", vendorID);
-		printf("        <match key=\"usb_device.product_id\" int=\"%s\">\n", productID);
+		/* Ignore record that don't have both vendorid and productid */
+		if ((sign | (VENDORID_SIGN + PRODUCTID_SIGN)) == 0 ) return; 
+		/* Ignore id pairs that were already printed */
+		if (is_already_printed(record->vendorid, record->productid, &id_already_printed)) return;
+		printf("      <match key=\"usb_device.vendor_id\" int=\"0x%04x\">\n", record->vendorid);
+		printf("        <match key=\"usb_device.product_id\" int=\"0x%04x\">\n", record->productid);
 		printf("          <append key=\"info.category\" type=\"string\">battery</append>\n");
 		printf("          <merge key=\"info.capabilities\" type=\"strlist\">battery</merge>\n");
 		printf("          <merge key=\"info.addons\" type=\"strlist\">hald-addon-usbhid-ups</merge>\n");
@@ -107,76 +254,251 @@ void print_ups(char* vendorID, char* productID) {
 	}
 	
 	if (udev) {
-		printf("SYSFS{idVendor}==\"%s\", SYSFS{idProduct}==\"%s\", MODE=\"660\", GROUP=\"@RUN_AS_USER@\"\n",vendorID + 2, productID + 2 );
+		/* Ignore record that don't have both vendorid and productid */
+		if ((sign | (VENDORID_SIGN + PRODUCTID_SIGN)) == 0 ) return; 
+		/* Ignore id pairs that were already printed */
+		if (is_already_printed(record->vendorid, record->productid, &id_already_printed)) return;
+		printf("SYSFS{idVendor}==\"0x%04x\", SYSFS{idProduct}==\"0x%04x\", MODE=\"660\", GROUP=\"@RUN_AS_USER@\"\n",record->vendorid, record->productid );
 	}
 	
 	if (hotplug) {
-		printf("libhidups\t0x0003\t%s\t%s\t0x0000\t0x0000\t0x00\t0x00\t0x00\t0x00\t0x00\t0x00\t0x00000000\n", vendorID, productID);
+		/* Ignore record that don't have both vendorid and productid */
+		if ((sign | (VENDORID_SIGN + PRODUCTID_SIGN)) == 0 ) return; 
+		/* Ignore id pairs that were already printed */
+		if (is_already_printed(record->vendorid, record->productid, &id_already_printed)) return;
+		printf("libhidups\t0x0003\t0x%04x\t0x%04x\t0x0000\t0x0000\t0x00\t0x00\t0x00\t0x00\t0x00\t0x00\t0x00000000\n", record->vendorid, record->productid);
+	}
+	
+	if (html) {
+		if (vendor == 0 || strcmp(record->vendor, vendor) != 0) {
+			if (color == 0) {
+				color = "#E0E0E0";
+			} else if (strcmp(color,"#F0F0F0") == 0) {
+				color = "#E0E0E0";
+			} else if (strcmp(color,"#E0E0E0") == 0) {
+				color = "F0F0F0";
+			} else {
+				color = "#E0E0E0";
+			}
+			printf("<TR BGCOLOR=\"%s\">\n", color);
+			
+			vendor = record->vendor;
+			changed_vendor = 1;
+			aux = record;
+			while( aux != 0 && strcmp(aux->vendor, vendor) == 0) {
+				i++;
+				aux = aux->next;
+			}
+			printf("<TH ROWSPAN=\"%d\">%s</TH>\n", i, vendor);
+		}
+		printf("<TR BGCOLOR=\"%s\">\n", color);
+		printf("<TD>%s", record->name);
+		if ((sign & EXTRAINFO_SIGN) != 0 ) {
+			printf("<BR>\n%s", record->extrainfo);
+		}
+		printf("</TD>\n");
+		
+		
+		if (driver == 0 || strcmp(record->driver, driver) != 0 || changed_vendor) {
+			driver = record->driver;
+			aux = record;
+			i = 0;
+			while( aux != 0 && strcmp(aux->vendor, vendor) == 0 && strcmp(aux->driver, driver) == 0) {
+				i++;
+				aux = aux->next;
+			}
+			
+			if ((sign & TYPE_SIGN) != 0 ) {
+				printf("<TD ROWSPAN=\"%d\">%s type = %s</TD>\n", i, record->driver, record->type);
+			} else {
+				printf("<TD ROWSPAN=\"%d\">%s</TD>\n", i, record->driver);
+			}
+		}
+		printf("</TR>\n");
 	}
 }
 
-
-
-void parse(FILE* pipe) {
-	PCONF_CTX* ctx = malloc(sizeof(PCONF_CTX));
-	char *vendorID = 0;
-	char *productID = 0;
-	int new_entry = 0;
-	char* value;
+void sort() {
+	ups_record aux, aux2, sorted_list ;
 	
-	pconf_init(ctx, err_handler);
+	if (record_list != 0) {
+		sorted_list = record_list;
+		record_list = record_list->next;
+		sorted_list->next = 0;
+	} else {
+		return;
+	}
 	
-	ctx->f = pipe;
-	
-	while (pconf_file_next(ctx) != 0) {
+	while (record_list != 0) {
+		aux = record_list;
+		record_list = record_list->next;
+		aux->next = 0;
 		
-		if (strcmp(ctx->arglist[0], "===") == 0) {
-			if (new_entry == 1) {
-				vendorID = 0;
-				productID = 0;
-			}
-			new_entry = 1;
+		if (compare(aux, sorted_list) < 0) {
+			aux->next = sorted_list;
+			sorted_list = aux;
 			continue;
 		}
+		aux2 = sorted_list;
+		while(aux2->next != 0) {
+			if (compare(aux, aux2->next) < 0) break;
+			aux2 = aux2->next;
+		}
+		aux->next = aux2->next;
+		aux2->next = aux;
 		
-		if (ctx->arglist[0][strlen(ctx->arglist[0]) - 1] == ':') {
-			ctx->arglist[0][strlen(ctx->arglist[0]) - 1] = 0;	
-			value = ctx->arglist[1];
+	}
+	
+	record_list = sorted_list;
+}
+
+int hex_to_int (char c) {
+	unsigned int y;
+	
+	if      ((y = c - '0') <= '9'-'0') return y;
+    else if ((y = c - 'a') <= 'f'-'a') return y+10;
+    else if ((y = c - 'A') <= 'F'-'A') return y+10;
+    else return -1;
+}
+
+int parse_hex(char* value) {
+	
+	int len = strlen(value);
+	int i, aux;
+	int res = 0;
+	
+	for (i = 0; i < 4 && len - i > 0 && value[len - i - 1] != 'x' ; i++ ) {
+		aux = hex_to_int(value[len - i - 1]);
+		if (aux == -1) return -1;
+		res += (aux << (4*i));
+	}
+	
+	return res;
+
+}
+
+
+/* Remove the space and tab at the begining or at the end of a string*/
+char* strip(char* str) {
+	if (str[0] == ' ' || str[0] == '\t') return strip(&(str[1]));
+	
+	if (str[strlen(str) - 1 ] == ' ' 
+		|| str[strlen(str) - 1 ] == '\t'
+		|| str[strlen(str) - 1 ] == '\n' ) {
+			
+		str[strlen(str) - 1 ] = 0;
+		return strip(str);
+	}
+	return str;
+}
+
+/* if line represents a key-value pair, return 1 and let key and value
+  point to key and value. "line" is updated destructively, and key
+  and value may point inside line. If not a key-value-pair, return 0
+  and leave line unchanged. */
+int key_value(char *line, char **key, char **value) {
+	char *p;
+
+	p = strchr(line, ':');
+	if (!p) {
+		return 0;
+	}
+	*p = 0;
+	*key = strip(line);
+	*value = strip(p + 1);
+   	return 1;
+}
+
+ups_record parse(FILE* pipe) {
+	
+	char line[LINE_BUFFER_SIZE];
+	char *p, *key, *value;
+	int l = 0;
+	int have_record = 0;
+	ups_record record = malloc(sizeof(struct _ups_record));
+	int first_line_found = 0;
+	int sign = 0;
+	
+	record->next = 0;
+	record->driver = driver;
+
+	while (fgets(line, LINE_BUFFER_SIZE, pipe) > 0) {
+		l++;
+		p = strip(line);
+		if (*p == 0 || *p == '#') { /* comment, blank line */
+			continue;
+		}
+		if (*p == '=') {  /* any line starting with '=' */
+			first_line_found = 1;
+			if (have_record) {
+				record->sign = sign;
+				if (record_list == 0) {
+					record_list = record;
+					last = record_list;
+				} else {
+					last->next = record;
+					last = last->next;
+				}
+				last = record;
+				record = malloc(sizeof(struct _ups_record));
+				record->next = 0;
+				record->driver = driver;
+				
+				//print_record(record, sign);
+				have_record = 0;
+				sign = 0;
+			}
+		} else if (first_line_found && key_value(p, &key, &value)) {
+			if (strcasecmp(key, "ProductID") == 0) {
+				record->productid = parse_hex(value);
+				if (record->productid != -1) sign += PRODUCTID_SIGN;
+			} else if (strcasecmp(key, "VendorID") == 0) {
+				record->vendorid = parse_hex(value);
+				if (record->vendorid != -1) sign += VENDORID_SIGN;
+			} else if (strcasecmp(key, "Name") == 0) {
+				record->name = strdup(value);
+				sign += NAME_SIGN;
+			} else if (strcasecmp(key, "Vendor") == 0) {
+				record->vendor = strdup(value);
+				sign += VENDOR_SIGN;
+			} else if (strcasecmp(key, "ExtraInfo") == 0) {
+				record->extrainfo = strdup(value);
+				sign += EXTRAINFO_SIGN;
+			} else if (strcasecmp(key, "Desc") == 0) {
+				record->desc = strdup(value);
+				sign += DESC_SIGN;
+			} else if (strcasecmp(key, "Type") == 0) {
+				record->type = strdup(value);
+				sign += TYPE_SIGN;	
+			} else {
+				fprintf(stderr,"Warning: unknown key %s in line %d\n", key, l);
+			}
+			have_record = 1;
+			continue;
+		} 
+	}
+    if (have_record) {
+    	record->sign = sign;
+    	if (record_list == 0) {
+			record_list = record;
+			last = record_list;
 		} else {
-			value = ctx->arglist[2];
+			last->next = record;
+			last = last->next;
 		}
 		
-		if (strcasecmp(ctx->arglist[0], "VendorID") == 0) {
-			if (!new_entry) continue;
-			vendorID = strdup(value);
-			if (productID != 0) {
-				print_ups(vendorID, productID);
-				free(productID);
-				free(vendorID);
-				productID = 0;
-				vendorID = 0;
-				new_entry = 0;
-			}
-			continue;
-		}
-		if (strcasecmp(ctx->arglist[0], "ProductID") == 0) {
-			if (!new_entry) continue;
-			productID = strdup(value);
-			if (vendorID != 0) {
-				print_ups(vendorID, productID);
-				free(productID);
-				free(vendorID);
-				productID = 0;
-				vendorID = 0;
-				new_entry = 0;
-			}
-		}
-	}
+        //print_record(record, sign);
+    }
+    return record_list;
 }
+
 
 int main(int argc, char** argv) {
 	int option_index = 0, i;
 	FILE* pipe;
+	char* s;
+	char c;
+	char** list;
 	
 	while ((i = getopt_long(argc, argv, "+fupah", long_options, &option_index)) != -1) {
 		switch (i) {
@@ -207,32 +529,67 @@ int main(int argc, char** argv) {
 		help();
 	}
 	
-	if ((fdi + udev + hotplug + html) == 0) {
+	if ((fdi + udev + hotplug + html) > 1) {
 		printf("Only use one output format\n");
 		help();
+		exit(0);
 	}
 	
 	
 	if (html) {
-		printf("This command is not implemented yet.\n");
-		printf("But I can draw a nice ascii art for you ! :\n");
-		print_tux();
+		list = driver_list;
+	} else {
+		list = usb_driver_list;
 	}
 	
-	pipe = popen("../drivers/newhidups -l", "r");
-	
-	if (pipe == 0) {
-		printf("Error : Unable to launch newhidups\n"); 
-		return 1;
-	}
 	
 	print_headers();
 	
-	parse(pipe);
+	i = 0;
+	
+	while (list[i] != 0) {
 		
+		driver = strdup(list[i]);
+		
+		s = malloc(sizeof(char) * (strlen(list[i]) + 15));
+		sprintf(s, "../drivers/%s -l", list[i]);
+		pipe = popen(s, "r");
+	
+		if ( (c = fgetc(pipe)) == EOF) {
+			s = malloc(sizeof(char) * (strlen(DRVPATH) + strlen(list[i]) + 5));
+			sprintf(s, "%s/newhidups -l", DRVPATH);
+			pipe = popen(s, "r");
+			free(s);
+			if ((c = fgetc(pipe)) == EOF) {
+				fprintf(stderr, "Error : Unable to launch %s\n", list[i]); 
+				i++;
+				continue;
+			}
+		}
+	
+		ungetc(c, pipe);
+	
+		parse(pipe);
+		
+		pclose(pipe);
+	
+		i++;
+	
+	}
+	
+	if (html) {
+		sort();
+		vendor = 0;
+		driver = 0;
+	}
+	
+	while(record_list != 0) {
+		print_record(record_list);
+		record_list = record_list->next;
+	}
+	
 	print_footers();
 	
-	pclose(pipe);
 
 	return 0;
 }

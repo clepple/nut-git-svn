@@ -26,7 +26,6 @@
 #include "extstate.h" /* for ST_FLAG_STRING */
 #include "dstate.h"   /* for STAT_INSTCMD_HANDLED */
 #include "common.h"
-#include "main.h"
 
 #define GENERIC_HID_VERSION	"GENERIC HID 0.1"
 

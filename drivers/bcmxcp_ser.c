@@ -17,6 +17,20 @@ struct pw_baud_rate {
 
 unsigned char AUT[4] = {0xCF, 0x69, 0xE8, 0xD5};		/* Autorisation	command	*/
 
+static ups_info_t bcmxcp_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Compaq", "R3000 XR", 0, 0},
+	{"Compaq", "R5500 XR", 0, 0},
+	{"HP", "R3000 XR", 0, 0},
+	{"HP", "R5500 XR", 0, 0},
+	{"Powerware", "PW5115", 0, 0},
+	{"Powerware", "PW5125", 0, 0},
+	{"Powerware", "PW9120", 0, 0},
+	{"Powerware", "PW9125", 0, 0},
+	
+	{0, 0, 0, 0} /* End of list */
+};
+
 void send_read_command(unsigned char command)
 {
 	int retry, sent;
@@ -302,7 +316,19 @@ void upsdrv_reconnect(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (bcmxcp_supported_ups[i].Vendor != 0 &&  bcmxcp_supported_ups[i].Name != 0) {		printf("===\n");
+		if (bcmxcp_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", bcmxcp_supported_ups[i].Name);
+		if (bcmxcp_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", bcmxcp_supported_ups[i].Vendor);
+		if (bcmxcp_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", bcmxcp_supported_ups[i].ExtraInfo);
+		if (bcmxcp_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", bcmxcp_supported_ups[i].Desc);
+		i++;
+	}
 }
 

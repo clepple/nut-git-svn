@@ -58,6 +58,14 @@ static	int	cap_upstemp = 0;
 static	float	lowvolt = 0, voltrange;
 static	int	lownorm, highnorm, poll_failures = 0;
 
+
+static ups_info_t sms_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"SMS (Brazil)", "Manager III", 0, 0},
+
+	{0, 0, 0, 0} /* End of list */
+};
+
 static void guessmodel(const char *raw)
 {
 	char	mch, *mstr;
@@ -371,6 +379,19 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (sms_supported_ups[i].Vendor != 0 &&  sms_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (sms_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", sms_supported_ups[i].Name);
+		if (sms_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", sms_supported_ups[i].Vendor);
+		if (sms_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", sms_supported_ups[i].ExtraInfo);
+		if (sms_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", sms_supported_ups[i].Desc);
+		i++;
+	}
 }

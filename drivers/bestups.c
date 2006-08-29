@@ -34,6 +34,22 @@ static	float	lowvolt = 0, highvolt = 0, voltrange = 0;
 static	int	linenorm = 0;
 static	int	inverted_bypass_bit = 0;
 
+static ups_info_t bestups_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Best Power", "Fortress (newer)", 0,                     0},
+	{"Best Power", "Fortress Telecom", 0,                     0},
+	{"Best Power", "Axxium Rackmount", 0,                     0},
+	{"Best Power", "Patriot Pro",      0,                     0},
+	{"Best Power", "Patriot Pro II",   0,                     0},
+	{"SOLA",       "325",              0,                     0},
+	{"SOLA",       "520",              0,                     0},
+	{"SOLA",       "610",              "use ID= in ups.conf", 0},
+	{"SOLA",       "620",              0,                     0},
+	{"Various",    "(various)",        "PhoenixTec protocol", 0},
+	{0, 0, 0, 0} /* End of list */
+};
+
+
 static void model_set(const char *abbr, const char *rating)
 {
 	if (!strcmp(abbr, "FOR")) {
@@ -411,6 +427,19 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (bestups_supported_ups[i].Vendor != 0 &&  bestups_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (bestups_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", bestups_supported_ups[i].Name);
+		if (bestups_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", bestups_supported_ups[i].Vendor);
+		if (bestups_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", bestups_supported_ups[i].ExtraInfo);
+		if (bestups_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", bestups_supported_ups[i].Desc);
+		i++;
+	}
 }

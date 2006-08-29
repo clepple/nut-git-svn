@@ -273,6 +273,22 @@ static HIDDeviceMatcher_t *reopen_matcher = NULL;
 static HIDDeviceMatcher_t *regex_matcher = NULL;
 static usb_dev_handle *udev;
 
+/* The structure that contains all information about supported UPS */
+typedef struct {
+	ups_info_t global_info;
+	int VendorID;
+	int ProductID; 
+} usb_ups_info_t;
+
+static usb_ups_info_t tripplite_usb_supported_ups[] = {
+	/* {{Vendor, Product, extra info, Description }, vendorID, ProductID }*/
+	{{"Tripp-Lite", "OMNIVS1000",    "USB", 0} , 0x09ae, 0x0001 },
+	{{"Tripp-Lite", "OMNIVS1500XL",  "USB", 0} , 0x09ae, 0x0001 },
+	{{"Tripp-Lite", "SMART1500RM2U", "USB", 0} , 0x09ae, 0x0001 },
+	
+	{{0, 0, 0, 0}, -1, -1} /* End of the list */
+};
+
 /* We calculate battery charge (q) as a function of voltage (V).
  * It seems that this function probably varies by firmware revision or
  * UPS model - the Windows monitoring software gives different q for a
@@ -1098,7 +1114,23 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
-	printf("List of supported UPSes\n");
-	printf("===\n");
+	int i = 0;
+	
+	printf("List of supported UPSs\n");
+	while (tripplite_usb_supported_ups[i].global_info.Vendor != 0 &&  tripplite_usb_supported_ups[i].global_info.Name != 0) {		printf("===\n");
+		if (tripplite_usb_supported_ups[i].global_info.Name != 0)
+			printf("Name      : %s\n", tripplite_usb_supported_ups[i].global_info.Name);
+		if (tripplite_usb_supported_ups[i].global_info.Vendor != 0)
+			printf("Vendor    : %s\n", tripplite_usb_supported_ups[i].global_info.Vendor);
+		if (tripplite_usb_supported_ups[i].global_info.ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", tripplite_usb_supported_ups[i].global_info.ExtraInfo);
+		if (tripplite_usb_supported_ups[i].global_info.Desc != 0)
+			printf("Desc      : %s\n", tripplite_usb_supported_ups[i].global_info.Desc);
+		if (tripplite_usb_supported_ups[i].VendorID != -1) {
+			printf("VendorID  : 0x%04x\n", tripplite_usb_supported_ups[i].VendorID);
+			printf("ProductID : 0x%04x\n", tripplite_usb_supported_ups[i].ProductID);
+		}
+		i++;
+	}
 }
 /* vim:se tw=78: */

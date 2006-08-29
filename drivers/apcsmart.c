@@ -28,7 +28,16 @@
 
 #define ALT_CABLE_1 "940-0095B"
 
-	static	int	ups_status = 0, quirk_capability_overflow = 0;
+static	int	ups_status = 0, quirk_capability_overflow = 0;
+
+static ups_info_t apcsmart_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"APC", "Back-UPS Pro", 0, 0},
+	{"APC", "Matrix-UPS", 0, 0},
+	{"APC", "Smart-UPS", 0, 0},
+	
+	{0, 0, 0, 0} /* End of list */
+};
 
 static struct apc_vartab_t *vartab_lookup_char(char cmdchar)
 {
@@ -1306,6 +1315,18 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (apcsmart_supported_ups[i].Vendor != 0 &&  apcsmart_supported_ups[i].Name != 0) {		printf("===\n");
+		if (apcsmart_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", apcsmart_supported_ups[i].Name);
+		if (apcsmart_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", apcsmart_supported_ups[i].Vendor);
+		if (apcsmart_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", apcsmart_supported_ups[i].ExtraInfo);
+		if (apcsmart_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", apcsmart_supported_ups[i].Desc);
+		i++;
+	}
 }

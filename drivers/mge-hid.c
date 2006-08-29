@@ -36,10 +36,45 @@
 /*      Supported UPS                                              */
 /* --------------------------------------------------------------- */
 
-static usb_ups_t mge_supported_ups[] = {
-	{MGE_VENDORID, 0x0001},
-	{MGE_VENDORID, 0xffff},
-	{-1, -1} // End of the list
+static usb_ups_info_t mge_supported_ups[] = {
+	/* {{Vendor, Product, extra info, Description }, vendorID, ProductID }*/
+	{{"MGE UPS SYSTEMS", "Comet EX RT",                 "USB port",             0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Comet EX RT 3:1",             "USB port",             0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Protection Center 420",       "USB cable",            0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Protection Center 500",       "USB cable",            0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Protection Center 675",       "USB cable",            0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "NOVA AVR 600 USB",            0,                      0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "NOVA AVR 1100 USB",           0,                      0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Pulsar Ellipse USBS",         0,                      0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Pulsar Ellipse USB",          0,                      0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Pulsar Ellipse Premium USBS", "USB cable",            0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Pulsar Ellipse Premium USB",  0,                      0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Ellipse Office 600",          "USB cable",            0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Ellipse Office 750",          "USB cable",            0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Ellipse Office 1000",         "USB cable",            0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Ellipse Office 1500",         "USB cable",            0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Pulsar Evolution",            "USB port",             0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Evolution 650",               "USB port",             0}, MGE_VENDORID, 0x0001},
+	{{"MGE UPS SYSTEMS", "Evolution 850",               "USB port",             0}, MGE_VENDORID, 0x0001},
+	{{"MGE UPS SYSTEMS", "Evolution 1150",              "USB port",             0}, MGE_VENDORID, 0x0001},
+	{{"MGE UPS SYSTEMS", "Evolution S 1250",            "USB port",             0}, MGE_VENDORID, 0x0001},
+	{{"MGE UPS SYSTEMS", "Evolution 1550",              "USB port",             0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Evolution S 1750",            "USB port",             0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Evolution 2000",              "USB port",             0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Evolution S 2500",            "USB port",             0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Evolution S 3000",            "USB port",             0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Pulsar M 2200",               "USB port",             0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Pulsar M 3000",               "USB port",             0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Pulsar M 3000 XL",            "USB port",             0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Pulsar 700",                  "USB port",             0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Pulsar 1000",                 "USB port",             0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Pulsar 1500",                 "USB port",             0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Pulsar 1000 RT2U",            "USB port",             0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Pulsar 1500 RT2U",            "USB port",             0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Pulsar MX 4000 RT",           "USB port",             0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Pulsar MX 5000 RT",           "USB port",             0}, MGE_VENDORID, 0xffff},
+	{{"MGE UPS SYSTEMS", "Comet / Galaxy (USB)",        "USB Card (ref 66067)", 0}, MGE_VENDORID, 0xffff},
+	{{0, 0, 0, 0}, -1, -1} // End of the list
 };
 
 /* --------------------------------------------------------------- */
@@ -559,8 +594,18 @@ void mge_print_ups_list(void) {
 	int i = 0;
 	while (mge_supported_ups[i].VendorID != -1 ) {
 		printf("===\n");
-		printf("VendorID  : 0x%04x\n", mge_supported_ups[i].VendorID);
-		printf("ProductID : 0x%04x\n", mge_supported_ups[i].ProductID);
+		if (mge_supported_ups[i].global_info.Name != 0)
+			printf("Name      : %s\n", mge_supported_ups[i].global_info.Name);
+		if (mge_supported_ups[i].global_info.Vendor != 0)
+			printf("Vendor    : %s\n", mge_supported_ups[i].global_info.Vendor);
+		if (mge_supported_ups[i].global_info.ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", mge_supported_ups[i].global_info.ExtraInfo);
+		if (mge_supported_ups[i].global_info.Desc != 0)
+			printf("Desc      : %s\n", mge_supported_ups[i].global_info.Desc);
+		if (mge_supported_ups[i].VendorID != -1) {
+			printf("VendorID  : 0x%04x\n", mge_supported_ups[i].VendorID);
+			printf("ProductID : 0x%04x\n", mge_supported_ups[i].ProductID);
+		}
 		i++;
 	}
 }

@@ -26,7 +26,51 @@
 
 #include "genericups.h"
 
-	static	int	upstype = -1;
+static	int	upstype = -1;
+	
+static generic_ups_info_t genericups_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{{"AEC",                 "MiniGuard UPS 700",               "Megatec M2501 cable",                     0}, 21},
+	{{"APC",                 "Back-UPS"	"940-0095A/C cables",   0,                                         0}, 1 },
+	{{"APC",                 "Back-UPS"	"940-0020B/C cables",   0,                                         0}, 2 },
+	{{"APC",                 "Back-UPS"	"940-0023A cable",      0,                                         0}, 9 },
+	{{"APC",                 "Back-UPS Office",                 "940-0119A cable",                         0}, 12},
+	{{"APC",                 "Masterswitch",                    "Not a UPS - 940-0020 cable",              0}, 12},
+	{{"APC",                 "Back-UPS RS 500",                 "custom non-USB cable",                    0}, 20},
+	{{"Belkin",              "Resource",                        0,                                         0}, 4 },
+	{{"Belkin",              "Home Office",                     "F6H350-SER, F6H500-SER, F6H650-SER",      0}, 7 },
+	{{"Best Power",          "Patriot",                         "INT51 cable",                             0}, 6 },
+	{{"Cyber Power Systems", "Power99",                         0,                                         0}, 7 },
+	{{"Cyber Power Systems", "550SL",                           0,                                         0}, 7 },
+	{{"Deltec",              "PowerRite Pro II",                0,                                         0}, 15},
+	{{"Dynex",               "975AVR",                          0,                                         0}, 7 },
+	{{"ETA",                 "mini+UPS",                        "WinNT/Upsoft cable",                      0}, 7 },
+	{{"Exide"                "NetUPS SE",                       0,                                         0}, 15},
+	{{"Fideltronik",         "Ares 700 and larger",             0,                                         0}, 6 },
+	{{"Fideltronik",         "Other Ares models",               0,                                         0}, 19},
+	{{"Gamatronic",          "All models with alarm interface", 0,                                         0}, 22},
+	{{"Nitram",              "Elite 500",                       0,                                         0}, 8 },
+	{{"Nitram",              "Elite 2002",                      0,                                         0}, 16},
+	{{"Online",              "P-Series",                        0,                                         0}, 14},
+	{{"PowerKinetics",       "9001",                            0,                                         0}, 17},
+	{{"PowerTech",           "Comp1000",                        "DTR cable power",                         0}, 3 },
+	{{"Powerware",           "3110",                            0,                                         0}, 7 },
+	{{"Powerware",           "3115",                            0,                                         0}, 11},
+	{{"Powerware",           "5119, 5125",                      0,                                         0}, 15},
+	{{"Powerware",           "5119 RM",                         0,                                         0}, 20},
+	{{"Repotec",             "RPT-800A",                        0,                                         0}, 13},
+	{{"Repotec",             "RPT-162A",                        0,                                         0}, 13},
+	{{"Sweex",               "500/1000",                        "contact closure - shipped with UPSmart",  0}, 7 },
+	{{"Tripp-Lite",          "(various)",                       "Lan 2.2 interface - black 73-0844 cable", 0}, 5 },
+	{{"UPSonic",             "LAN Saver 600",                   0,                                         0}, 0 },
+	{{"UPSonic",             "Power Guardian",                  0,                                         0}, 7 },
+	{{"Various",             "(various)",                       "Generic RUPS model",                      0}, 4 },
+	{{"Various",             "(various)",                       "Generic RUPS 2000 (Megatec M2501 cable)", 0}, 21},
+	{{"Victron/IMV",         "Lite",                            "crack cable",                             0}, 10},
+	
+	{{0, 0, 0, 0}, 0} /* End of list */
+};
+	
 
 static void parse_output_signals(const char *value, int *line) 
 { 
@@ -288,7 +332,21 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (genericups_supported_ups[i].global_info.Vendor != 0 &&  genericups_supported_ups[i].global_info.Name != 0) {		
+		printf("===\n");
+		if (genericups_supported_ups[i].global_info.Name != 0)
+			printf("Name      : %s\n", genericups_supported_ups[i].global_info.Name);
+		if (genericups_supported_ups[i].global_info.Vendor != 0)
+			printf("Vendor    : %s\n", genericups_supported_ups[i].global_info.Vendor);
+		if (genericups_supported_ups[i].global_info.ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", genericups_supported_ups[i].global_info.ExtraInfo);
+		if (genericups_supported_ups[i].global_info.Desc != 0)
+			printf("Desc      : %s\n", genericups_supported_ups[i].global_info.Desc);
+	    printf("Type      : %d\n", genericups_supported_ups[i].type);
+		i++;
+	}
 }
 

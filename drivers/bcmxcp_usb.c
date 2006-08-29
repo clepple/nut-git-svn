@@ -3,6 +3,23 @@
 #include "bcmxcp_io.h"
 #include "nut_usb.h"
 
+/* The structure that contains all information about supported UPS */
+typedef struct {
+	ups_info_t global_info;
+	int VendorID;
+	int ProductID; 
+} usb_ups_info_t;
+
+static usb_ups_info_t bcmxcp_usb_supported_ups[] = {
+	/* {{Vendor, Product, extra info, Description }, vendorID, ProductID }*/
+	{{"Powerware", "PW3105",0 , 0} , 0x0592, 0x0002 },
+	{{"Powerware", "PW5110",0 , 0} , 0x0592, 0x0002 },
+	{{"?",         "?",     0 , 0} , 0x06da, 0x0002 },
+	
+	{{0, 0, 0, 0}, -1, -1} /* End of the list */
+};
+
+
 usb_dev_handle *upsdev = NULL;
 
 void send_read_command(unsigned char command)
@@ -189,11 +206,22 @@ void upsdrv_reconnect(void)
 
 void upsdrv_print_ups_list(void)
 {
-	printf("List of supported UPSs");
-	printf("===\n");
-	printf("VendorID  : 0x0592\n");
-	printf("ProductID : 0x0002\n");
-	printf("===\n");
-	printf("VendorID  : 0x06da\n");
-	printf("ProductID : 0x0002\n");
+	int i = 0;
+	
+	printf("List of supported UPSs\n");
+	while (bcmxcp_usb_supported_ups[i].global_info.Vendor != 0 &&  bcmxcp_usb_supported_ups[i].global_info.Name != 0) {		printf("===\n");
+		if (bcmxcp_usb_supported_ups[i].global_info.Name != 0)
+			printf("Name      : %s\n", bcmxcp_usb_supported_ups[i].global_info.Name);
+		if (bcmxcp_usb_supported_ups[i].global_info.Vendor != 0)
+			printf("Vendor    : %s\n", bcmxcp_usb_supported_ups[i].global_info.Vendor);
+		if (bcmxcp_usb_supported_ups[i].global_info.ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", bcmxcp_usb_supported_ups[i].global_info.ExtraInfo);
+		if (bcmxcp_usb_supported_ups[i].global_info.Desc != 0)
+			printf("Desc      : %s\n", bcmxcp_usb_supported_ups[i].global_info.Desc);
+		if (bcmxcp_usb_supported_ups[i].VendorID != -1) {
+			printf("VendorID  : 0x%04x\n", bcmxcp_usb_supported_ups[i].VendorID);
+			printf("ProductID : 0x%04x\n", bcmxcp_usb_supported_ups[i].ProductID);
+		}
+		i++;
+	}
 }

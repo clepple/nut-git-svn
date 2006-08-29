@@ -29,6 +29,12 @@
 
 static float lowvlt = 0,voltrange = 0,highvolt = 0;
 
+static ups_info_t ippon_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Ippon", "(various)", 0, 0},
+
+	{0, 0, 0, 0} /* End of list */
+};
 
 static int instcmd(const char *cmdname, const char *extra)
 {
@@ -242,6 +248,19 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (ippon_supported_ups[i].Vendor != 0 &&  ippon_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (ippon_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", ippon_supported_ups[i].Name);
+		if (ippon_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", ippon_supported_ups[i].Vendor);
+		if (ippon_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", ippon_supported_ups[i].ExtraInfo);
+		if (ippon_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", ippon_supported_ups[i].Desc);
+		i++;
+	}
 }

@@ -55,6 +55,13 @@
 #include "serial.h"
 #include "etapro.h"
 
+static ups_info_t etapro_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"ETA", "mini+UPS PRO", "UPS Explorer cable", 0},
+		
+	{0, 0, 0, 0} /* End of list */
+};
+
 static int
 etapro_get_response(const char *resp_type)
 {
@@ -369,6 +376,19 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (etapro_supported_ups[i].Vendor != 0 &&  etapro_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (etapro_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", etapro_supported_ups[i].Name);
+		if (etapro_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", etapro_supported_ups[i].Vendor);
+		if (etapro_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", etapro_supported_ups[i].ExtraInfo);
+		if (etapro_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", etapro_supported_ups[i].Desc);
+		i++;
+	}
 }

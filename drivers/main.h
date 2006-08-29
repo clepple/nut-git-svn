@@ -40,6 +40,13 @@ typedef struct {
 	void	*next;
 }	vartab_t;
 
+typedef struct {
+	char* Vendor;
+	char* Name;
+	char* ExtraInfo;
+	char* Desc;
+} ups_info_t;
+
 /* flags to define types in the vartab */
 
 #define VAR_FLAG	0x0001	/* argument is a flag (no value needed) */

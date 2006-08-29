@@ -48,6 +48,13 @@
 
 int debugging = 0;
 
+static ups_info_t bestuferrups_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Best Power", "Micro-Ferrups", 0, 0},
+	
+	{0, 0, 0, 0} /* End of list */
+};
+
 
 /* Blob of UPS configuration data from the formatconfig string */
 struct {
@@ -494,6 +501,19 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
+	while (bestuferrups_supported_ups[i].Vendor != 0 &&  bestuferrups_supported_ups[i].Name != 0) {		
 		printf("===\n");
+		if (bestuferrups_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", bestuferrups_supported_ups[i].Name);
+		if (bestuferrups_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", bestuferrups_supported_ups[i].Vendor);
+		if (bestuferrups_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", bestuferrups_supported_ups[i].ExtraInfo);
+		if (bestuferrups_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", bestuferrups_supported_ups[i].Desc);
+		i++;
+	}
 }

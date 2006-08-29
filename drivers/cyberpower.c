@@ -32,6 +32,21 @@
 
 #define UPSDELAY 50000
 
+static ups_info_t cyberpower_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Cyber Power Systems", "320AVR", 0, 0},
+	{"Cyber Power Systems", "500AVR", 0, 0},
+	{"Cyber Power Systems", "650AVR", 0, 0},
+	{"Cyber Power Systems", "700AVR", 0, 0},
+	{"Cyber Power Systems", "800AVR", 0, 0},
+	{"Cyber Power Systems", "850AVR", 0, 0},
+	{"Cyber Power Systems", "900AVR", 0, 0},
+	{"Cyber Power Systems", "1250AVR", 0, 0},
+	{"Cyber Power Systems", "1500AVR", 0, 0},
+	
+	{0, 0, 0, 0} /* End of list */
+};
+
 /* ups frequency */
 static float frequency(unsigned char in)
 {
@@ -574,6 +589,19 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (cyberpower_supported_ups[i].Vendor != 0 &&  cyberpower_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (cyberpower_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", cyberpower_supported_ups[i].Name);
+		if (cyberpower_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", cyberpower_supported_ups[i].Vendor);
+		if (cyberpower_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", cyberpower_supported_ups[i].ExtraInfo);
+		if (cyberpower_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", cyberpower_supported_ups[i].Desc);
+		i++;
+	}
 }

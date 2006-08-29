@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include "config.h"
 #include "libhid.h"
+#include "main.h"
 
 #define DRIVER_VERSION		"0.30"
 
@@ -223,11 +224,12 @@ struct subdriver_s {
 };
 typedef struct subdriver_s subdriver_t;
 
+/* The structure that contains all information about supported UPS */
 typedef struct {
+	ups_info_t global_info;
 	int VendorID;
 	int ProductID; 
-} usb_ups_t;
-
+} usb_ups_info_t;
 
 /* the following functions are exported for the benefit of subdrivers */
 int instcmd(const char *cmdname, const char *extradata);

@@ -36,6 +36,18 @@
 #define SER_WAIT_USEC	0
 #define DRV_VERSION	"0.01"
 
+static ups_info_t gamatronic_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Clary",      "ST-800" ,   0,              0},
+	{"Gamatronic", "MP110/210", 0,              0},
+	{"Gamatronic", "MS-T",      0,              0},
+	{"Gamatronic", "MS",        0,              0},
+	{"Gamatronic", "µPS3/1",    0,              0},
+	{"Various",    "(various)", "SEC protocol", 0},
+	
+	{0, 0, 0, 0} /* End of list */
+};
+
 int sec_upsrecv (char *buf)
 {
 
@@ -404,6 +416,19 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (gamatronic_supported_ups[i].Vendor != 0 &&  gamatronic_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (gamatronic_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", gamatronic_supported_ups[i].Name);
+		if (gamatronic_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", gamatronic_supported_ups[i].Vendor);
+		if (gamatronic_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", gamatronic_supported_ups[i].ExtraInfo);
+		if (gamatronic_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", gamatronic_supported_ups[i].Desc);
+		i++;
+	}
 }

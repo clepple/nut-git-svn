@@ -48,6 +48,54 @@ int nominal_power = 0;
 #define UPS_SET_BUZZER_MUTE		0x0d
 #define UPS_SET_BATTERY_TEST		0x0e
 
+static ups_info_t metasys_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Meta System",	"HF Line",           "1..4 boards", 0},
+	{"Meta System",	"HF Line /2",       "5..8 boards", 0},
+	{"Meta System",	"HF Millennium 810", 0,             0},
+	{"Meta System",	"HF Millennium 820", 0,             0},
+	{"Meta System",	"HF TOP Line 910",   0,             0},
+	{"Meta System",	"HF TOP Line 920",   0,             0},
+	{"Meta System",	"HF TOP Line 930",   0,             0},
+	{"Meta System",	"HF TOP Line 940",   0,             0},
+	{"Meta System",	"HF TOP Line 950",   0,             0},
+	{"Meta System",	"HF TOP Line 960",   0,             0},
+	{"Meta System",	"HF TOP Line 970",   0,             0},
+	{"Meta System",	"HF TOP Line 980",   0,             0},
+	{"Meta System",	"ECO Network 750",   0,             0},
+	{"Meta System",	"ECO Network 1000",  0,             0},
+	{"Meta System",	"ECO Network 1050",  0,             0},
+	{"Meta System",	"ECO Network 1500",  0,             0},
+	{"Meta System",	"ECO Network 1800",  0,             0},
+	{"Meta System",	"ECO Network 2000",  0,             0},
+	{"Meta System",	"ECO Network 2100",  0,             0},
+	{"Meta System",	"ECO Network 2500",  0,             0},
+	{"Meta System",	"ECO Network 3000",  0,             0},
+	{"Meta System",	"ECO 305",           0,             0},
+	{"Meta System",	"ECO 308",           0,             0},
+	{"Meta System",	"ECO 311",           0,             0},
+	{"Meta System",	"ECO 511",           0,             0},
+	{"Meta System",	"ECO 516",           0,             0},
+	{"Meta System",	"ECO 519",           0,             0},
+	{"Meta System",	"ECO 522",           0,             0},
+	{"Meta System",	"ally HF 800",       0,             0},
+	{"Meta System",	"ally HF 1000",      0,             0},
+	{"Meta System",	"ally HF 1250",      0,             0},
+	{"Meta System",	"ally HF 1600",      0,             0},
+	{"Meta System",	"ally HF 2000",      0,             0},
+	{"Meta System",	"ally HF 2500",      0,             0},
+	{"Meta System",	"Megaline 1250",     0,             0},
+	{"Meta System",	"Megaline 2500",     0,             0},
+	{"Meta System",	"Megaline 3750",     0,             0},
+	{"Meta System",	"Megaline 5000",     0,             0},
+	{"Meta System",	"Megaline 6250",     0,             0},
+	{"Meta System",	"Megaline 7500",     0,             0},
+	{"Meta System",	"Megaline 8750",     0,             0},
+	{"Meta System",	"Megaline 10000",    0,             0},
+	
+	{0, 0, 0, 0} /* End of list */
+};
+
 static int instcmd(const char *cmdname, const char *extra);
 
 /*
@@ -1034,6 +1082,19 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (metasys_supported_ups[i].Vendor != 0 &&  metasys_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (metasys_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", metasys_supported_ups[i].Name);
+		if (metasys_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", metasys_supported_ups[i].Vendor);
+		if (metasys_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", metasys_supported_ups[i].ExtraInfo);
+		if (metasys_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", metasys_supported_ups[i].Desc);
+		i++;
+	}
 }

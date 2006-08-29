@@ -28,6 +28,13 @@
 
 #define	ML_ONBATTERY	0x55
 
+static ups_info_t liebert_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Liebert", "UPStation GXT2", "contact-closure cable", 0},
+
+	{0, 0, 0, 0} /* End of list */
+};
+
 void upsdrv_shutdown(void)
 {
 	/* XXX: replace with a proper shutdown function (raise DTR) */
@@ -193,6 +200,19 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (liebert_supported_ups[i].Vendor != 0 &&  liebert_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (liebert_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", liebert_supported_ups[i].Name);
+		if (liebert_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", liebert_supported_ups[i].Vendor);
+		if (liebert_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", liebert_supported_ups[i].ExtraInfo);
+		if (liebert_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", liebert_supported_ups[i].Desc);
+		i++;
+	}
 }

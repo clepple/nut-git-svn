@@ -122,6 +122,14 @@
 #define MAX_VOLT 13.4          /* Max battery voltage (100%) */
 #define MIN_VOLT 11.0          /* Min battery voltage (10%) */
 
+static ups_info_t tripplite_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Tripp-Lite", "SmartUPS", 0, 0},
+
+	{0, 0, 0, 0} /* End of list */
+};
+
+
 /* We calculate battery charge (q) as a function of voltage (V).
  * It seems that this function probably varies by firmware revision or
  * UPS model - the Windows monitoring software gives different q for a
@@ -541,7 +549,20 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (tripplite_supported_ups[i].Vendor != 0 &&  tripplite_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (tripplite_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", tripplite_supported_ups[i].Name);
+		if (tripplite_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", tripplite_supported_ups[i].Vendor);
+		if (tripplite_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", tripplite_supported_ups[i].ExtraInfo);
+		if (tripplite_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", tripplite_supported_ups[i].Desc);
+		i++;
+	}
 }
 

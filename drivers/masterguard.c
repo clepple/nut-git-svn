@@ -47,6 +47,14 @@ int     type;
 char    name[31];
 char    firmware[6];
 
+
+static ups_info_t masterguard_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Masterguard", "(various)", 0, 0},
+
+	{0, 0, 0, 0} /* End of list */
+};
+
 /********************************************************************
  *
  * Helper function to split a sting into words by splitting at the 
@@ -631,6 +639,19 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (masterguard_supported_ups[i].Vendor != 0 &&  masterguard_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (masterguard_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", masterguard_supported_ups[i].Name);
+		if (masterguard_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", masterguard_supported_ups[i].Vendor);
+		if (masterguard_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", masterguard_supported_ups[i].ExtraInfo);
+		if (masterguard_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", masterguard_supported_ups[i].Desc);
+		i++;
+	}
 }

@@ -95,6 +95,14 @@
 #include "belkinunv.h"
 #include <sys/ioctl.h>
 	
+	
+static ups_info_t belkininv_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Belkin", "Universal UPS", "F6C800-UNV, F6C120-UNV, F6C1100-UNV", 0},
+	
+	{0, 0, 0, 0} /* End of list */
+};
+	
 /* somewhat arbitrary buffer size - the longest actually occuring
    message is 18 bytes for the F6C800-UNV. But since message length is
    arbitrary in principle, we allow for some extra bytes. */
@@ -1304,6 +1312,18 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (belkininv_supported_ups[i].Vendor != 0 &&  belkininv_supported_ups[i].Name != 0) {		printf("===\n");
+		if (belkininv_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", belkininv_supported_ups[i].Name);
+		if (belkininv_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", belkininv_supported_ups[i].Vendor);
+		if (belkininv_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", belkininv_supported_ups[i].ExtraInfo);
+		if (belkininv_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", belkininv_supported_ups[i].Desc);
+		i++;
+	}
 }

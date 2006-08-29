@@ -34,6 +34,13 @@ static	float	lowvolt = 0, highvolt = 0, voltrange = 0;
 static	int	poll_failures = 0;
 static	int	inverted_bypass_bit = 0;
 
+static ups_info_t blazer_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Centralion", "Blazer", 0, 0},
+	{"SOLA", "330",          0, 0},
+
+	{0, 0, 0, 0} /* End of list */
+};
 
 static int instcmd(const char *cmdname, const char *extra)
 {
@@ -326,6 +333,19 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (blazer_supported_ups[i].Vendor != 0 &&  blazer_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (blazer_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", blazer_supported_ups[i].Name);
+		if (blazer_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", blazer_supported_ups[i].Vendor);
+		if (blazer_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", blazer_supported_ups[i].ExtraInfo);
+		if (blazer_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", blazer_supported_ups[i].Desc);
+		i++;
+	}
 }

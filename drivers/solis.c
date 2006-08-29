@@ -91,6 +91,16 @@
 
 #define FMT_DAYS   "                      %d    %d    %d    %d    %d    %d    %d\n"
 
+static ups_info_t solis_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Microsol", "Solis 1.0", "1000VA", 0},
+	{"Microsol", "Solis 1.5", "1500VA", 0},
+	{"Microsol", "Solis 2.0", "2000VA", 0},
+	{"Microsol", "Solis 3.0", "3 00VA", 0},
+	
+	{0, 0, 0, 0} /* End of list */
+};
+
 /* convert standard days string to firmware format */
 static char* convdays( char *cop )
 {
@@ -398,7 +408,7 @@ static int IsToday( unsigned char dweek, int nweek)
 
 	switch ( nweek )
 	{
-	case 0: // sunday
+	case 0: /* sunday */
 		return ( ( ( dweek & 0x40 ) == 0x40 ) );
 	case 1:
 		return ( ( ( dweek & 0x20 ) == 0x20 ) );
@@ -410,7 +420,7 @@ static int IsToday( unsigned char dweek, int nweek)
 		return ( ( ( dweek & 0x04 ) == 0x04 ) );
 	case 5:
 		return ( ( ( dweek & 0x02 ) == 0x02 ) );
-	case 6: // saturday
+	case 6: /* saturday */
 		return ( ( ( dweek & 0x01 ) == 0x01 ) );
 	}
 	
@@ -792,7 +802,7 @@ static void getbaseinfo(void)
 #else
 	char DaysOfWeek[7][4]={"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 #endif
-	char    mycmd[8]; // , ch;
+	char    mycmd[8]; /* , ch; */
 	char *str1, *str2, *str3, *str4, *strx;
 	unsigned char Pacote[25];
 	int  i, i1=0, i2=0, j=0, tam, tpac=25;
@@ -861,7 +871,7 @@ static void getbaseinfo(void)
 		}
 	}
 	    
-	} // end prgups 1 - 2
+	} /* end prgups 1 - 2 */
 
 	/* dummy read attempt to sync - throw it out */
 	sprintf(mycmd,"%c%c",CMD_UPSCONT, ENDCHAR);
@@ -869,7 +879,7 @@ static void getbaseinfo(void)
 
 	/* trying detect solis model */
 	while ( ( !detected ) && ( j < 20 ) )  {
-		temp[0] = 0; // flush temp buffer
+		temp[0] = 0; /* flush temp buffer */
 		tam = ser_get_buf_len(upsfd, temp, tpac, 3, 0);
 		if( tam == 25 ) {
 			for( i = 0 ; i < tam ; i++ ) {
@@ -1003,17 +1013,17 @@ static int instcmd(const char *cmdname, const char *extra)
 {
 
 	if (!strcasecmp(cmdname, "shutdown.return"))  {
-		// shutdown and restart
-		ser_send_char(upsfd, CMD_SHUTRET); // 0xDE
-		// ser_send_char(upsfd, ENDCHAR);
+		/* shutdown and restart */
+		ser_send_char(upsfd, CMD_SHUTRET); /* 0xDE */
+		/* ser_send_char(upsfd, ENDCHAR); */
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stayoff"))
 	  {
-	    // shutdown now (one way)
-	    ser_send_char(upsfd, CMD_SHUT); // 0xDD
-	    // ser_send_char(upsfd, ENDCHAR);
+	    /* shutdown now (one way) */
+	    ser_send_char(upsfd, CMD_SHUT); /* 0xDD */
+	    /* ser_send_char(upsfd, ENDCHAR);*/
 	    return STAT_INSTCMD_HANDLED;
 	  }
 
@@ -1075,7 +1085,7 @@ void upsdrv_shutdown(void)
 	/* on battery: send normal shutdown, ups will return by itself on utility */
 	/* on line: send shutdown+return, ups will cycle and return soon */
 
-	if (!SourceFail) {     // on line
+	if (!SourceFail) {     /* on line */
 	
 		printf("On line, sending shutdown+return command...\n");
 		ser_send_char(upsfd, CMD_SHUTRET );
@@ -1151,6 +1161,19 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (solis_supported_ups[i].Vendor != 0 &&  solis_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (solis_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", solis_supported_ups[i].Name);
+		if (solis_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", solis_supported_ups[i].Vendor);
+		if (solis_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", solis_supported_ups[i].ExtraInfo);
+		if (solis_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", solis_supported_ups[i].Desc);
+		i++;
+	}
 }

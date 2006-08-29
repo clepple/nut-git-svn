@@ -39,9 +39,11 @@
 /*      Supported UPS                                              */
 /* --------------------------------------------------------------- */
 
-static usb_ups_t tripplite_supported_ups[] = {
-	{TRIPPLITE_VENDORID, TRIPPLITE_HID_PRODUCTID},
-	{-1, -1} // End of the list
+static usb_ups_info_t tripplite_supported_ups[] = {
+	/* {{Vendor, Product, extra info, Description }, vendorID, ProductID }*/
+	{{"Tripp-lite", "USB UPS", 0, 0}, TRIPPLITE_VENDORID, TRIPPLITE_HID_PRODUCTID},
+	
+	{{0, 0, 0, 0}, -1, -1} /* End of the list */
 };
 
 /* --------------------------------------------------------------- */
@@ -225,8 +227,18 @@ void tripplite_print_ups_list(void) {
 	int i = 0;
 	while (tripplite_supported_ups[i].VendorID != -1 ) {
 		printf("===\n");
-		printf("VendorID  : 0x%04x\n", tripplite_supported_ups[i].VendorID);
-		printf("ProductID : 0x%04x\n", tripplite_supported_ups[i].ProductID);
+		if (tripplite_supported_ups[i].global_info.Name != 0)
+			printf("Name      : %s\n", tripplite_supported_ups[i].global_info.Name);
+		if (tripplite_supported_ups[i].global_info.Vendor != 0)
+			printf("Vendor    : %s\n", tripplite_supported_ups[i].global_info.Vendor);
+		if (tripplite_supported_ups[i].global_info.ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", tripplite_supported_ups[i].global_info.ExtraInfo);
+		if (tripplite_supported_ups[i].global_info.Desc != 0)
+			printf("Desc      : %s\n", tripplite_supported_ups[i].global_info.Desc);
+		if (tripplite_supported_ups[i].VendorID != -1) {
+			printf("VendorID  : 0x%04x\n", tripplite_supported_ups[i].VendorID);
+			printf("ProductID : 0x%04x\n", tripplite_supported_ups[i].ProductID);
+		}
 		i++;
 	}
 }

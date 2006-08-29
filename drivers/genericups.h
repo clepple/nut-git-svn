@@ -270,3 +270,9 @@ struct {
 	  0
 	}
 };
+
+/* The structure that contains all information about supported UPS */
+typedef struct {
+	ups_info_t global_info;
+	int type;
+} generic_ups_info_t;

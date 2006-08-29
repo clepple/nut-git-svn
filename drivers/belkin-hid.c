@@ -37,9 +37,13 @@
 /*      Supported UPS                                              */
 /* --------------------------------------------------------------- */
 
-static usb_ups_t belkin_supported_ups[] = {
-	{BELKIN_VENDORID, 0x0980},
-	{-1, -1} // End of the list
+static usb_ups_info_t belkin_supported_ups[] = {
+	/* {{Vendor, Product, extra info, Description }, vendorID, ProductID }*/
+	{{"Belkin", "Universal UPS", "F6C800-UNV, F6C1100-UNV", 0} , BELKIN_VENDORID, 0x0980 },
+	{{"Belkin", "Universal UPS", "F6C120-UNV",              0} , BELKIN_VENDORID, 0x0912 },
+	{{"Belkin", "Office Series", "F6C550-AVR",              0},  BELKIN_VENDORID, 0x0980 },
+	
+	{{0, 0, 0, 0}, -1, -1} /* End of the list */
 };
 
 /* some conversion functions specific to Belkin */
@@ -395,8 +399,18 @@ void belkin_print_ups_list(void) {
 	int i = 0;
 	while (belkin_supported_ups[i].VendorID != -1 ) {
 		printf("===\n");
-		printf("VendorID  : 0x%04x\n", belkin_supported_ups[i].VendorID);
-		printf("ProductID : 0x%04x\n", belkin_supported_ups[i].ProductID);
+		if (belkin_supported_ups[i].global_info.Name != 0)
+			printf("Name      : %s\n", belkin_supported_ups[i].global_info.Name);
+		if (belkin_supported_ups[i].global_info.Vendor != 0)
+			printf("Vendor    : %s\n", belkin_supported_ups[i].global_info.Vendor);
+		if (belkin_supported_ups[i].global_info.ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", belkin_supported_ups[i].global_info.ExtraInfo);
+		if (belkin_supported_ups[i].global_info.Desc != 0)
+			printf("Desc      : %s\n", belkin_supported_ups[i].global_info.Desc);
+		if (belkin_supported_ups[i].VendorID != -1) {
+			printf("VendorID  : 0x%04x\n", belkin_supported_ups[i].VendorID);
+			printf("ProductID : 0x%04x\n", belkin_supported_ups[i].ProductID);
+		}
 		i++;
 	}
 }

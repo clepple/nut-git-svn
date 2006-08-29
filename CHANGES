@@ -1,3 +1,8 @@
+Tue Aug 29 08:48:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
+ - drivers/ : Added the list of supported UPs in each driver
+ - utils/print-ups-list.c : this tool can now output the table of supported hardware
+ - Makefile.in : added utils to the list od SUBDIR
+
 Tue Aug 01 12:18:33 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - dstate-hal.c: complete data

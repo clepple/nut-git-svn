@@ -124,6 +124,20 @@ static float
 	nom_out_kw = 0,
 	min_to_sec = 60.0,
 	kilo_to_unity = 1000.0;
+	
+static ups_info_t upscode2_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Compaq",    "T1500h",         "use : use_pre_lf", 0},
+	{"Fiskars",   "PowerRite MAX",  0,                  0},
+	{"Fiskars",   "PowerServer 10", 0,                  0},
+	{"Fiskars",   "PowerServer 30", 0,                  0},
+	{"Powerware", "9120",           0,                  0},
+	{"Powerware", "9150",           0,                  0},
+	{"Powerware", "9305",           0,                  0},
+		
+	{0, 0, 0, 0} /* End of list */
+};
+
 
 
 /* Status codes for the STAT and STMF status responses */
@@ -592,8 +606,21 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (upscode2_supported_ups[i].Vendor != 0 &&  upscode2_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (upscode2_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", upscode2_supported_ups[i].Name);
+		if (upscode2_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", upscode2_supported_ups[i].Vendor);
+		if (upscode2_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", upscode2_supported_ups[i].ExtraInfo);
+		if (upscode2_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", upscode2_supported_ups[i].Desc);
+		i++;
+	}
 }
 
    

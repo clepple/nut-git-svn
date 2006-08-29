@@ -33,6 +33,26 @@ static	int	cap_upstemp = 0;
 static	float	lowvolt = 0, voltrange, chrglow = 0, chrgrange;
 static	int	lownorm, highnorm;
 
+static ups_info_t fentonups_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Effekta",                  "MI/MT/MH",        "2502 cable",     0},
+	{"Fenton Technologies",      "PowerPal",        "L-series", 	  0},
+	{"Fenton Technologies",      "PowerOn",         0,                0},
+	{"Fenton Technologies",      "PowerPure",       0,                0},
+	{"INELT",                    "Monolith 1000LT", 0,                0},
+	{"Orvaldi Power Protection", "various",         "not 400 or 600", 0},
+	{"Powercom",                 "SMK-800A",        0,                0},
+	{"Powercom",                 "ULT-1000",        0,                0},
+	{"PowerGuard",               "PG-600",          0,                0},
+	{"SuperPower",               "HP360, Hope-550", 0,                0},
+	{"Sysgration",               "UPGUARDS Pro650", 0,                0},
+	{"UNITEK",                   "ALPHA 500 IC",    0,                0},
+	{"UNITEK",                   "Alpha 1000is",    0,                0},
+	
+	{0, 0, 0, 0} /* End of list */
+};
+
+
 /* handle devices which don't give a properly formatted I string */
 static int check_mtab2(const char *raw)
 {
@@ -447,6 +467,19 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (fentonups_supported_ups[i].Vendor != 0 &&  fentonups_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (fentonups_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", fentonups_supported_ups[i].Name);
+		if (fentonups_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", fentonups_supported_ups[i].Vendor);
+		if (fentonups_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", fentonups_supported_ups[i].ExtraInfo);
+		if (fentonups_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", fentonups_supported_ups[i].Desc);
+		i++;
+	}
 }

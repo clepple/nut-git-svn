@@ -30,6 +30,14 @@
 
 #define DRV_VERSION "0.21"
 
+static ups_info_t belkin_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Belkin", "Regulator Pro", "serial", 0},
+	{"Belkin", "Small Enterprise", "F6C1500-TW-RK", 0},
+	
+	{0, 0, 0, 0} /* End of list */
+};
+
 static void send_belkin_command(char cmd, const char *subcmd, const char *data)
 {
 	ser_send(upsfd, "~00%c%03d%s%s", cmd, strlen(data) + 3, subcmd, data);
@@ -447,6 +455,18 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+		int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (belkin_supported_ups[i].Vendor != 0 &&  belkin_supported_ups[i].Name != 0) {		printf("===\n");
+		if (belkin_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", belkin_supported_ups[i].Name);
+		if (belkin_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", belkin_supported_ups[i].Vendor);
+		if (belkin_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", belkin_supported_ups[i].ExtraInfo);
+		if (belkin_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", belkin_supported_ups[i].Desc);
+		i++;
+	}
 }

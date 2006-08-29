@@ -44,6 +44,27 @@ snmp_info_t *snmp_info;
 
 time_t lastpoll;
 
+
+/* --------------------------------------------------------------- */
+/*                    List of supported UPSs                       */
+/* --------------------------------------------------------------- */
+
+static ups_info_t snmp_ups_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"APC",             "(various)",                      "SNMP monitoring card",                                   0},
+	{"MGE UPS SYSTEMS", "Pulsar / Comet / Galaxy (SNMP)", "SNMP/Web Transverse card (ref 66074)",                   0},
+	{"MGE UPS SYSTEMS", "Pulsar (SNMP)",                  "SNMP/Web Minislot card (ref 66244)",                     0},
+	{"MGE UPS SYSTEMS", "Pulsar / Comet / Galaxy (SNMP)", "SNMP card (ref 66062)",                                  0},
+	{"MGE UPS SYSTEMS", "Pulsar (SNMP)",                  "SNMP card (ref 66045)",                                  0},
+	{"MGE UPS SYSTEMS", "UM-Link (SNMP)",                 "Not a UPS (ref 66850)",                                  0},
+	{"Powerware",       "(various)",                      "ConnectUPS Web/SNMP card",                               0},
+	{"Socomec Sicon",   "Netvision",                      "UPS equipped with Netvision WEB/SNMP card/external box", 0},
+	{"Various",         "(various)",                      "SNMP - RFC 1628",                                        0},
+	
+	{0, 0, 0, 0} /* End of list */
+};
+
+
 /* ---------------------------------------------
  * driver functions implementations
  * --------------------------------------------- */
@@ -122,8 +143,10 @@ void upsdrv_makevartable(void)
 
 void upsdrv_banner(void)
 {
-	upslogx(1,"Network UPS Tools - Multi-MIBS SNMP UPS driver %s (%s)", 
+	printf("Network UPS Tools - Multi-MIBS SNMP UPS driver %s (%s)", 
 		DRIVER_VERSION, UPS_VERSION);
+	/*upslogx(1,"Network UPS Tools - Multi-MIBS SNMP UPS driver %s (%s)", 
+		DRIVER_VERSION, UPS_VERSION);*/
 	
 	experimental_driver = 1;
 }
@@ -168,8 +191,21 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (snmp_ups_supported_ups[i].Vendor != 0 &&  snmp_ups_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (snmp_ups_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", snmp_ups_supported_ups[i].Name);
+		if (snmp_ups_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", snmp_ups_supported_ups[i].Vendor);
+		if (snmp_ups_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", snmp_ups_supported_ups[i].ExtraInfo);
+		if (snmp_ups_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", snmp_ups_supported_ups[i].Desc);
+		i++;
+	}
 }
 
 /* -----------------------------------------------------------

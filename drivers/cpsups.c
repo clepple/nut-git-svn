@@ -28,6 +28,18 @@
 
 #define DRV_VERSION ".04"
 
+static ups_info_t cpsups_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"MicroDowell",         "B.Box BP  500", 0, 0},
+	{"MicroDowell",         "B.Box BP  750", 0, 0},
+	{"MicroDowell",         "B.Box BP 1000", 0, 0},
+	{"MicroDowell",         "B.Box BP 1500", 0, 0},
+	{"Cyber Power Systems", "CPS825VA",      0, 0},
+	{"Cyber Power Systems", "1100AVR",       0, 0},
+	{"Cyber Power Systems", "1500AVR-HO",    0, 0},	
+	{0, 0, 0, 0} /* End of list */
+};
+
 static void model_set(const char *abbr, const char *rating)
 {
 
@@ -435,6 +447,19 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (cpsups_supported_ups[i].Vendor != 0 &&  cpsups_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (cpsups_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", cpsups_supported_ups[i].Name);
+		if (cpsups_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", cpsups_supported_ups[i].Vendor);
+		if (cpsups_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", cpsups_supported_ups[i].ExtraInfo);
+		if (cpsups_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", cpsups_supported_ups[i].Desc);
+		i++;
+	}
 }

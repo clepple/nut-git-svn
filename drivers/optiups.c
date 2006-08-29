@@ -87,6 +87,14 @@ static ezfill _initv[] = {
 	{ "IS", "ups.firmware" },
 };
 
+static ups_info_t optiups_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Opti-UPS",  "PowerES", "420E", 0},
+	{"Viewsonic", "PowerES", "420E", 0},
+
+	{0, 0, 0, 0} /* End of list */
+};
+
 /* All serial reads of the OPTI-UPS go through here.  We always expect a CR/LF terminated
  *   response.  Unknown/Unimplemented commands return ^U (0x15).  Actions that complete
  *   successfully return ^F (0x06). */
@@ -372,8 +380,21 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (optiups_supported_ups[i].Vendor != 0 &&  optiups_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (optiups_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", optiups_supported_ups[i].Name);
+		if (optiups_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", optiups_supported_ups[i].Vendor);
+		if (optiups_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", optiups_supported_ups[i].ExtraInfo);
+		if (optiups_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", optiups_supported_ups[i].Desc);
+		i++;
+	}
 }
 
 /*******************************************

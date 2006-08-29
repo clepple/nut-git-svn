@@ -63,6 +63,21 @@
 
 #define DRV_VERSION	"1.0"
 
+static ups_info_t safenet_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Ever-Power",          "625/1000",                         0,                              0},
+	{"Fenton Technologies", "PowerPal",                         "P-series",                     0},
+	{"Fairstone",           "L525/L625/L750",                   0,                              0},
+	{"Gemini",              "UPS625/UPS1000",                   0,                              0},
+	{"Powerwell",           "PM525A/-625A/-800A/-1000A/-1250A", 0,                              0},
+	{"Repotec",             "RPF525/625/800/1000",              0,                              0},
+	{"Soltec",              "Winmate 525/625/800/1000",         0,                              0},
+	{"Sweex",               "500/1000",                         "smart - shipped with SafeNet", 0},
+	{"Various",             "(various)",                        "Safenet software",             0},
+			
+	{0, 0, 0, 0} /* End of list */
+};
+
 /*
  * Here we keep the last known status of the UPS
  */
@@ -436,6 +451,19 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (safenet_supported_ups[i].Vendor != 0 &&  safenet_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (safenet_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", safenet_supported_ups[i].Name);
+		if (safenet_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", safenet_supported_ups[i].Vendor);
+		if (safenet_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", safenet_supported_ups[i].ExtraInfo);
+		if (safenet_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", safenet_supported_ups[i].Desc);
+		i++;
+	}
 }

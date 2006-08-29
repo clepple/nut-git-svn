@@ -39,6 +39,13 @@
 #define MAXTRIES 15
 /* #define IGNCHARS	""	*/
 
+static ups_info_t isbmex_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"SOLA/BASIC Mexico", "various", "ISBMEX protocol", 0},
+
+	{0, 0, 0, 0} /* End of list */
+};
+
 float lagrange(unsigned int vbyte)
 {
 	float f0, f1, f2, f3, f4, f5, f6;
@@ -349,6 +356,19 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (isbmex_supported_ups[i].Vendor != 0 &&  isbmex_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (isbmex_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", isbmex_supported_ups[i].Name);
+		if (isbmex_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", isbmex_supported_ups[i].Vendor);
+		if (isbmex_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", isbmex_supported_ups[i].ExtraInfo);
+		if (isbmex_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", isbmex_supported_ups[i].Desc);
+		i++;
+	}
 }

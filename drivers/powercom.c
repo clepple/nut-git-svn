@@ -49,6 +49,16 @@ static void dtr0rts1 (void);
 static void dtr1 (void);
 static void no_flow_control (void);
 
+static ups_info_t powercom_supported_ups[] = {
+	/* Vendor, Product, ExtraInfo, Description */
+	{"Powercom",      "Trust 425/625",             0,        0},
+	{"Powercom",      "(various)",                 0,        0},
+	{"Powercom",      "Advice Partner/King Pr750", 0,        0},
+	{"Socomec Sicon", "Egys",                      "420 VA", 0},
+			
+	{0, 0, 0, 0} /* End of list */
+};
+
 /* struct defining types */
 static struct type types[] = {
         {
@@ -590,6 +600,19 @@ void upsdrv_cleanup(void)
 
 void upsdrv_print_ups_list(void)
 {
+	int i = 0;
+	
 	printf("List of supported UPSs\n");
-	printf("===\n");
+	while (powercom_supported_ups[i].Vendor != 0 &&  powercom_supported_ups[i].Name != 0) {		
+		printf("===\n");
+		if (powercom_supported_ups[i].Name != 0)
+			printf("Name      : %s\n", powercom_supported_ups[i].Name);
+		if (powercom_supported_ups[i].Vendor != 0)
+			printf("Vendor    : %s\n", powercom_supported_ups[i].Vendor);
+		if (powercom_supported_ups[i].ExtraInfo != 0)
+			printf("ExtraInfo : %s\n", powercom_supported_ups[i].ExtraInfo);
+		if (powercom_supported_ups[i].Desc != 0)
+			printf("Desc      : %s\n", powercom_supported_ups[i].Desc);
+		i++;
+	}
 }
