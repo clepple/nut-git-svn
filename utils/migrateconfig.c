@@ -762,16 +762,16 @@ int main (int argc, char** argv) {
 	s[5] = 0;
 	
 	comm_file = xmalloc(sizeof(char) * (strlen(comments_dir) + strlen(s) + 30));
-	sprintf(comm_file, "%s/conf.comm.%s", comments_dir, s);
+	sprintf(comm_file, "%s/conf.comments.%s", comments_dir, s);
 	
 	test = fopen(comm_file, "r");
 		
 	if (test == 0) {
 		s[2] = 0;
-		sprintf(comm_file, "%s/conf.comm.%s", comments_dir, s);
+		sprintf(comm_file, "%s/conf.comments.%s", comments_dir, s);
 		test = fopen(comm_file, "r");
 		if (test == 0) {
-			sprintf(comm_file, "%s/conf.comm.C", comments_dir);
+			sprintf(comm_file, "%s/conf.comments.C", comments_dir);
 			test = fopen(comm_file, "r");
 			if (test == 0) {
 				free(comm_file);
