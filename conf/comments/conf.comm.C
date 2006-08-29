@@ -14,7 +14,7 @@
 # ---------
 # To specify the value of the driver name of the ups "myups" for instance :
 #
-# ups.myups.driver.name = "newhidups" r
+# ups.myups.driver.name = "newhidups"
 #
 # ---------
 # For the moment, only string and enumeration of string can be
@@ -25,20 +25,6 @@
 #      "foo"
 # Enumeration of string are delimited by brace :
 #      { "foo" "foo2" ... }
-#
-# ---------
-# After a value, you can specify the access right to this value
-# Valid rights are :
-#
-# r       : all users can read the variable. No one write set it
-# rw      : all users can read and write the variable
-# r*      : only NUT's administrators can read the variable. No one can 
-#           write it
-# rw*     : all users can read the variable. Only NUT's administrators
-#           can write it
-# r*w*    : only NUT's administrators can read and write the variable. A
-#           good idea for variable like password ;-)
-# nothing : don't specify the right. It is the same as putting r
 #
 # ---------
 # As NUT use a tree to expose its variables, you may something need to

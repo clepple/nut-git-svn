@@ -1952,14 +1952,23 @@ void set_force_sll(boolean value) {
 
 
 t_string node_to_string(t_tree tree) {
-	t_string last_part, rights, s = 0, s2;
+	t_string last_part, s = 0, s2;
+	t_string rights;
 	int len;
 	
 	last_part = extract_last_part(tree->name);
 	
 	if (tree->has_value) {
 		
+/* Use this flag to enable the saving of rights in the 
+ * configuration file. Disabled for the moment because
+ * not used yet (and we don't want the user to wonder
+ * about what it is) */
+#ifdef CONFIG_USE_RIGHT
 		rights = right_to_string(tree->right);
+#else
+		rights = "";
+#endif
 		
 		switch(tree->type) {
 			case string_type :

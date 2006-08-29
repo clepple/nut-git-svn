@@ -21,6 +21,23 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  */
+ 
+ /* TODO
+  * 
+  * The saving of rights notion have been disabled for the 
+  * moment, because no application use it for the moment,
+  * and we don't want users to wonder what it is and/or
+  * what it does.
+  * 
+  * If you want to enable it back, define the flag CONFIG_USE_RIGHT
+  * 
+  * This notion of right have been made for a future evolution
+  * with a unified tree for data and configuration, to be
+  * able for instance to modify configuration "in live" and to
+  * protect the acces of data in this tree (like password, or 
+  * variable you need right to set, and so on)
+  * 
+  */
 
 #include "data_types.h"
 #include "tree.h"

@@ -117,28 +117,6 @@ It is equivalant to :
 .fi
 .LP
 
-.SH RIGHTS
-For later evolution, a notion of rights have been introduced in the configuration file
-The configuration would be able to be changed in live, by an interface, without having to
-manually modify the configuration file.
-Thus the notion of "setable" variables that already exist for UPs internal variable have been
-extended to configuration variable.
-The notion of "readable" variables has been added, especially for variable like user passwords
-
-Therefore, after the value of a variable can now figures the right of this variable. Valid values are :
-
-.IP "r"
-This variable is readable for all but not writable
-
-.IP "r*"
-This variable is only readable by NUT administrators, and not writable
-
-.IP "rw*"
-This variable is readable by all but only NUT administrtors can write it
-
-.IP "r*w*"
-This variable is readable and writable only by NUT administrator. Perfect right for passwords.
-
 .SH UPS section
 
 You must define the "driver" and "port" elements for each entry.  Anything
