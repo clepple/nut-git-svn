@@ -16,7 +16,7 @@ INSTALLCMD  = @INSTALL@
 PUBFILES = upssched.conf
 CGIPUB   = hosts.conf upsset.conf upsstats.html upsstats-single.html
 BASECONFFILES = nut.conf
-COMMENTSFILES = conf.comm.C
+COMMENTSFILES = conf.comments.C
 
 all:
 clean:

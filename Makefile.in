@@ -41,7 +41,7 @@ distclean: clean
 		rm $$i/Makefile; \
 	done
 
-install: install-dirs install-bin install-man install-data
+install: install-dirs install-bin install-man install-data install-conf
 
 install-bin:
 	@for i in $(SUBDIRS); do \
