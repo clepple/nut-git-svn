@@ -1,3 +1,7 @@
+Wed Aug 30 17:17:17 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
+
+ - drivers/tripplite-hid.c : added model AVR550U to the list of supported UPS
+
 Tue Aug 29 08:48:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
  - drivers/ : Added the list of supported UPs in each driver
  - utils/print-ups-list.c : this tool can now output the table of supported hardware

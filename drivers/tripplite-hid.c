@@ -42,6 +42,7 @@
 static usb_ups_info_t tripplite_supported_ups[] = {
 	/* {{Vendor, Product, extra info, Description }, vendorID, ProductID }*/
 	{{"Tripp-lite", "USB UPS", 0, 0}, TRIPPLITE_VENDORID, TRIPPLITE_HID_PRODUCTID},
+	{{"Tripp-lite", "AVR550U", 0, 0}, TRIPPLITE_VENDORID, 0x1003},
 	
 	{{0, 0, 0, 0}, -1, -1} /* End of the list */
 };
