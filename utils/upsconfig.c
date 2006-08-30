@@ -140,7 +140,7 @@ int main (int argc, char** argv)  {
 	}
 	
 	/* Some parameters are mandatory */
-	if (driver == 0 && mode != pm && mode != no_mode) {
+	if (driver == 0 && mode != pm && mode != no_mode && mode != net_client) {
 		print_error("\"driver\" option is mandatory");
 		print_usage();
 		exit(EXIT_FAILURE);
@@ -215,13 +215,15 @@ int main (int argc, char** argv)  {
 		search_user("monslave");
 		/* To remove the allowfrom variable : */
 		set_allowfrom(0);
-		/* Want to modify the host of the monitor rule. 
-		   Create the one wanted then delete the first */
+		/* if an host has been specified, should modify the host of the monitor rule. 
+		   Create the one wanted then delete the first */		
 		search_monitor_rule(1);
 		s = get_monitor_ups();
 		add_monitor_rule(s, server, get_monitor_powervalue(), "monslave");
 		free(s);
-		remove_monitor_rule(1);
+		if ( strcmp(server, "localhost") != 0) {
+			remove_monitor_rule(1);
+		}
 	}
 	
 	if (mode == standalone) {

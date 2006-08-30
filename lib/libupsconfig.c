@@ -1,5 +1,4 @@
-/*  libupsconfig.c - API to manipulate NUT configuration
-
+/*
    Copyright (C) 2006 Jonathan Dion <dion.jonathan@gmail.com>
 
    This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
@@ -179,7 +178,7 @@ int save_existant_files(t_string directory, void errhandler(const char*)) {
 	sprintf(new_fn, "%s/nut.conf.save", directory);
 	
 	ret = stat(fn, st);
-	if (ret != 0 || errno != ENOENT) {
+	if (ret == 0 || errno != ENOENT) {
 		if (link(fn, new_fn) == -1 && is_fatal_error(fn, new_fn, errhandler)) {
 			error = 1;
 		} else if (unlink(fn) == -1 && is_fatal_error(fn, new_fn, errhandler)) {
@@ -190,7 +189,7 @@ int save_existant_files(t_string directory, void errhandler(const char*)) {
 	sprintf(fn, "%s/ups.conf", directory);
 	sprintf(new_fn, "%s/ups.conf.save", directory);
 	ret = stat(fn, st);
-	if (ret != 0 || errno != ENOENT) {
+	if (ret == 0 || errno != ENOENT) {
 		if (link(fn, new_fn) == -1 && is_fatal_error(fn, new_fn, errhandler)) {
 			error = 1;
 		} else if (unlink(fn) == -1 && is_fatal_error(fn, new_fn, errhandler)) {
@@ -201,7 +200,7 @@ int save_existant_files(t_string directory, void errhandler(const char*)) {
 	sprintf(fn, "%s/users.conf", directory);
 	sprintf(new_fn, "%s/users.conf.save", directory);
 	ret = stat(fn, st);
-	if (ret != 0 || errno != ENOENT) {
+	if (ret == 0 || errno != ENOENT) {
 		if (link(fn, new_fn) == -1 && is_fatal_error(fn, new_fn, errhandler)) {
 			error = 1;
 		} else if (unlink(fn) == -1 && is_fatal_error(fn, new_fn, errhandler)) {
@@ -212,7 +211,7 @@ int save_existant_files(t_string directory, void errhandler(const char*)) {
 	sprintf(fn, "%s/upsd.conf", directory);
 	sprintf(new_fn, "%s/upsd.conf.save", directory);
 	ret = stat(fn, st);
-	if (ret != 0 || errno != ENOENT) {
+	if (ret == 0 || errno != ENOENT) {
 		if (link(fn, new_fn) == -1 && is_fatal_error(fn, new_fn, errhandler)) {
 			error = 1;
 		} else if (unlink(fn) == -1 && is_fatal_error(fn, new_fn, errhandler)) {
@@ -223,7 +222,7 @@ int save_existant_files(t_string directory, void errhandler(const char*)) {
 	sprintf(fn, "%s/upsmon.conf", directory);
 	sprintf(new_fn, "%s/upsmon.conf.save", directory);
 	ret = stat(fn, st);
-	if (ret != 0 || errno != ENOENT) {
+	if (ret == 0 || errno != ENOENT) {
 		if (link(fn, new_fn) == -1 && is_fatal_error(fn, new_fn, errhandler)) {
 			error = 1;
 		} else if (unlink(fn) == -1 && is_fatal_error(fn, new_fn, errhandler)) {
@@ -1423,7 +1422,7 @@ int search_monitor_rule(int rulenumber) {
 
 t_string get_monitor_system() {
 	if (current.monitor_rule != 0) {
-		return string_copy(extract_last_part(current.monitor_rule->name));
+		return string_copy(current.monitor_rule->name + 19);
 	}
 	return 0;
 }
@@ -1565,7 +1564,7 @@ t_flags get_notify_flag(t_notify_events event) {
 	sprintf(s, "nut.upsmon.notifyflag.%s", s2);
 	t = tree_search(conf, s, TRUE);
 	free(s);
-	if (t != 0  || t->type != string_type) {
+	if ((t != 0)  && (t->type == string_type)) {
 		current.rights_out = t->right;
 		return string_to_flag(t->value.string_value);
 	}
@@ -1720,7 +1719,7 @@ void set_hostsync(int value) {
 int get_minsupplies() {
 	t_tree t;
 	
-	t = tree_search(conf, "nut.upsmon.minsupply", TRUE);
+	t = tree_search(conf, "nut.upsmon.minsupplies", TRUE);
 	if (t == 0) return 0;
 	if (t->type == string_type) {
 		current.rights_out = t->right;
