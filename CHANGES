@@ -1,3 +1,13 @@
+Thu Aug 31 15:07:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
+
+ - drivers/mains.c : some bugs corrected
+ - lib/libupsconfig.c : now allow, when a list of string is expected for a variable, to pu a string
+   this string will be considered as a list of string with only one element. this will probably prevent
+   a lot of wondering from the users, being more flexible. ( and with only one element, it is perhaps more
+   natural to put something like allowfrom = "localhost" than allowfrom = { "localhost" }. Moreover, the
+   users won't have to know if the variable need a list or not : if they have only one value, they can alway use string,
+   if they have more than one, it is obvious it is a list of string that is needed ^_^
+
 Thu Aug 31 11:31:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
 
  - lib/libupsconfig.ch : added the function get_comments_templates

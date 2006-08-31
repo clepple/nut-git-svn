@@ -303,7 +303,7 @@ void read_upsconf(void)
 		if (chroot_path)
 			free(chroot_path);
 
-		chroot_path = value.value.string_value;
+		chroot_path = strdup(value.value.string_value);
 	} 
 	
 	value = get_variable("nut.ups.global.user");
@@ -311,7 +311,7 @@ void read_upsconf(void)
 		if (user)
 			free(user);
 
-		user = value.value.string_value;
+		user = strdup(value.value.string_value);
 	}
 	
 	

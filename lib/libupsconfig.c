@@ -1135,7 +1135,11 @@ t_enum_string get_allowfrom() {
 		sprintf( s, "%s.allowfrom", current.user->name);
 		t = tree_search(conf, s, TRUE);
 		free(s);
-		if (t == 0  || t->type != enum_string_type) return 0;
+		if (t == 0 ) return 0;
+		if ( t->type == string_type ) {
+			current.rights_out = t->right;
+			return add_to_enum_string( 0, t->value.string_value);
+		}
 		if (t->type == enum_string_type) {
 			current.rights_out = t->right;
 			return enum_string_copy(t->value.enum_string_value);
@@ -1170,7 +1174,11 @@ t_enum_string get_actions() {
 		sprintf( s, "%s.actions", current.user->name);
 		t = tree_search(conf, s, TRUE);
 		free(s);
-		if (t == 0  || t->type != enum_string_type) return 0;
+		if (t == 0 ) return 0;
+		if ( t->type == string_type ) {
+			current.rights_out = t->right;
+			return add_to_enum_string( 0, t->value.string_value);
+		}
 		if (t->type == enum_string_type) {
 			current.rights_out = t->right;
 			return enum_string_copy(t->value.enum_string_value);
@@ -1205,7 +1213,11 @@ t_enum_string get_instcmds() {
 		sprintf( s, "%s.instcmds", current.user->name);
 		t = tree_search(conf, s, TRUE);
 		free(s);
-		if (t == 0  || t->type != enum_string_type) return 0;
+		if (t == 0 ) return 0;
+		if ( t->type == string_type ) {
+			current.rights_out = t->right;
+			return add_to_enum_string( 0, t->value.string_value);
+		}
 		if (t->type == enum_string_type) {
 			current.rights_out = t->right;
 			return enum_string_copy(t->value.enum_string_value);
@@ -1297,7 +1309,11 @@ t_enum_string get_accept() {
 	t_tree t;
 	
 	t = tree_search(conf, "nut.upsd.accept", TRUE);
-	if (t == 0  || t->type != enum_string_type) return 0;
+	if (t == 0 ) return 0;
+	if ( t->type == string_type ) {
+			current.rights_out = t->right;
+			return add_to_enum_string( 0, t->value.string_value);
+		}
 	if (t->type == enum_string_type) {
 		current.rights_out = t->right;
 		return enum_string_copy(t->value.enum_string_value);
@@ -1317,7 +1333,11 @@ t_enum_string get_reject() {
 	t_tree t;
 	
 	t = tree_search(conf, "nut.upsd.reject", TRUE);
-	if (t == 0  || t->type != enum_string_type) return 0;
+	if (t == 0) return 0;
+	if ( t->type == string_type ) {
+			current.rights_out = t->right;
+			return add_to_enum_string( 0, t->value.string_value);
+		}
 	if (t->type == enum_string_type) {
 		current.rights_out = t->right;
 		return enum_string_copy(t->value.enum_string_value);
