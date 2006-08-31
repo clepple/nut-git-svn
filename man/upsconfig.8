@@ -4,6 +4,8 @@ upsconfig \- simple UPS configuration tool
 .SH SYNOPSIS
 .B upsconfig \-h
 
+.B upsconfig \-g <varname>
+
 .B upsconfig \-d <driver> [\-m <mode>] [\-p <port>] [\-t <target_dir>] [\-b <base_config_dir>] [\-u <upsd_server>] [\-s] [\-h]
 
 .SH DESCRIPTION
@@ -23,6 +25,10 @@ to be commented.
 
 .IP "\-d \fIdriver\fR, \-\-driver \fIdriver\fR"
 The driver which support your UPS. this option is mandatory
+
+.IP "\-g \fIvarname\fR, \-\-get \fIvarname\fR"
+Return the value of the variable \fIvarname\fR in the current configuration file.
+Return Undefined if this variable doesn't exist or doesn't has value.
 
 .IP "\-h, \-\-help"
 Display the help text.

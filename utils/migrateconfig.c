@@ -364,7 +364,7 @@ int parse_users() {
 	return 1;
 }
 
-static int parse_upsd_conf_args(int numargs, char **arg, t_enum_string accept_list, t_enum_string reject_list)
+static int parse_upsd_conf_args(int numargs, char **arg, t_enum_string *accept_list, t_enum_string *reject_list)
 {
 	t_enum_string enum_string;
 	int i;
@@ -401,7 +401,7 @@ static int parse_upsd_conf_args(int numargs, char **arg, t_enum_string accept_li
 	if (!strcmp(arg[0], "ACCEPT")) {
 		enum_string = get_accept();
 		for (i = 1; i < numargs; i++) {
-			accept_list = add_to_enum_string(accept_list, arg[i]);
+			*accept_list = add_to_enum_string(*accept_list, arg[i]);
 		}
 		return 1;
 	}
@@ -411,7 +411,7 @@ static int parse_upsd_conf_args(int numargs, char **arg, t_enum_string accept_li
 		enum_string = get_reject();
 		for (i = 1; i < numargs; i++) {
 			if ( strcmp(arg[i], "all") == 0 ) continue; 
-			reject_list = add_to_enum_string(reject_list, arg[i]);
+			*reject_list = add_to_enum_string(*reject_list, arg[i]);
 		}
 		return 1;
 	}
@@ -467,7 +467,7 @@ int parse_upsd() {
 		if (ctx.numargs < 1)
 			continue;
 
-		if (!parse_upsd_conf_args(ctx.numargs, ctx.arglist, accept_list, reject_list)) {
+		if (!parse_upsd_conf_args(ctx.numargs, ctx.arglist, &accept_list, &reject_list)) {
 			unsigned int	i;
 			char	errmsg[SMALLBUF];
 
@@ -631,18 +631,16 @@ static int parse_upsmon_arg(int numargs, char **arg)
 		if (ep) {
 			*ep = '\0';
 			add_monitor_rule(arg[1], ep+1, atoi(arg[2]), arg[3]);
-			if (mode == net_client) {
-				if (strcmp(arg[5], "master") == 0) {
-					add_user(arg[3], upsmon_master, "!");
-					set_rights(admin_rw);
-					set_password(arg[4]);
-					set_rights(all_r_admin_rw);
-				} else {
-					add_user(arg[3], upsmon_slave, "!");
-					set_rights(admin_rw);
-					set_password(arg[4]);
-					set_rights(all_r_admin_rw);
-				}
+			if (strcmp(arg[5], "master") == 0) {
+				add_user(arg[3], upsmon_master, "!");
+				set_rights(admin_rw);
+				set_password(arg[4]);
+				set_rights(all_r_admin_rw);
+			} else {
+				add_user(arg[3], upsmon_slave, "!");
+				set_rights(admin_rw);
+				set_password(arg[4]);
+				set_rights(all_r_admin_rw);
 			}
 			return 1;
 		}
@@ -750,9 +748,9 @@ int main (int argc, char** argv) {
 	set_mode(mode);
 	
 	ups = parse_ups();
+	upsmon = parse_upsmon();
 	users = parse_users();
 	upsd = parse_upsd();
-	upsmon = parse_upsmon();
 	
 	/* Generate the name of the comments file to use */
 	

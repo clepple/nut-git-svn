@@ -16,7 +16,9 @@ void print_error(const char* errtxt) {
 
 void print_usage() {
 	printf("usage : upsconfig -d <driver> [-m <mode>] [-p <port>] [-t <target_dir>]\n");
-	printf("                  [-b <base_config_dir>] [-u <upsd_server>] [-s] [-h]\n");
+	printf("                  [-b <base_config_dir>] [-u <upsd_server>] [-s]\n");
+	printf("        upsconfig -g <variable name>\n");
+	printf("        upsconfig -h\n");
 	printf("-d, --driver            The driver which support the ups\n");
 	printf("-m, --mode              The mode to run NUT in. standalone | net_server |\n");
 	printf("                        net_client | pm | none.\n");
@@ -29,6 +31,7 @@ void print_usage() {
 	printf("-u, --upsd_server       Where is the upsd server, in host[:port] format\n");
 	printf("                        Use it for net_client configuration. Default is\n");
 	printf("                        \"localhost\"\n");
+	printf("-g, --get               get the value of the given variable in configuration file\n");
 	printf("-s, --single            Save the configuration in a single file\n");
 	printf("-q, --quiet             Don't print anything apart errors\n");
 	printf("-h, --help              Show this help message\n");
@@ -43,8 +46,11 @@ int main (int argc, char** argv)  {
 	t_string target_dir = 0;
 	t_string base_config_dir;
 	t_string server = "localhost";
+	t_string variable = 0;
 	boolean single = FALSE;
 	boolean quiet = FALSE;
+	boolean get = FALSE;
+	t_typed_value value;
 	int i;
 	t_string conf_file, comm_file, s;
 	FILE* test;
@@ -125,6 +131,17 @@ int main (int argc, char** argv)  {
 			}
 			continue;
 		}
+		if (strcmp(argv[i], "-g") == 0 || strcmp(argv[i], "--get") == 0) {
+			if (i != argc - 1) {
+				variable = string_copy(argv[++i]);
+				get = TRUE;
+			} else {
+				print_error("\"get\" option used without parameter");
+				print_usage();
+				exit(EXIT_FAILURE);
+			}
+			continue;
+		}
 		if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--single") == 0) {
 			single = TRUE;
 			continue;
@@ -139,63 +156,87 @@ int main (int argc, char** argv)  {
 		}
 	}
 	
-	/* Some parameters are mandatory */
-	if (driver == 0 && mode != pm && mode != no_mode && mode != net_client) {
-		print_error("\"driver\" option is mandatory");
-		print_usage();
-		exit(EXIT_FAILURE);
-	}
+	if (get) {
+		conf_file = xmalloc(sizeof(char) * (strlen(CONFPATH) + 10));
+		sprintf(conf_file, "%s/nut.conf", CONFPATH);
+	} else {
+		/* Some parameters are mandatory */
+		if (driver == 0 && mode != pm && mode != no_mode && mode != net_client) {
+			print_error("\"driver\" option is mandatory");
+			print_usage();
+			exit(EXIT_FAILURE);
+		}
 	
-	if (mode == net_client && server == 0) {
-		print_error("\"upsd_server\" option is mandatory when in net_client mode");
-		print_usage();
-		exit(EXIT_FAILURE);
-	}
+		if (mode == net_client && server == 0) {
+			print_error("\"upsd_server\" option is mandatory when in net_client mode");
+			print_usage();
+			exit(EXIT_FAILURE);
+		}
 	
 	
-	/* Generate the name of the template file to use */
-	conf_file = xmalloc(sizeof(char) * (strlen(base_config_dir) + 10));
-	sprintf(conf_file, "%s/nut.conf", base_config_dir);
+		/* Generate the name of the template file to use */
+		conf_file = xmalloc(sizeof(char) * (strlen(base_config_dir) + 10));
+		sprintf(conf_file, "%s/nut.conf", base_config_dir);
 	
-	/* Generate the name of the comments file to use */
-	s = xmalloc(sizeof(char) * 20);
-	strcpy(s, getenv("LANG"));
-	s[5] = 0;
+		/* Generate the name of the comments file to use */
+		s = xmalloc(sizeof(char) * 20);
+		strcpy(s, getenv("LANG"));
+		s[5] = 0;
 	
-	comm_file = xmalloc(sizeof(char) * (strlen(base_config_dir) + strlen(s) + 30));
-	sprintf(comm_file, "%s/comments/conf.comments.%s", base_config_dir, s);
-	
-	test = fopen(comm_file, "r");
-		
-	if (test == 0) {
-		s[2] = 0;
+		comm_file = xmalloc(sizeof(char) * (strlen(base_config_dir) + strlen(s) + 30));
 		sprintf(comm_file, "%s/comments/conf.comments.%s", base_config_dir, s);
+		
 		test = fopen(comm_file, "r");
+		
 		if (test == 0) {
-			sprintf(comm_file, "%s/comments/conf.comments.C", base_config_dir);
+			s[2] = 0;
+			sprintf(comm_file, "%s/comments/conf.comments.%s", base_config_dir, s);
 			test = fopen(comm_file, "r");
 			if (test == 0) {
-				free(comm_file);
-				comm_file = 0;
+				sprintf(comm_file, "%s/comments/conf.comments.C", base_config_dir);
+				test = fopen(comm_file, "r");
+				if (test == 0) {
+					free(comm_file);
+					comm_file = 0;
+				}
 			}
 		}
-	}
+		free(s);
+		if (test != 0) {
+			fclose(test);
+		}
 
-	free(base_config_dir);
-	free(s);
+		free(base_config_dir);
 
-	if (test != 0) {
-		fclose(test);
-	}
 	
-	/* Load and modify the configuration from the template */
-	if (!quiet) {
-		printf("\nLoading the base configuration from template %s\n\n", conf_file);
+		/* Load and modify the configuration from the template */
+		if (!quiet) {
+			printf("\nLoading the base configuration from template %s\n\n", conf_file);
+		}
 	}
 	
 	if (!load_config(conf_file, 0)) {
 		/* An errors occured, aborting */
 		exit(EXIT_FAILURE);
+	}
+	
+	if (get) {
+		value = get_variable(variable);
+		if (!value.has_value) {
+			printf("Undefined\n");
+			drop_config();
+			exit(EXIT_SUCCESS);
+		}
+		if (value.type == string_type) {
+			printf("%s\n", value.value.string_value); 
+			drop_config();
+			exit(EXIT_SUCCESS);
+		}
+		if (value.type == enum_string_type) {
+			printf("%s\n", enum_string_to_string(value.value.enum_string_value)); 
+		}
+		drop_config();
+		exit(EXIT_SUCCESS);
 	}
 	
 	/* Set the mode */

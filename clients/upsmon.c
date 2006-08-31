@@ -1161,7 +1161,7 @@ static void loadconfig(void)
 	}
 	
 	/* minsupplies */
-	if (get_minsupplies() != 0) {
+	if (get_minsupplies() != -1) {
 		minsupplies = get_minsupplies();
 	}
 

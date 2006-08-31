@@ -755,7 +755,7 @@ void set_notify_command(t_string command);
 /**
  * Return the time upsmon wait before declaring an UPS "dead" when it cannot connect to upsd
  * 
- * @return The time
+ * @return The time, or -1 if not or badly specified
  */
 int get_deadtime();
 
@@ -769,7 +769,7 @@ void set_deadtime(int value);
 /**
  * Return the last sleep interval before shutting down the system
  *  
- * @return The time
+ * @return The time, or -1 if not or badly specified
  */
 int get_finaldelay();
 
@@ -783,7 +783,7 @@ void set_finaldelay(int value);
 /**
  * Return how long upsmon will wait before giving up on another upsmon
  *  
- * @return The time
+ * @return The time, or -1 if not or badly specified
  */
 int get_hostsync();
 
@@ -797,7 +797,7 @@ void set_hostsync(int value);
 /**
  * Return the minimum number power supplies needed to run the computer
  *  
- * @return The minimum number of power supplies
+ * @return The minimum number of power supplies, or -1 if not or badly specified
  */
 int get_minsupplies();
 
@@ -811,7 +811,7 @@ void set_minsupplies(int value);
 /**
  * Return the time upsmon wait between two warning of "no communication"
  *  
- * @return The time
+ * @return The time, or -1 if not or badly specified
  */
 int get_nocommwarntime();
 
@@ -825,7 +825,7 @@ void set_nocommwarntime(int value);
 /**
  * Return the time upsmon wait between two warning of "replace battery"
  *  
- * @return The time
+ * @return The time, or -1 if not or badly specified
  */
 int get_rbwarntime();
 
@@ -839,7 +839,7 @@ void set_rbwarntime(int value);
 /**
  * Return the time between two polling in normal activity
  *  
- * @return The time
+ * @return The time, or -1 if not or badly specified
  */
 int get_pollfreq();
 
@@ -853,7 +853,7 @@ void set_pollfreq(int value);
 /**
  * Return the time between two polling when UPS is on battery
  *  
- * @return The time
+ * @return The time, or -1 if not or badly specified
  */
 int get_pollfreqalert();
 

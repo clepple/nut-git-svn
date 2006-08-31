@@ -116,10 +116,9 @@ void drop_config() {
  *                 SAVING SECTION                  *
  ***************************************************/
 
-static void write_section( t_string section, t_string filename, FILE* comm_file, void errhandler(const char*)) {	
+static void write_section( t_string section, t_string filename, FILE* comm_file, boolean is_root_user, void errhandler(const char*)) {	
 	FILE* conf_file;
 	t_tree son;
-	boolean is_root_user = FALSE;
 	struct group* grp;
 	
 	conf_file = open_file( filename, "w", errhandler);
@@ -322,16 +321,16 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				chmod(nut_conf, S_IRUSR | S_IWUSR | S_IRGRP);
 				
 				sprintf(s, "%s/ups.conf", directory_dest);
-				write_section("nut.ups", s, comm_file, errhandler);
+				write_section("nut.ups", s, comm_file, is_root_user, errhandler);
 				
 				sprintf(s, "%s/users.conf", directory_dest);
-				write_section("nut.users", s, comm_file, errhandler);
+				write_section("nut.users", s, comm_file, is_root_user, errhandler);
 
 				sprintf(s, "%s/upsd.conf", directory_dest);
-				write_section("nut.upsd", s, comm_file, errhandler);
+				write_section("nut.upsd", s, comm_file, is_root_user, errhandler);
 
 				sprintf(s, "%s/upsmon.conf", directory_dest);
-				write_section("nut.upsmon", s, comm_file, errhandler);
+				write_section("nut.upsmon", s, comm_file, is_root_user, errhandler);
 
 				
 				free(s);
@@ -368,16 +367,16 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				chmod(nut_conf, S_IRUSR | S_IWUSR | S_IRGRP);
 				
 				sprintf(s, "%s/ups.conf", directory_dest);
-				write_section("nut.ups", s, comm_file, errhandler);
+				write_section("nut.ups", s, comm_file, is_root_user, errhandler);
 				
 				sprintf(s, "%s/users.conf", directory_dest);
-				write_section("nut.users", s, comm_file, errhandler);
+				write_section("nut.users", s, comm_file, is_root_user, errhandler);
 
 				sprintf(s, "%s/upsd.conf", directory_dest);
-				write_section("nut.upsd", s, comm_file, errhandler);
+				write_section("nut.upsd", s, comm_file, is_root_user, errhandler);
 
 				sprintf(s, "%s/upsmon.conf", directory_dest);
-				write_section("nut.upsmon", s, comm_file, errhandler);
+				write_section("nut.upsmon", s, comm_file, is_root_user, errhandler);
 				
 				
 				free(s);
@@ -409,10 +408,10 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				chmod(nut_conf, S_IRUSR | S_IWUSR | S_IRGRP);
 				
 				sprintf(s, "%s/users.conf", directory_dest);
-				write_section("nut.users", s, comm_file, errhandler);
+				write_section("nut.users", s, comm_file, is_root_user, errhandler);
 
 				sprintf(s, "%s/upsmon.conf", directory_dest);
-				write_section("nut.upsmon", s, comm_file, errhandler);
+				write_section("nut.upsmon", s, comm_file, is_root_user, errhandler);
 				
 				free(s);
 				break;
@@ -493,7 +492,7 @@ t_typed_value get_variable(t_string varname) {
 	t_tree t;
 	t_typed_value value;
 	
-	if (current.ups != 0 && varname != 0) {
+	if (varname != 0) {
 		t = tree_search(conf, varname, TRUE);
 		if (t == 0) {
 			value.has_value = FALSE;
@@ -1650,7 +1649,7 @@ int get_deadtime() {
 		current.rights_out = t->right;
 		return atoi(t->value.string_value);
 	}
-	return 0;
+	return -1;
 }
 
 
@@ -1675,7 +1674,7 @@ int get_finaldelay() {
 		current.rights_out = t->right;
 		return atoi(t->value.string_value);
 	}
-	return 0;
+	return -1;
 }
 
 
@@ -1700,7 +1699,7 @@ int get_hostsync() {
 		current.rights_out = t->right;
 		return atoi(t->value.string_value);
 	}
-	return 0;
+	return -1;
 }
 
 
@@ -1725,7 +1724,7 @@ int get_minsupplies() {
 		current.rights_out = t->right;
 		return atoi(t->value.string_value);
 	}
-	return 0;
+	return -1;
 }
 
 
@@ -1750,7 +1749,7 @@ int get_nocommwarntime() {
 		current.rights_out = t->right;
 		return atoi(t->value.string_value);
 	}
-	return 0;
+	return -1;
 }
 
 
@@ -1775,7 +1774,7 @@ int get_rbwarntime() {
 		current.rights_out = t->right;
 		return atoi(t->value.string_value);
 	}
-	return 0;
+	return -1;
 }
 
 
@@ -1800,7 +1799,7 @@ int get_pollfreq() {
 		current.rights_out = t->right;
 		return atoi(t->value.string_value);
 	}
-	return 0;
+	return -1;
 }
 
 
@@ -1825,7 +1824,7 @@ int get_pollfreqalert() {
 		current.rights_out = t->right;
 		return atoi(t->value.string_value);
 	}
-	return 0;
+	return -1;
 }
 
 
@@ -1849,7 +1848,7 @@ t_string get_powerdownflag() {
 		current.rights_out = t->right;
 		return string_copy(t->value.string_value);
 	}
-	return 0;
+	return -1;
 }
 
 

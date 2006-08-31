@@ -1,3 +1,12 @@
+Thu Aug 31 09:25:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
+
+ - clients/upsmon.c : correction of a little bug
+ - lib/libupsconfig.ch : function that returns integer now return -1 if they failed, not 0 (because 0 can be a valide value)
+ - utils/migrateconfig.c : some minor modifications
+ - utils/upsconfig.c : added the -g option, to get the value of a variable in the configuration file. (for instance to get the powerdownflag in shutdown script)
+ - man/upsconfig.8 : added the -g option
+ - server/user.c : correction of some bugs
+
 Tue Aug 29 10:11:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
 
  - lib/libupsconfig.ch : disabled the saving in configuration

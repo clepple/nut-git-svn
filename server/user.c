@@ -118,8 +118,10 @@ static void user_password(char *pw)
 		return;
 	}
 
-	if (!pw)
+	if (!pw) {
+		upslogx(LOG_WARNING, "Ignoring null password definition");
 		return;
+	}
 
 	if (curr_user->password) {
 		fprintf(stderr, "Ignoring duplicate password for %s\n", 
@@ -469,13 +471,12 @@ void read_users(void)
 		
 		pw = get_password();
 		
-		if (pw = 0 || strlen(pw) == 0 || strcmp(pw, "!") == 0) {
+		if (pw == 0 || strlen(pw) == 0 || strcmp(pw, "!") == 0) {
 			upslogx(LOG_ERR, "Invalid password for user %s. Ignoring the user", users->value);
 			users = users->next_value;
 			continue;
 		}
 		user_add(users->value);
-		
 		
 		user_password(pw);
 		
@@ -509,14 +510,12 @@ void read_users(void)
 				/* Add default actions for admin type */
 				user_add_action("SET");
 				/* Add defaults instcmds for admin type */
-				user_add_instcmd("all");
+				user_add_instcmd("ALL");
 				break;
 			case upsmon_master :
-				user_add_action("FSD");
 				set_upsmon_type("master");
 				break;
 			case upsmon_slave :
-				user_add_action("FSD");
 				set_upsmon_type("slave");
 				break;
 			default : ;
