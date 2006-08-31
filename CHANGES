@@ -1,3 +1,8 @@
+Thu Aug 31 90:57:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
+
+ - lib/libupsconfig.c : Arnaud defined what need to be saved in configuration file
+   when in mode "pm". Modified the code accordingly.
+
 Thu Aug 31 09:25:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
 
  - clients/upsmon.c : correction of a little bug

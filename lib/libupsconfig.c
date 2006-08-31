@@ -418,6 +418,7 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 				
 			case pm :
 				write_desc("nut", conf_file, comm_file);
+				s = xmalloc(sizeof(char) * ( 50 + strlen(directory_dest)));
 				write_desc("nut.mode", conf_file, comm_file);
 				fwrite("mode = \"pm\"\n\n", 13, 1, conf_file);
 				fclose(conf_file);
@@ -429,6 +430,11 @@ int save_config(t_string directory_dest, t_string comm_filename, boolean single,
 					chown(nut_conf, getpwnam("root")->pw_uid, grp->gr_gid);
 				}
 				chmod(nut_conf, S_IRUSR | S_IWUSR | S_IRGRP);
+				
+				sprintf(s, "%s/ups.conf", directory_dest);
+				write_section("nut.ups", s, comm_file, is_root_user, errhandler);
+				
+				free(s);
 				break;
 				
 			case no_mode :
@@ -1848,7 +1854,7 @@ t_string get_powerdownflag() {
 		current.rights_out = t->right;
 		return string_copy(t->value.string_value);
 	}
-	return -1;
+	return 0;
 }
 
 
