@@ -45,6 +45,7 @@ int main (int argc, char** argv)  {
 	t_string port = "auto";
 	t_string target_dir = 0;
 	t_string base_config_dir;
+	t_string comments_dir;
 	t_string server = "localhost";
 	t_string variable = 0;
 	boolean single = FALSE;
@@ -53,7 +54,6 @@ int main (int argc, char** argv)  {
 	t_typed_value value;
 	int i;
 	t_string conf_file, comm_file, s;
-	FILE* test;
 	
 	
 	/* Value by default */
@@ -172,49 +172,25 @@ int main (int argc, char** argv)  {
 			print_usage();
 			exit(EXIT_FAILURE);
 		}
-	
-	
+		
 		/* Generate the name of the template file to use */
 		conf_file = xmalloc(sizeof(char) * (strlen(base_config_dir) + 10));
 		sprintf(conf_file, "%s/nut.conf", base_config_dir);
 	
-		/* Generate the name of the comments file to use */
-		s = xmalloc(sizeof(char) * 20);
-		strcpy(s, getenv("LANG"));
-		s[5] = 0;
-	
-		comm_file = xmalloc(sizeof(char) * (strlen(base_config_dir) + strlen(s) + 30));
-		sprintf(comm_file, "%s/comments/conf.comments.%s", base_config_dir, s);
+		/* Generate the name of the comments file to use */	
+		comments_dir = xmalloc(sizeof(char) * (strlen(base_config_dir) + 10));
+		sprintf(comments_dir, "%s/comments", base_config_dir);
+		comm_file = get_comments_template(comments_dir);
 		
-		test = fopen(comm_file, "r");
-		
-		if (test == 0) {
-			s[2] = 0;
-			sprintf(comm_file, "%s/comments/conf.comments.%s", base_config_dir, s);
-			test = fopen(comm_file, "r");
-			if (test == 0) {
-				sprintf(comm_file, "%s/comments/conf.comments.C", base_config_dir);
-				test = fopen(comm_file, "r");
-				if (test == 0) {
-					free(comm_file);
-					comm_file = 0;
-				}
-			}
-		}
-		free(s);
-		if (test != 0) {
-			fclose(test);
-		}
 
 		free(base_config_dir);
 
-	
-		/* Load and modify the configuration from the template */
 		if (!quiet) {
 			printf("\nLoading the base configuration from template %s\n\n", conf_file);
 		}
 	}
-	
+
+	/* Load the configuration */	
 	if (!load_config(conf_file, 0)) {
 		/* An errors occured, aborting */
 		exit(EXIT_FAILURE);
@@ -238,6 +214,8 @@ int main (int argc, char** argv)  {
 		drop_config();
 		exit(EXIT_SUCCESS);
 	}
+	
+	/* Modify the template configuration */
 	
 	/* Set the mode */
 	set_mode(mode);

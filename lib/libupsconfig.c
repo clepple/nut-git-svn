@@ -549,6 +549,53 @@ t_enum_string get_variable_list(t_string path) {
 	return 0;
 }
 
+t_string get_comments_template(t_string directory) {
+	t_string s;
+	t_string comments_dir;
+	t_string comm_file;
+	FILE* test;
+	
+	if (directory == 0) {
+		comments_dir = xmalloc(sizeof(char) * (strlen(CONFPATH) + 34));
+		sprintf(comments_dir, "%s/base_config/comments", CONFPATH);
+	} else {
+		comments_dir = directory;
+	}
+	
+	/* Generate the name of the comments file to use */
+	s = xmalloc(sizeof(char) * 20);
+	strcpy(s, getenv("LANG"));
+	s[5] = 0;
+
+	comm_file = xmalloc(sizeof(char) * (strlen(comments_dir) + strlen(s) + 30));
+	sprintf(comm_file, "%s/conf.comments.%s", comments_dir, s);
+	
+	test = fopen(comm_file, "r");
+	
+	if (test == 0) {
+		s[2] = 0;
+		sprintf(comm_file, "%s/conf.comments.%s", comments_dir, s);
+		test = fopen(comm_file, "r");
+		if (test == 0) {
+			sprintf(comm_file, "%s/conf.comments.C", comments_dir);
+			test = fopen(comm_file, "r");
+			if (test == 0) {
+				free(comm_file);
+				comm_file = 0;
+			}
+		}
+	}
+	free(s);
+	if (test != 0) {
+		fclose(test);
+	}
+	if (directory == 0) {
+		free(comments_dir);
+	}
+	
+	return comm_file;
+}
+
 /***************************************************
  *                   UPS SECTION                   *
  ***************************************************/

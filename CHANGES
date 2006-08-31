@@ -1,3 +1,9 @@
+Thu Aug 31 11:31:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
+
+ - lib/libupsconfig.ch : added the function get_comments_templates
+ - utils/upsconfig.c : modified to use the function get_comments_templates
+ - utils/migrateconfig.c : modified to use the function get_comments_templates
+
 Thu Aug 31 90:57:00 UTC 2006 / Jonathan Dion <dion.jonathan@gmail.com>
 
  - lib/libupsconfig.c : Arnaud defined what need to be saved in configuration file

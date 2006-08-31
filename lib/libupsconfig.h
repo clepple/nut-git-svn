@@ -162,6 +162,16 @@ t_typed_value get_variable(t_string varname);
  */
 void set_variable(t_string varname, void* value, t_types type);
 
+/**
+ * Get the name of the best comment file to use, regarding the system locales
+ * 
+ * @param directory Where to seacrh comments files. Put 0 to use the standard directory
+ *                  (CONFPATH/base_config/comments)
+ * 
+ * @return The name of the file, or 0 if not any (or errors)
+ */
+t_string get_comments_template(t_string directory);
+
 
 /* *************************************************
  *                   UPS SECTION                   *

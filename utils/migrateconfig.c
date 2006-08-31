@@ -702,8 +702,7 @@ int parse_upsmon() {
 int main (int argc, char** argv) {
 	int option_index = 0, i;
 	int ups, users, upsd, upsmon;
-	t_string s, comm_file;
-	FILE* test;
+	t_string comm_file;
 	
 	if (argc == 1) {
 		print_usage();
@@ -753,31 +752,8 @@ int main (int argc, char** argv) {
 	upsd = parse_upsd();
 	
 	/* Generate the name of the comments file to use */
-	
-	
-	s = xmalloc(sizeof(char) * 20);
-	strcpy(s, getenv("LANG"));
-	s[5] = 0;
-	
-	comm_file = xmalloc(sizeof(char) * (strlen(comments_dir) + strlen(s) + 30));
-	sprintf(comm_file, "%s/conf.comments.%s", comments_dir, s);
-	
-	test = fopen(comm_file, "r");
+	comm_file = get_comments_template(comments_dir);
 		
-	if (test == 0) {
-		s[2] = 0;
-		sprintf(comm_file, "%s/conf.comments.%s", comments_dir, s);
-		test = fopen(comm_file, "r");
-		if (test == 0) {
-			sprintf(comm_file, "%s/conf.comments.C", comments_dir);
-			test = fopen(comm_file, "r");
-			if (test == 0) {
-				free(comm_file);
-				comm_file = 0;
-			}
-		}
-	}
-	
 	save_config(target_dir, comm_file, single, 0);
 	
 	drop_config();
