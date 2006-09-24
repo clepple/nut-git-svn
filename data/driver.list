@@ -365,6 +365,7 @@
 
 "SMS (Brazil)"	"Manager III"	""	"sms"
 
+"SOLA"	"305"	"cable INT-0025C"	"genericups upstype=7"
 "SOLA"	"325"	""	"bestups"
 "SOLA"	"520"	""	"bestups"
 "SOLA"	"610"	"use ID= in ups.conf"	"bestups"
@@ -396,7 +397,8 @@
 
 "Tripp-Lite"	"OMNIVS1000"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"OMNIVS1500XL"	"USB"	"tripplite_usb"
-"Tripp-Lite"	"SMART1500RM2U"	"USB"	"tripplite_usb"
+"Tripp-Lite"	"SMART1500RM2U"	"USB"	"tripplite_usb (experimental)"
+"Tripp-Lite"	"SMART2200RMXL2U"	"USB"	"tripplite_usb (experimental)"
 "Tripp-Lite"	"SmartUPS"	""	"tripplite"
 "Tripp-Lite"	"SmartOnline"	""	"tripplitesu"
 "Tripp-Lite"	"(various)"	"Lan 2.2 interface - black 73-0844 cable"	"genericups upstype=5"

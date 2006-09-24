@@ -27,6 +27,7 @@
 #include "belkin-hid.h"
 #include "extstate.h" /* for ST_FLAG_STRING */
 #include "dstate.h"   /* for STAT_INSTCMD_HANDLED */
+#include "main.h"     /* for getval() */
 #include "common.h"
 
 #define BELKIN_HID_VERSION      "Belkin HID 0.1"
@@ -384,6 +385,7 @@ static int belkin_claim(HIDDevice *hd) {
 	/* accept any known UPS - add devices here as needed */
 	case 0x0980:  /* F6C800-UNV */
 	case 0x0912:  /* F6C120-UNV */
+	case 0x0551:  /* F6C550-AVR */
 		return 1;
 
 	/* reject any known non-UPS */
