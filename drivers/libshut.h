@@ -1,16 +1,12 @@
 /*!
- * @file libusb.h
- * @brief HID Library - Generic USB backend for Generic HID Access (using MGE HIDParser)
+ * @file libshut.h
+ * @brief HID Library - Generic serial SHUT backend for Generic HID Access (using MGE HIDParser)
+ *        SHUT stands for Serial HID UPS Transfer, and was created by MGE UPS SYSTEMS
  *
- * @author Copyright (C)
- *	2003 - 2006 Arnaud Quette <aquette.dev@gmail.com>
- *      2005 Peter Selinger <selinger@users.sourceforge.net>
+ * @author Copyright (C) 2006
+ *	Arnaud Quette <aquette.dev@gmail.com>
  *
  * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
- *
- *      The logic of this file is ripped from mge-shut driver (also from
- *      Arnaud Quette), which is a "HID over serial link" UPS driver for
- *      Network UPS Tools <http://www.networkupstools.org/>
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License as published by
@@ -28,13 +24,23 @@
  *
  * -------------------------------------------------------------------------- */
 
-#ifndef LIBUSB_H
-#define LIBUSB_H
+#ifndef LIBSHUT_H
+#define LIBSHUT_H
 
-#include <usb.h> /* libusb header file */
 #include "libhid.h"
 
-extern communication_subdriver_t usb_subdriver;
+extern communication_subdriver_t shut_subdriver;
 
-#endif /* LIBUSB_H */
+/*!
+ * Notification levels
+ * These are however not processed currently
+ */
+#define OFF_NOTIFICATION	1	/* notification off */
+#define LIGHT_NOTIFICATION	2	/* light notification */
+#define COMPLETE_NOTIFICATION	3	/* complete notification for UPSs which do */
+					/* not support disabling it like some early */
+					/* Ellipse models */
+#define DEFAULT_NOTIFICATION COMPLETE_NOTIFICATION
+
+#endif /* LIBSHUT_H */
 

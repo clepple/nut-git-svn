@@ -1,8 +1,8 @@
 /*  tripplite-hid.c - data to monitor Tripp Lite USB/HID devices with NUT
  *
  *  Copyright (C)  
- *	2003 - 2005	Arnaud Quette <arnaud.quette@free.fr>
- *	2005		Peter Selinger <selinger@users.sourceforge.net>
+ *	2003 - 2005 Arnaud Quette <arnaud.quette@free.fr>
+ *	2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
  *
@@ -29,11 +29,11 @@
 #include "dstate.h"   /* for STAT_INSTCMD_HANDLED */
 #include "common.h"
 
-#define TRIPPLITE_HID_VERSION "TrippLite HID 0.0 (incomplete)"
+#define TRIPPLITE_HID_VERSION "TrippLite HID 0.1 (experimental)"
 
 #define TRIPPLITE_VENDORID 0x09ae 
 #define TRIPPLITE_HID_PRODUCTID 0x2005 
-/* not all Tripp Lite products are HID, some are "serial over USB" */
+/* not all Tripp Lite products are HID, some are "serial over USB". */
 
 /* --------------------------------------------------------------- */
 /*	Vendor-specific usage table */
@@ -44,15 +44,20 @@ static usage_lkp_t tripplite_usage_lkp[] = {
 	/* currently unknown: 
 	   ffff0010, 00ff0001, ffff007d, ffff00c0, ffff00c1, ffff00c2,
 	   ffff00c3, ffff00c4, ffff00c5, ffff00d2, ffff0091, ffff0092,
-	   ffff00c7, 0084004b, 008400d0 
-	*/
+	   ffff00c7 */
 
+	/* it looks like Tripp Lite confused pages 0x84 and 0x85 for the
+	   following 4 items, on some OMNI1000LCD devices. */
+	{ "TLCharging",				0x00840044 },  /* conflicts with HID spec! */
+	{ "TLDischarging",			0x00840045 },  /* conflicts with HID spec! */
+	{ "TLNeedReplacement",		0x0084004b },
+	{ "TLACPresent",				0x008400d0 },
 	{  "\0", 0x0 }
 };
 
 static usage_tables_t tripplite_utab[] = {
-	tripplite_usage_lkp,
-	hid_usage_lkp,
+	tripplite_usage_lkp, /* tripplite lookup table; make sure this is first */
+	hid_usage_lkp,       /* generic lookup table */
 	NULL,
 };
 
@@ -62,9 +67,21 @@ static usage_tables_t tripplite_utab[] = {
 
 /* HID2NUT lookup table */
 static hid_info_t tripplite_hid2nut[] = {
-	{ "UPS.BatterySystem.Battery.PresentStatus.Charging", 0, 1, "UPS.BatterySystem.Battery.PresentStatus.Charging", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "UPS.BatterySystem.Battery.PresentStatus.Discharging", 0, 1, "UPS.BatterySystem.Battery.PresentStatus.Discharging", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "UPS.BatterySystem.Battery.PresentStatus.NeedReplacement", 0, 1, "UPS.BatterySystem.Battery.PresentStatus.NeedReplacement", NULL, "%.0f", HU_FLAG_OK, NULL },
+
+#ifdef NEWHIDUPS_TRIPPLITE_DEBUG
+
+	/* duplicated variables, also: UPS.PowerSummary.PresentStatus.* */
+	{ "UPS.BatterySystem.Battery.PresentStatus.Charging", 0, 1, "UPS.BatterySystem.Battery.PresentStatus.Charging", NULL, "%.0f", HU_FLAG_OK, NULL }, 
+	{ "UPS.BatterySystem.Battery.PresentStatus.Discharging", 0, 1, "UPS.BatterySystem.Battery.PresentStatus.Discharging", NULL, "%.0f", HU_FLAG_OK, NULL }, 
+	{ "UPS.BatterySystem.Battery.PresentStatus.NeedReplacement", 0, 1, "UPS.BatterySystem.Battery.PresentStatus.NeedReplacement", NULL, "%.0f", HU_FLAG_OK, NULL }, 
+
+	/* uninteresting variables: CapacityMode is usually 2=percent; 
+      FullChargeCapacity is usually 100 */
+	{ "UPS.PowerSummary.CapacityMode", 0, 1, "UPS.PowerSummary.CapacityMode", NULL, "%.0f", HU_FLAG_OK, NULL },
+	{ "UPS.PowerSummary.FullChargeCapacity", 0, 1, "UPS.PowerSummary.FullChargeCapacity", NULL, "%.0f", HU_FLAG_OK, NULL },
+
+	/* more unmapped variables - meaning unknown */
+	{ "UPS.PowerConverter.PresentStatus.Used", 0, 1, "UPS.PowerConverter.PresentStatus.Used", NULL, "%.0f", HU_FLAG_OK, NULL },
 	{ "UPS.ffff0010.00ff0001.ffff007d", 0, 1, "UPS.ffff0010.00ff0001.ffff007d", NULL, "%.0f", HU_FLAG_OK, NULL },
 	{ "UPS.ffff0015.00ff0001.ffff00c0", 0, 1, "UPS.ffff0015.00ff0001.ffff00c0", NULL, "%.0f", HU_FLAG_OK, NULL },
 	{ "UPS.ffff0015.00ff0001.ffff00c1", 0, 1, "UPS.ffff0015.00ff0001.ffff00c1", NULL, "%.0f", HU_FLAG_OK, NULL },
@@ -73,29 +90,11 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "UPS.ffff0015.00ff0001.ffff00c4", 0, 1, "UPS.ffff0015.00ff0001.ffff00c4", NULL, "%.0f", HU_FLAG_OK, NULL },
 	{ "UPS.ffff0015.00ff0001.ffff00c5", 0, 1, "UPS.ffff0015.00ff0001.ffff00c5", NULL, "%.0f", HU_FLAG_OK, NULL },
 	{ "UPS.ffff0015.00ff0001.ffff00d2", 0, 1, "UPS.ffff0015.00ff0001.ffff00d2", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "UPS.Flow.ConfigFrequency", 0, 1, "UPS.Flow.ConfigFrequency", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "UPS.Flow.ConfigVoltage", 0, 1, "UPS.Flow.ConfigVoltage", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "UPS.OutletSystem.Outlet.DelayBeforeReboot", 0, 1, "UPS.OutletSystem.Outlet.DelayBeforeReboot", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "UPS.OutletSystem.Outlet.DelayBeforeShutdown", 0, 1, "UPS.OutletSystem.Outlet.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_OK, NULL },
 	{ "UPS.OutletSystem.Outlet.ffff0091", 0, 1, "UPS.OutletSystem.Outlet.ffff0091", NULL, "%.0f", HU_FLAG_OK, NULL },
 	{ "UPS.OutletSystem.Outlet.ffff0092", 0, 1, "UPS.OutletSystem.Outlet.ffff0092", NULL, "%.0f", HU_FLAG_OK, NULL },
 	{ "UPS.OutletSystem.Outlet.ffff00c7", 0, 1, "UPS.OutletSystem.Outlet.ffff00c7", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "UPS.PowerConverter.Input.Frequency", 0, 1, "UPS.PowerConverter.Input.Frequency", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "UPS.PowerConverter.PresentStatus.AwaitingPower", 0, 1, "UPS.PowerConverter.PresentStatus.AwaitingPower", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "UPS.PowerConverter.PresentStatus.InternalFailure", 0, 1, "UPS.PowerConverter.PresentStatus.InternalFailure", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "UPS.PowerConverter.PresentStatus.OverTemperature", 0, 1, "UPS.PowerConverter.PresentStatus.OverTemperature", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "UPS.PowerConverter.PresentStatus.Used", 0, 1, "UPS.PowerConverter.PresentStatus.Used", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "UPS.PowerConverter.PresentStatus.VoltageOutOfRange", 0, 1, "UPS.PowerConverter.PresentStatus.VoltageOutOfRange", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "UPS.PowerSummary.CapacityMode", 0, 1, "UPS.PowerSummary.CapacityMode", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "UPS.PowerSummary.FullChargeCapacity", 0, 1, "UPS.PowerSummary.FullChargeCapacity", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "UPS.PowerSummary.iManufacturer", 0, 1, "UPS.PowerSummary.iManufacturer", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "UPS.PowerSummary.iProduct", 0, 1, "UPS.PowerSummary.iProduct", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "UPS.PowerSummary.iSerialNumber", 0, 1, "UPS.PowerSummary.iSerialNumber", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "UPS.PowerSummary.PresentStatus.0084004b", 0, 1, "UPS.PowerSummary.PresentStatus.0084004b", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "UPS.PowerSummary.PresentStatus.008400d0", 0, 1, "UPS.PowerSummary.PresentStatus.008400d0", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "UPS.PowerSummary.PresentStatus.ConfigActivePower", 0, 1, "UPS.PowerSummary.PresentStatus.ConfigActivePower", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "UPS.PowerSummary.PresentStatus.ConfigPercentLoad", 0, 1, "UPS.PowerSummary.PresentStatus.ConfigPercentLoad", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "UPS.PowerSummary.Voltage", 0, 1, "UPS.PowerSummary.Voltage", NULL, "%.0f", HU_FLAG_OK, NULL },
+
+#endif /* NEWHIDUPS_TRIPPLITE_DEBUG */
 
 	/* Server side variables */
 	{ "driver.version.internal", ST_FLAG_STRING, sizeof(DRIVER_VERSION), NULL, NULL, DRIVER_VERSION, HU_FLAG_ABSENT | HU_FLAG_OK, NULL },
@@ -110,9 +109,10 @@ static hid_info_t tripplite_hid2nut[] = {
 	
 	/* UPS page */
 	{ "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.OutletSystem.Outlet.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_OK, NULL},
+	{ "ups.delay.reboot", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.OutletSystem.Outlet.DelayBeforeReboot", NULL, "%.0f", HU_FLAG_OK, NULL },
 	{ "ups.test.result", 0, 0, "UPS.BatterySystem.Test", NULL, "%s", HU_FLAG_OK, &test_read_info[0] },
 	{ "ups.beeper.status", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", HU_FLAG_OK, &beeper_info[0] },
-	{ "ups.power.nominal", 0, 0, "UPS.Flow.ConfigApparentPower", NULL, "%s", HU_FLAG_OK, NULL },
+	{ "ups.power.nominal", 0, 0, "UPS.Flow.ConfigApparentPower", NULL, "%.0f", HU_FLAG_OK, NULL },
 	
 	/* Special case: ups.status */
 	{ "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, "%.0f", HU_FLAG_OK, &online_info[0] },
@@ -123,18 +123,34 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, "%.0f", HU_FLAG_OK, &replacebatt_info[0] },
 	{ "ups.status", 0, 1, "UPS.PowerConverter.PresentStatus.Boost", NULL, "%.0f", HU_FLAG_OK, &boost_info[0] },
 	{ "ups.status", 0, 1, "UPS.PowerConverter.PresentStatus.Buck", NULL, "%.0f", HU_FLAG_OK, &trim_info[0] },
+
+	/* repeat some of the above for faulty usage codes (seen on OMNI1000LCD, untested) */
+	{ "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.TLACPresent", NULL, "%.0f", HU_FLAG_OK, &online_info[0] },
+	{ "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.TLDischarging", NULL, "%.0f", HU_FLAG_OK, &discharging_info[0] },
+	{ "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.TLCharging", NULL, "%.0f", HU_FLAG_OK, &charging_info[0] },
+	{ "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.TLNeedReplacement", NULL, "%.0f", HU_FLAG_OK, &replacebatt_info[0] },
+
+	/* Tripp Lite specific status flags (seen on OMNI1000LCD, untested) */
+	{ "ups.status", 0, 1, "UPS.PowerConverter.PresentStatus.OverTemperature", NULL, "%.0f", HU_FLAG_OK, &overheat_info[0] },
+	{ "ups.status", 0, 1, "UPS.PowerConverter.PresentStatus.AwaitingPower", NULL, "%.0f", HU_FLAG_OK, &awaitingpower_info[0] },
+	{ "ups.status", 0, 1, "UPS.PowerConverter.PresentStatus.InternalFailure", NULL, "%.0f", HU_FLAG_OK, &commfault_info[0] },
+	{ "ups.status", 0, 1, "UPS.PowerConverter.PresentStatus.VoltageOutOfRange", NULL, "%.0f", HU_FLAG_OK, &vrange_info[0] },
 	
 	/* Input page */
 	{ "input.voltage", 0, 0, "UPS.PowerConverter.Input.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
 	{ "input.voltage.nominal", 0, 0, "UPS.PowerSummary.Input.ConfigVoltage", NULL, "%.0f", HU_FLAG_OK, NULL },
+	{ "input.frequency", 0, 1, "UPS.PowerConverter.Input.Frequency", NULL, "%.1f", HU_FLAG_OK, NULL },
 	
 	/* Output page */
-	{ "output.voltage.target.line", 0, 0, "UPS.Flow.ConfigVoltage", NULL, "%.1f", HU_FLAG_OK, NULL },
+	{ "output.voltage", 0, 1, "UPS.PowerSummary.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
+	{ "output.voltage.nominal", 0, 0, "UPS.Flow.ConfigVoltage", NULL, "%.0f", HU_FLAG_OK, NULL },
+	{ "output.frequency.nominal", 0, 1, "UPS.Flow.ConfigFrequency", NULL, "%.0f", HU_FLAG_OK, NULL },
 	
+
 	/* instant commands. */
-	{ "test.battery.start.quick", 0, 0, "UPS.BatterySystem.Test", NULL, "1", HU_TYPE_CMD | HU_FLAG_OK, &test_write_info[0] }, /* TODO: lookup needed? */
-	{ "test.battery.start.deep", 0, 0, "UPS.BatterySystem.Test", NULL, "2", HU_TYPE_CMD | HU_FLAG_OK, &test_write_info[0] },
-	{ "test.battery.stop", 0, 0, "UPS.BatterySystem.Test", NULL, "3", HU_TYPE_CMD | HU_FLAG_OK, &test_write_info[0] },
+	{ "test.battery.start.quick", 0, 0, "UPS.BatterySystem.Test", NULL, "1", HU_TYPE_CMD | HU_FLAG_OK, &test_write_info[0] }, /* TODO: lookup needed? */ /* reported to work on OMNI1000 */
+	{ "test.battery.start.deep", 0, 0, "UPS.BatterySystem.Test", NULL, "2", HU_TYPE_CMD | HU_FLAG_OK, &test_write_info[0] }, /* reported not to work */
+	{ "test.battery.stop", 0, 0, "UPS.BatterySystem.Test", NULL, "3", HU_TYPE_CMD | HU_FLAG_OK, &test_write_info[0] }, /* reported not to work */
 	
 	{ "load.off", 0, 0, "UPS.OutletSystem.Outlet.DelayBeforeShutdown", NULL, "0", HU_TYPE_CMD | HU_FLAG_OK, NULL },
 	
@@ -186,10 +202,14 @@ static int tripplite_claim(HIDDevice *hd) {
 		if (hd->ProductID == TRIPPLITE_HID_PRODUCTID) {
 			return 1;
 		}
+		if (hd->ProductID == 0x1003) {
+         return 1;
+      }
 
-		upsdebugx(1, "This particular Tripp Lite device (%04x/%04x) is not (or perhaps not\n"
-			  "yet) supported by newhidups. First try the tripplite_usb driver. If\n"
-			  "this fails, please write to the NUT developer's mailing list.\n", 
+		upsdebugx(1, 
+"This particular Tripp Lite device (%04x/%04x) is not (or perhaps not\n"
+"yet) supported by newhidups. First try the tripplite_usb driver. If\n"
+"this fails, please write to the NUT developer's mailing list.\n", 
 			  hd->VendorID, hd->ProductID);
 	}
 	return 0;

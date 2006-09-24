@@ -1,4 +1,4 @@
-/* newhidups.c - Driver for serial/USB HID UPS units
+/* newhidups.c - Driver for USB and serial (MGE SHUT) HID UPS units
  * 
  * Copyright (C)
  *   2003-2005 Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
@@ -23,22 +23,34 @@
 
 #include "main.h"
 #include "libhid.h"
-#include "libusb.h"
 #include "newhidups.h"
+#ifdef SHUT_MODE
+	#include "libshut.h"
+#else
+	#include "libusb.h"
+#endif
 
 /* include all known subdrivers */
-#include "generic-hid.h"
 #include "mge-hid.h"
-#include "apc-hid.h"
-#include "belkin-hid.h"
+#ifndef SHUT_MODE
+	#include "generic-hid.h"
+	#include "apc-hid.h"
+	#include "belkin-hid.h"
+	#include "tripplite-hid.h"
+#endif
 
 /* master list of avaiable subdrivers */
 static subdriver_t *subdriver_list[] = {
+#ifndef SHUT_MODE
 	&generic_subdriver,
+#endif
 	&mge_subdriver,
+#ifndef SHUT_MODE
 	&apc_subdriver,
 	&belkin_subdriver,
+	&tripplite_subdriver,
 	NULL
+#endif
 };
 
 /* pointer to the active subdriver object (set in upsdrv_initups, then
@@ -54,13 +66,14 @@ static int pollfreq = DEFAULT_POLLFREQ;
 static int ups_status = 0;
 static bool data_has_changed = FALSE; /* for SEMI_STATIC data polling */
 static time_t lastpoll; /* Timestamp the last polling */
-usb_dev_handle *udev;
+hid_dev_handle *udev;
 
 /* support functions */
 static hid_info_t *find_nut_info(const char *varname);
 static hid_info_t *find_nut_info_valid(const char *varname);
 static hid_info_t *find_hid_info(const char *hidname);
 static char *hu_find_infoval(info_lkp_t *hid2info, long value);
+static long hu_find_valinfo(info_lkp_t *hid2info, const char* value);
 static void process_status_info(char *nutvalue);
 static void ups_status_set(void);
 static void identify_ups ();
@@ -83,12 +96,14 @@ status_lkp_t status_info[] = {
 	{ "boost", STATUS_BOOST },
 	{ "bypass", STATUS_BYPASS },
 	{ "off", STATUS_OFF },
-	{ "overhead", STATUS_OVERHEAT },
+	{ "overheat", STATUS_OVERHEAT },
 	{ "commfault", STATUS_COMMFAULT },
 	{ "depleted", STATUS_DEPLETED },
 	{ "timelimitexp", STATUS_TIMELIMITEXP },
 	{ "batterypres", STATUS_BATTERYPRES },
 	{ "fullycharged", STATUS_FULLYCHARGED },
+	{ "awaitingpower", STATUS_AWAITINGPOWER },
+	{ "vrange", STATUS_VRANGE },
 	{ NULL, 0 },
 };
 
@@ -160,6 +175,26 @@ info_lkp_t boost_info[] = {
   { 0, "!boost", NULL },
   { 0, "NULL", NULL }
 };
+info_lkp_t overheat_info[] = {
+  { 1, "overheat", NULL },
+  { 0, "!overheat", NULL },
+  { 0, "NULL", NULL }
+};
+info_lkp_t awaitingpower_info[] = {
+  { 1, "awaitingpower", NULL },
+  { 0, "!awaitingpower", NULL },
+  { 0, "NULL", NULL }
+};
+info_lkp_t commfault_info[] = {
+  { 1, "commfault", NULL },
+  { 0, "!commfault", NULL },
+  { 0, "NULL", NULL }
+};
+info_lkp_t vrange_info[] = {
+  { 1, "vrange", NULL },
+  { 0, "!vrange", NULL },
+  { 0, "NULL", NULL }
+};
 /* FIXME: extend ups.status for BYPASS Manual/Automatic */
 info_lkp_t bypass_info[] = {
   { 1, "bypass", NULL },
@@ -198,6 +233,18 @@ info_lkp_t beeper_info[] = {
   { 2, "enabled", NULL },
   { 3, "muted", NULL },
   { 0, "NULL", NULL }
+};
+
+info_lkp_t yes_no_info[] = {
+	{ 0, "no", NULL },
+	{ 1, "yes", NULL },
+	{ 0, "NULL", NULL }
+};
+
+info_lkp_t on_off_info[] = {
+	{ 0, "off", NULL },
+	{ 1, "on", NULL },
+	{ 0, "NULL", NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -239,8 +286,8 @@ info_lkp_t hex_conversion[] = {
    done with result! */
 static char *stringid_conversion_fun(long value) {
 	static char buf[20];
-	libusb_get_string(udev, value, buf);	
-	
+	comm_driver->get_string(udev, value, buf);	
+
 	return buf;
 }
 
@@ -261,10 +308,27 @@ info_lkp_t divide_by_10_conversion[] = {
 	{ 0, NULL, divide_by_10_conversion_fun }
 };
 
-/* ---------------------------------------------
- * subdriver matcher
- * --------------------------------------------- */
+/* returns statically allocated string - must not use it again before
+   done with result! */
+static char *kelvin_celsius_conversion_fun(long value) {
+	static char buf[20];
+	
+	/* we should be working with floats, not integers, but integers it
+	   is for now */
+	sprintf(buf, "%d", (int)(value - 273.15));
+	return buf;
+}
 
+info_lkp_t kelvin_celsius_conversion[] = {
+	{ 0, NULL, kelvin_celsius_conversion_fun }
+};
+
+/*!
+ * subdriver matcher: only useful for USB mode
+ * as SHUT is only supported by MGE UPS SYSTEMS units
+ */
+
+#ifndef SHUT_MODE
 static int match_function_subdriver(HIDDevice *d, void *privdata) {
 	int i;
 
@@ -282,6 +346,7 @@ static HIDDeviceMatcher_t subdriver_matcher_struct = {
 	NULL,
 };
 static HIDDeviceMatcher_t *subdriver_matcher = &subdriver_matcher_struct;
+#endif
 
 /* ---------------------------------------------
  * driver functions implementations
@@ -302,7 +367,7 @@ void upsdrv_shutdown(void)
 	/* enforce ondelay > offdelay */
 	if (ondelay <= offdelay) {
 		ondelay = offdelay + 1;
-		upsdebugx(2, "Ondelay must be greater than offdelay; setting ondelay = %d (offdelay = %d)", ondelay, offdelay);
+		upsdebugx(2, "ondelay must be greater than offdelay; setting ondelay = %d (offdelay = %d)", ondelay, offdelay);
 	}
 
 	/* Apply specific method */
@@ -319,7 +384,8 @@ int instcmd(const char *cmdname, const char *extradata)
 {
 	hid_info_t *hidups_item;
 	
-	upsdebugx(2, "entering instcmd(%s, %s)\n", cmdname, extradata);
+	upsdebugx(5, "entering instcmd(%s, %s)\n",
+		  cmdname, (extradata==NULL)?"":extradata);
 
 	/* Retrieve and check netvar & item_path */	
 	hidups_item = find_nut_info_valid(cmdname);
@@ -341,15 +407,16 @@ int instcmd(const char *cmdname, const char *extradata)
 	}
 	
 	/* Actual variable setting */
-	if (HIDSetItemValue(udev, hidups_item->hidpath, atol(hidups_item->dfl), subdriver->utab))
+	if (HIDSetItemValue(udev, hidups_item->hidpath,
+	    atol(hidups_item->dfl), subdriver->utab))
 	{
-		upsdebugx(3, "SUCCEED\n");
+		upsdebugx(5, "instcmd: SUCCEED\n");
 		/* Set the status so that SEMI_STATIC vars are polled */
 		data_has_changed = TRUE;
 		return STAT_INSTCMD_HANDLED;
 	}
 	else
-		upsdebugx(3, "FAILED\n"); /* TODO: HANDLED but FAILED, not UNKNOWN! */
+		upsdebugx(3, "instcmd: FAILED\n"); /* TODO: HANDLED but FAILED, not UNKNOWN! */
 	
 	/* TODO: to be completed */
 	return STAT_INSTCMD_UNKNOWN;
@@ -359,8 +426,9 @@ int instcmd(const char *cmdname, const char *extradata)
 int setvar(const char *varname, const char *val)
 {
 	hid_info_t *hidups_item;
-	
-	upsdebugx(2, "entering setvar(%s, %s)\n", varname, val);
+	long newvalue;
+
+	upsdebugx(5, "entering setvar(%s, %s)\n", varname, val);
 	
 	/* 1) retrieve and check netvar & item_path */	
 	hidups_item = find_nut_info(varname);
@@ -396,11 +464,17 @@ int setvar(const char *varname, const char *val)
 		}
 	}
 
+	/* Lookup the new value if needed */
+	if (hidups_item->hid2info != NULL)
+		newvalue = hu_find_valinfo(hidups_item->hid2info, val);
+	else
+		newvalue = atol(val);
+
 	/* Actual variable setting */
-	if (HIDSetItemValue(udev, hidups_item->hidpath, atol(val), subdriver->utab))
+	if (HIDSetItemValue(udev, hidups_item->hidpath, newvalue, subdriver->utab))
 	{
 		/* FIXME: GetValue(hidups_item->hidpath) to ensure success on non volatile */
-		upsdebugx(3, "SUCCEED\n");
+		upsdebugx(5, "setvar: SUCCEED\n");
 		/* Delay a bit not to flood the device */
 		sleep(1);
 		/* Set the status so that SEMI_STATIC vars are polled */
@@ -408,7 +482,7 @@ int setvar(const char *varname, const char *val)
 		return STAT_SET_HANDLED;
 	}
 	else
-		upsdebugx(3, "FAILED\n"); /* FIXME: HANDLED but FAILED, not UNKNOWN! */
+		upsdebugx(3, "setvar: FAILED\n"); /* FIXME: HANDLED but FAILED, not UNKNOWN! */
 	
 	return STAT_SET_UNKNOWN;
 }
@@ -430,10 +504,10 @@ void upsdrv_makevartable(void)
 		DEFAULT_ONDELAY);
 	addvar (VAR_VALUE, HU_VAR_ONDELAY, temp);
 	
-	sprintf(temp, "Set polling frequency, in seconds, to reduce USB flow (default=%i).",
+	sprintf(temp, "Set polling frequency, in seconds, to reduce data flow (default=%i).",
 		DEFAULT_POLLFREQ);
 	addvar(VAR_VALUE, HU_VAR_POLLFREQ, temp);
-	
+#ifndef SHUT_MODE
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	addvar(VAR_VALUE, "vendor", "Regular expression to match UPS Manufacturer string");
 	addvar(VAR_VALUE, "product", "Regular expression to match UPS Product string");
@@ -442,12 +516,14 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
 	addvar(VAR_FLAG, "generic", "Match unsupported UPS");
+#endif
 }
 
 void upsdrv_banner(void)
 {
-	printf("Network UPS Tools: New USB/HID UPS driver %s (%s)\n\n",
-		DRIVER_VERSION, UPS_VERSION);
+	printf("Network UPS Tools: %s %s - core %s (%s)\n\n",
+	       comm_driver->name, comm_driver->version,
+	       DRIVER_VERSION, UPS_VERSION);
 }
 
 void upsdrv_updateinfo(void) 
@@ -551,7 +627,7 @@ static void process_status_info(char *nutvalue)
 	status_lkp_t *status_item;
 	int clear = 0;
 
-	upsdebugx(2, "process_status_info: %s", nutvalue);
+	upsdebugx(5, "process_status_info: %s", nutvalue);
 
 	if (*nutvalue == '!') {
 		nutvalue++;
@@ -591,9 +667,14 @@ void upsdrv_initinfo(void)
 
 void upsdrv_initups(void)
 {
-	char *regex_array[5];
-	int r;
 	int i;
+#ifndef SHUT_MODE
+	/*!
+	 * SHUT is only supported by MGE UPS SYSTEMS units
+	 * So we don't need the regex mechanism
+	 */
+	int r;
+	char *regex_array[5];
 
 	/* enforce use of the "vendorid" option if "generic" is given */
 	if (testvar("generic") && getval("vendorid")==NULL) {
@@ -617,13 +698,24 @@ void upsdrv_initups(void)
 	/* link the matchers */
 	regex_matcher->next = subdriver_matcher;
 
+#else
+	/*!
+	 * But SHUT is a serial protocol, so it need
+	 * the device path
+	 */
+	udev = (hid_dev_handle *)xmalloc(sizeof(hid_dev_handle));
+	udev->device_path = strdup(device_path);
+
+#endif /* SHUT_MODE */
+
 	/* Search for the first supported UPS matching the regular
-	   expression */
+	   expression (not for SHUT_MODE) */
 	if ((hd = HIDOpenDevice(&udev, &curDevice, regex_matcher, MODE_OPEN)) == NULL)
-		fatalx("No matching USB/HID UPS found");
+		fatalx("No matching HID UPS found");
 	else
 		upslogx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
 
+#ifndef SHUT_MODE
 	/* create a new matcher for later reopening */
 	reopen_matcher = new_exact_matcher(hd);
 	if (!reopen_matcher) {
@@ -632,6 +724,8 @@ void upsdrv_initups(void)
 	/* link the two matchers */
 	reopen_matcher->next = regex_matcher;
 
+#endif /* SHUT_MODE */
+	
 	/* select the subdriver for this device */
 	for (i=0; subdriver_list[i] != NULL; i++) {
 		if (subdriver_list[i]->claim(hd)) {
@@ -641,7 +735,7 @@ void upsdrv_initups(void)
 	subdriver = subdriver_list[i];
 	if (!subdriver) {
 		upslogx(1, "Manufacturer not supported!");
-		upslogx(1, "Contact the driver author <arnaud.quette@free.fr / @mgeups.com> with the below information");
+		upslogx(1, "Contact the NUT Developers with the below information");
 		HIDDumpTree(udev, subdriver->utab);
 		fatalx("Aborting");
 	}
@@ -673,7 +767,7 @@ static void identify_ups ()
 	char *mfr;
 	char *serial;
 
-	upsdebugx (2, "entering identify_ups(0x%04x, 0x%04x)\n", 
+	upsdebugx (5, "entering identify_ups(0x%04x, 0x%04x)\n", 
 			   hd->VendorID,
 			   hd->ProductID);
 
@@ -835,39 +929,42 @@ static bool hid_ups_walk(int mode)
 
 			/* store timestamp */
 /* 			lastpoll = time(NULL); */
-		  }
+		}
 		else
-		  {
+		{
 			if ( (retcode == -EPERM) || (retcode == -EPIPE)
-				 || (retcode == -ENODEV) || (retcode == -EACCES) )
-			  break;
-			else {
-			  /* atomic call */
-			  dstate_dataok();
+				|| (retcode == -ENODEV) || (retcode == -EACCES)
+				|| (retcode == -EIO) || (retcode == -ENOENT) )
+				break;
+			else
+			{
+				/* atomic call */
+				dstate_dataok();
 			}
 
 			if (mode == HU_WALKMODE_INIT)
-			  {
+			{
 				/* invalidate item */
 				item->hidflags &= ~HU_FLAG_OK;
-			  }
-		  }
-	  } /* end for */
+			}
+		}
+	} /* end for */
 
 	if (mode == HU_WALKMODE_FULL_UPDATE)
-	  {
+	{
 		/* store timestamp */
 		lastpoll = time(NULL);
-	  }
+	}
 
 	/* Reserved values: -1/-10 for nul delay, -2 can't get value */
 	/* device has been disconnected, try to reconnect */
 	if ( (retcode == -EPERM) || (retcode == -EPIPE)
-	     || (retcode == -ENODEV) || (retcode == -EACCES))
-	  {
+		|| (retcode == -ENODEV) || (retcode == -EACCES)
+		|| (retcode == -EIO) || (retcode == -ENOENT) )
+	{
 		hd = NULL;
 		reconnect_ups();
-	  }
+	}
 	else {
 	  /* atomic call */
 	  dstate_dataok();
@@ -878,18 +975,22 @@ static bool hid_ups_walk(int mode)
 
 static void reconnect_ups(void)
 {
-  if (hd == NULL)
-	{	  
-	  upsdebugx(2, "==================================================");
-	  upsdebugx(2, "= device has been disconnected, try to reconnect =");
-	  upsdebugx(2, "==================================================");
-	  
-	  /* Not really useful as the device is no more reachable */
-	  HIDCloseDevice(udev);
-	  udev = NULL;
-	  
-	  if ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, MODE_REOPEN)) == NULL)
-		dstate_datastale();
+	if (hd == NULL)
+	{
+		upsdebugx(2, "==================================================");
+		upsdebugx(2, "= device has been disconnected, try to reconnect =");
+		upsdebugx(2, "==================================================");
+		
+#ifdef SHUT_MODE
+		/* Cause a double free corruption in USB mode on linux! */
+		HIDCloseDevice(udev);
+#else
+		/* but keep udev in SHUT mode, for udev->device_path */
+		udev = NULL;
+#endif
+		
+		if ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, MODE_REOPEN)) == NULL)
+			dstate_datastale();
 	}
 }
 
@@ -899,7 +1000,7 @@ static void ups_status_set(void)
 {
 	/* clear status buffer before begining */
 	status_init();
-  
+
 	if (ups_status & STATUS_ONLINE) {
 		status_set("OL");		/* on line */
 	} else {
@@ -938,13 +1039,19 @@ static void ups_status_set(void)
 		status_set("CAL");		/* calibration */
 	}
 	if (ups_status & STATUS_OVERHEAT) {
-		status_set("OVERHEAT");		/* overheat; Belkin */
+		status_set("OVERHEAT");		/* overheat; Belkin, TrippLite */
 	}
 	if (ups_status & STATUS_COMMFAULT) {
-		status_set("COMMFAULT");	/* UPS fault; Belkin */
+		status_set("COMMFAULT");	/* UPS fault; Belkin, TrippLite */
 	}
 	if (ups_status & STATUS_DEPLETED) {
 		status_set("DEPLETED");		/* battery depleted; Belkin */
+	}
+	if (ups_status & STATUS_AWAITINGPOWER) {
+		status_set("AWAITINGPOWER");	/* awaiting power; Belkin, TrippLite */
+	}
+	if (ups_status & STATUS_VRANGE) {
+		status_set("VRANGE");		/* voltage out of range; TrippLite */
 	}
 	
 	/* Commit the status buffer */
@@ -992,70 +1099,68 @@ static hid_info_t *find_nut_info_valid(const char *varname)
  */
 static hid_info_t *find_hid_info(const char *hidname)
 {
-  hid_info_t *hidups_item;
-
-  for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
-
-	/* Skip NULL HID path (server side vars) */
-	if (hidups_item->hidpath == NULL)
-	  continue;
+	hid_info_t *hidups_item;
 	
-    if (!strcasecmp(hidups_item->hidpath, hidname))
-      return hidups_item;
-  }
+	for (hidups_item = subdriver->hid2nut; 
+		hidups_item->info_type != NULL ; hidups_item++) {
 
-  upsdebugx(2, "find_hid_info: unknown variable: %s\n", hidname);
-  return NULL;
+		/* Skip NULL HID path (server side vars) */
+		if (hidups_item->hidpath == NULL)
+			continue;
+	
+		if (!strcasecmp(hidups_item->hidpath, hidname))
+			return hidups_item;
+	}
+
+	upsdebugx(2, "find_hid_info: unknown variable: %s\n", hidname);
+	return NULL;
 }
 
-#if 0  /* NOT USED */
 /* find the HID Item value matching that NUT value */
 /* useful for set with value lookup... */
-static long hu_find_valinfo(info_lkp_t *hid2info, char* value)
+static long hu_find_valinfo(info_lkp_t *hid2info, const char* value)
 {
-  info_lkp_t *info_lkp;
-  
-  for (info_lkp = hid2info; (info_lkp != NULL) &&
-	 (strcmp(info_lkp->nut_value, "NULL")); info_lkp++) {
-    
-    if (!(strcmp(info_lkp->nut_value, value))) {
-      upsdebugx(3, "hu_find_valinfo: found %s (value: %s)\n",
-		info_lkp->nut_value, value);
-      
-      return info_lkp->hid_value;
-    }
-  }
-  upsdebugx(3, "hu_find_valinfo: no matching HID value for this INFO_* value (%s)", value);
-  return -1;
+	info_lkp_t *info_lkp;
+	
+	for (info_lkp = hid2info; (info_lkp != NULL) &&
+		(strcmp(info_lkp->nut_value, "NULL")); info_lkp++) {
+
+		if (!(strcmp(info_lkp->nut_value, value))) {
+			upsdebugx(5, "hu_find_valinfo: found %s (value: %ld)\n",
+				  info_lkp->nut_value, info_lkp->hid_value);
+	
+			return info_lkp->hid_value;
+		}
+	}
+	upsdebugx(3, "hu_find_valinfo: no matching HID value for this INFO_* value (%s)", value);
+	return -1;
 }
-#endif  /* NOT USED */
 
 /* find the NUT value matching that HID Item value */
 static char *hu_find_infoval(info_lkp_t *hid2info, long value)
 {
-  info_lkp_t *info_lkp;
-  char *nut_value;
-  
-  upsdebugx(3, "hu_find_infoval: searching for value = %ld\n", value);
-  
-  if (hid2info->fun != NULL) {
-    nut_value = hid2info->fun(value);
-    upsdebugx(3, "hu_find_infoval: found %s (value: %ld)\n",
-	      nut_value, value);
-    return nut_value;
-  }
+	info_lkp_t *info_lkp;
+	char *nut_value;
 
-  for (info_lkp = hid2info; (info_lkp != NULL) &&
-	 (strcmp(info_lkp->nut_value, "NULL")); info_lkp++) {
-    
-    if (info_lkp->hid_value == value) {
-      upsdebugx(3, "hu_find_infoval: found %s (value: %ld)\n",
-		info_lkp->nut_value, value);
-      
-      return info_lkp->nut_value;
-    }
-  }
-  upsdebugx(3, "hu_find_infoval: no matching INFO_* value for this HID value (%ld)\n", value);
-  return NULL;
+	upsdebugx(5, "hu_find_infoval: searching for value = %ld\n", value);
+
+	if (hid2info->fun != NULL) {
+		nut_value = hid2info->fun(value);
+		upsdebugx(5, "hu_find_infoval: found %s (value: %ld)\n",
+			nut_value, value);
+		return nut_value;
+	}
+
+	for (info_lkp = hid2info; (info_lkp != NULL) &&
+		(strcmp(info_lkp->nut_value, "NULL")); info_lkp++) {
+		if (info_lkp->hid_value == value) {
+			upsdebugx(5, "hu_find_infoval: found %s (value: %ld)\n",
+					info_lkp->nut_value, value);
+	
+			return info_lkp->nut_value;
+		}
+	}
+	upsdebugx(3, "hu_find_infoval: no matching INFO_* value for this HID value (%ld)\n", value);
+	return NULL;
 }
 

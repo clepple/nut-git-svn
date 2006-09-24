@@ -13,10 +13,10 @@ PROGS	= bestups fentonups apcsmart everups belkin masterguard powercom \
 	  cyberpower tripplite victronups genericups mge-utalk bestuferrups \
 	  isbmex etapro liebert sms esupssmart tripplitesu blazer safenet \
 	  belkinunv oneac ippon cpsups mustek metasys bestfcom megatec \
-	  bcmxcp upscode2 solis gamatronic al175 nitram optiups
+	  bcmxcp upscode2 solis gamatronic al175 nitram optiups rhino
 LDFLAGS = @LDFLAGS@
 LIBDEP	= @LIBOBJ@
-LIBOBJ	= $(LIBDEP) @NETLIBS@ @SERLIBS@
+LIBOBJ	= $(LIBDEP) @NETLIBS@ @SERLIBS@ @LIBS@
 
 INSTALLCMD = @INSTALL@
 INSTALLMODE = 0755
@@ -91,20 +91,21 @@ energizerups.o:
 # ==========================================================================
 # Special case: newhidups driver - development version
 
+NEWHIDUPS_SUBDRIVERS = generic-hid.o mge-hid.o apc-hid.o belkin-hid.o \
+  tripplite-hid.o
+
 newhidups: newhidups.o main.o dstate.o ../common/state.o \
 		../common/upsconf.o ../common/parseconf.o $(LIBDEP) \
 		$(STRLCPY) libhid.o libusb.o hidparser.o \
-		generic-hid.o mge-hid.o apc-hid.o belkin-hid.o \
-		tripplite-hid.o
+		$(NEWHIDUPS_SUBDRIVERS)
 	$(CC) $(CFLAGS) -o $@ $@.o main.o dstate.o \
 		../common/state.o ../common/upsconf.o ../common/parseconf.o \
 		$(LIBOBJ) $(LIBUSB_LIBS) $(LDFLAGS) libhid.o libusb.o hidparser.o \
-		generic-hid.o mge-hid.o apc-hid.o belkin-hid.o \
-                tripplite-hid.o
+		$(NEWHIDUPS_SUBDRIVERS)
 
 # all the stuff that needs to include $(LIBUSB_CFLAGS):
-newhidups.o libhid.o libusb.o apc-hid.o belkin-hid.o generic-hid.o \
-kebo-hid.o mge-hid.o tripplite-hid.o tripplite_usb.o bcmxcp_usb.o nut_usb.o:
+newhidups.o libhid.o libusb.o $(NEWHIDUPS_SUBDRIVERS) \
+kebo-hid.o tripplite_usb.o bcmxcp_usb.o nut_usb.o:
 	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -c $<
 
 # ==========================================================================
@@ -129,7 +130,7 @@ bcmxcp_usb: bcmxcp.o bcmxcp_usb.o nut_usb.o main.o dstate.o ../common/state.o \
 
 
 # ==========================================================================
-# Special case: mge-shut driver - development version (early beta)
+# Special case: mge-shut driver
 
 mge-shut: mge-shut.o hidparser.o main.o dstate.o serial.o \
 		../common/state.o ../common/upsconf.o \
@@ -143,6 +144,37 @@ mge-shut.o:
 
 hidparser.o:
 	$(CC) $(CFLAGS) -c hidparser.c
+
+# ==========================================================================
+# Special case: newmge-shut driver - development version (early beta)
+
+# newmge-shut: newmge-shut.o hidparser.o main.o dstate.o serial.o \
+# 		../common/state.o ../common/upsconf.o \
+# 		../common/parseconf.o $(LIBDEP)
+# 	$(CC) $(CFLAGS) -o newmge-shut newmge-shut.o hidparser.o main.o \
+# 		dstate.o serial.o ../common/state.o ../common/upsconf.o \
+# 		../common/parseconf.o $(LIBOBJ) $(LDFLAGS)
+# 
+# newmge-shut.o:
+# 	$(CC) $(CFLAGS) -c newmge-shut.c
+
+
+newmge-shut: newmge-shut.o main.o dstate.o serial.o ../common/state.o \
+		../common/upsconf.o ../common/parseconf.o $(LIBDEP) \
+		$(STRLCPY) libshut.o libhid-shut.o hidparser.o mge-hid.o
+	$(CC) $(CFLAGS) -g -o $@ $@.o main.o dstate.o serial.o \
+		../common/state.o ../common/upsconf.o ../common/parseconf.o \
+		$(LIBOBJ) $(LIBUSB_LIBS) $(LDFLAGS) libhid-shut.o libshut.o \
+		hidparser.o mge-hid.o
+
+libhid-shut.o: libhid.c
+	$(CC) $(CFLAGS) -g -DSHUT_MODE -o libhid-shut.o -c libhid.c
+
+newmge-shut.o: newhidups.c
+	$(CC) $(CFLAGS) -g -DSHUT_MODE -o newmge-shut.o -c newhidups.c
+
+libshut.o: libshut.c
+	$(CC) $(CFLAGS) -g -DSHUT_MODE -c libshut.c
 
 # ==========================================================================
 # Special case: snmp-ups driver - need OpenSSL and NetSNMP includes

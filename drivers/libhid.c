@@ -4,7 +4,6 @@
  *
  * @author Copyright (C) 2003 - 2005
  *	Arnaud Quette <arnaud.quette@free.fr> && <arnaud.quette@mgeups.com>
- *	Philippe Marzouk <philm@users.sourceforge.net> (dump_hex())
  *	John Stamp <kinsayder@hotmail.com>
  *      2005 Peter Selinger <selinger@users.sourceforge.net>
  *	
@@ -36,39 +35,42 @@
 #include "hidparser.h"
 #include "hidtypes.h"
 #include "libhid.h"
+#include "common.h" /* for xmalloc, upsdebugx prototypes */
 
-#include "libusb.h"
+/* Communication layers and drivers (USB and MGE SHUT) */
+#ifdef SHUT_MODE
+	#include "libshut.h"
+	communication_subdriver_t *comm_driver = &shut_subdriver;
+#else
+	#include "libusb.h"
+	communication_subdriver_t *comm_driver = &usb_subdriver;
+#endif
 
 #include <errno.h>
 
 /* support functions */
-static void logical_to_physical(HIDData *Data, long *Value);
-static void physical_to_logical(HIDData *Data, long *Value);
+static float logical_to_physical(HIDData *Data, long logical);
+static long physical_to_logical(HIDData *Data, float physical);
 static const char *hid_lookup_path(unsigned int usage, usage_tables_t *utab);
 static int hid_lookup_usage(char *name, usage_tables_t *utab);
 static int string_to_path(char *HIDpath, HIDPath *path, usage_tables_t *utab);
 static int path_to_string(char *HIDpath, HIDPath *path, usage_tables_t *utab);
-static void dump_hex (const char *msg, const unsigned char *buf, int len);
 static long get_unit_expo(long UnitType);
 static float expo(int a, int b);
 
 /* report buffer structure: holds data about most recent report for
    each given report id */
 struct reportbuf_s {
-	time_t ts[256];           /* timestamp when report was retrieved */
-	int len[256];             /* size of report data */
-	unsigned char *data[256]; /* report data (allocated) */
+       time_t ts[256];           /* timestamp when report was retrieved */
+       int len[256];             /* size of report data */
+       unsigned char *data[256]; /* report data (allocated) */
 };
 typedef struct reportbuf_s reportbuf_t;
 
 /* global variables */
 
-static HIDDesc  	*pDesc = NULL; /* parsed Report Descriptor */
+static HIDDesc         *pDesc = NULL; /* parsed Report Descriptor */
 static reportbuf_t      *rbuf = NULL;  /* buffer for most recent reports */
-
-/* TODO: rework all that */
-void upsdebugx(int level, const char *fmt, ...);
-#define TRACE upsdebugx
 
 #define min(x,y) ((x)>(y) ? (y) : (x))
 
@@ -132,7 +134,7 @@ int refresh_report_buffer(reportbuf_t *rbuf, int id, int age, HIDDesc *pDesc, us
 		return -1;
 	}
 	memset(data, 0, len+1);
-	r = libusb_get_report(udev, id, data, len+1);
+	r = comm_driver->get_report(udev, id, data, len+1);
 	if (r <= 0) {
 		return -1;
 	}
@@ -142,7 +144,7 @@ int refresh_report_buffer(reportbuf_t *rbuf, int id, int age, HIDDesc *pDesc, us
 	rbuf->ts[id] = time(0);
 	rbuf->len[id] = r;  /* normally equal to len+1, but could be less? */
 
-	dump_hex ("Report ", rbuf->data[id], rbuf->len[id]);
+	upsdebug_hex (3, "Report[r]", rbuf->data[id], rbuf->len[id]);
 	
 	return 0;
 }
@@ -152,7 +154,7 @@ int refresh_report_buffer(reportbuf_t *rbuf, int id, int age, HIDDesc *pDesc, us
 int set_report_from_buffer(reportbuf_t *rbuf, int id, usb_dev_handle *udev) {
 	int r;
 
-	r = libusb_set_report(udev, id, rbuf->data[id], rbuf->len[id]);
+	r = comm_driver->set_report(udev, id, rbuf->data[id], rbuf->len[id]);
 	if (r <= 0) {
 		return -1;
 	}
@@ -181,7 +183,7 @@ int file_report_buffer(reportbuf_t *rbuf, u_char *report, int len) {
 	rbuf->ts[id] = time(0);
 	rbuf->len[id] = len;
 
-	dump_hex ("Report ", rbuf->data[id], rbuf->len[id]);
+	upsdebug_hex (3, "Report[i]", rbuf->data[id], rbuf->len[id]);
 	
 	return 0;
 }
@@ -225,7 +227,7 @@ int set_item_buffered(reportbuf_t *rbuf, HIDData *pData, HIDDesc *pDesc, usb_dev
 /* ---------------------------------------------------------------------- */
 
 /* FIXME: we currently "hard-wire" the report buffer size in the calls
-   to libusb_get_report() below to 8 bytes. This is not really a great
+   to libxxx_get_report() below to 8 bytes. This is not really a great
    idea, but it is necessary because Belkin models will crash,
    sometimes with permanent firmware damage, if called with a larger
    buffer size (never mind the USB specification). Let's hope for now
@@ -386,7 +388,7 @@ static int match_regex(regex_t *preg, char *str) {
 
   /* make a copy of str with whitespace stripped */
   for (q=str; *q==' ' || *q=='\t' || *q=='\n'; q++) {
-    /* nop */
+    /* empty */
   }
   len = strlen(q);
   p = (char *)malloc(len+1);
@@ -522,8 +524,7 @@ void free_regex_matcher(HIDDeviceMatcher_t *matcher) {
 
 /* ---------------------------------------------------------------------- */
 
-
-void HIDDumpTree(usb_dev_handle *udev, usage_tables_t *utab)
+void HIDDumpTree(hid_dev_handle *udev, usage_tables_t *utab)
 {
 	int 		j;
 	char 		path[128], type[10];
@@ -560,10 +561,10 @@ void HIDDumpTree(usb_dev_handle *udev, usage_tables_t *utab)
 
 			/* Get data value */
 			if (HIDGetItemValue(udev, path, &value, utab) > 0)
-				TRACE(1, "Path: %s, Type: %s, Value: %f", path, type, value);
+				upsdebugx(1, "Path: %s, Type: %s, Value: %f", path, type, value);
 			
 			else
-				TRACE(1, "Path: %s, Type: %s", path, type);
+				upsdebugx(1, "Path: %s, Type: %s", path, type);
 		}
 	}
 }
@@ -571,18 +572,18 @@ void HIDDumpTree(usb_dev_handle *udev, usage_tables_t *utab)
 /* Matcher is a linked list of matchers (see libhid.h), and the opened
     device must match all of them. On success, set *udevp and *hd and
     return hd. On failure, return NULL. */
-HIDDevice *HIDOpenDevice(usb_dev_handle **udevp, HIDDevice *hd, HIDDeviceMatcher_t *matcher, int mode)
+HIDDevice *HIDOpenDevice(hid_dev_handle **udevp, HIDDevice *hd, HIDDeviceMatcher_t *matcher, int mode)
 {
 	int ReportSize;
 	unsigned char ReportDesc[4096];
 
 	if ( mode == MODE_REOPEN )
 	{
-		TRACE(2, "Reopening device");
+		upsdebugx(2, "Reopening device");
 	}
 
 	/* get and parse descriptors (dev, cfg and report) */
-	ReportSize = libusb_open(udevp, hd, matcher, ReportDesc, mode);
+	ReportSize = comm_driver->open(udevp, hd, matcher, ReportDesc, mode);
 
 	if (ReportSize == -1)
 		return NULL;
@@ -590,18 +591,18 @@ HIDDevice *HIDOpenDevice(usb_dev_handle **udevp, HIDDevice *hd, HIDDeviceMatcher
 	{
 		if ( mode == MODE_REOPEN )
 		{
-			TRACE(2, "Device reopened successfully");
+			upsdebugx(2, "Device reopened successfully");
 			return hd;
 		}
 	
-		TRACE(2, "Report Descriptor size = %d", ReportSize);
-		dump_hex ("Report Descriptor", ReportDesc, 200);
+		upsdebugx(2, "Report Descriptor size = %d", ReportSize);
+		upsdebug_hex(3, "Report Descriptor", ReportDesc, ReportSize);
 
 		/* Parse Report Descriptor */
 		Free_ReportDesc(pDesc);
 		pDesc = Parse_ReportDesc(ReportDesc, ReportSize);
 		if (!pDesc) {
-			TRACE(0, "Failed to parse report descriptor: %s", strerror(errno));
+			upsdebugx(0, "Failed to parse report descriptor: %s", strerror(errno));
 			HIDCloseDevice(*udevp);
 			*udevp = NULL;
 			return NULL;
@@ -611,7 +612,7 @@ HIDDevice *HIDOpenDevice(usb_dev_handle **udevp, HIDDevice *hd, HIDDeviceMatcher
 		free_report_buffer(rbuf);
 		rbuf = new_report_buffer();
 		if (!rbuf) {
-			TRACE(0, "Failed to allocate report buffer: %s", strerror(errno));
+			upsdebugx(0, "Failed to allocate report buffer: %s", strerror(errno));
 			HIDCloseDevice(*udevp);
 			*udevp = NULL;
 			return NULL;
@@ -637,21 +638,21 @@ static int HIDGetItemLogical(usb_dev_handle *udev, char *path, usage_tables_t *u
 		return 0;
 	}
 
-	TRACE(4, "Path depth = %i", Path.Size);
+	upsdebugx(4, "Path depth = %i", Path.Size);
 	
 	for (i = 0; i<Path.Size; i++) {
-		TRACE(4, "%i: Usage(%08x)", i, Path.Node[i]);
+		upsdebugx(4, "%i: Usage(%08x)", i, Path.Node[i]);
 	} 
 
 	/* Get info on object (reportID, offset and size) */
 	pData = FindObject_with_Path(pDesc, &Path, ITEM_FEATURE);
 	if (!pData) {
-		TRACE(2, "Can't find object %s", path);
+		upsdebugx(2, "Can't find object %s", path);
 		return 0;
 	} 
 	r = get_item_buffered(rbuf, pData, MAX_TS, pDesc, udev, &hValue);
 	if (r<0) {
-		TRACE(2, "Can't retrieve Report %i (%i): %s", pData->ReportID, errno, strerror(errno));
+		upsdebugx(2, "Can't retrieve Report %i (%i): %s", pData->ReportID, errno, strerror(errno));
 		return -errno;
 	}
 
@@ -662,13 +663,13 @@ static int HIDGetItemLogical(usb_dev_handle *udev, char *path, usage_tables_t *u
 	return 1;
 }
 
-/* return 1 if OK, 0 on fail, <= -1 otherwise (ie disconnect). TODO:
+/* return 1 if OK, 0 on fail, -errno otherwise (ie disconnect). TODO:
    return value should be checked. Return the physical value
    associated with the given path. */
 int HIDGetItemValue(usb_dev_handle *udev, char *path, float *Value, usage_tables_t *utab)
 {
 	int r;
-	float tmpValue;
+	float physical;
 	long hValue;
 	HIDData *pData;
 
@@ -677,23 +678,20 @@ int HIDGetItemValue(usb_dev_handle *udev, char *path, float *Value, usage_tables
 		return r;
 	}
 	
-	TRACE(4, "=>> Before exponent: %ld, %i/%i)", hValue,
+	upsdebugx(4, "=>> Before exponent: %ld, %i/%i)", hValue,
 	      (int)pData->UnitExp, (int)get_unit_expo(pData->Unit) );
-	
-	tmpValue = hValue;
-	
-	/* Process exponents */
-	/* Value*=(float) pow(10,(int)pData->UnitExp - get_unit_expo(pData->Unit)); */
-	tmpValue*=(float) expo(10,(int)pData->UnitExp - get_unit_expo(pData->Unit));
-	hValue = (long) tmpValue;
 	
 	/* Convert Logical Min, Max and Value into Physical */
-	logical_to_physical(pData, &hValue);
+	physical = logical_to_physical(pData, hValue);
 	
-	TRACE(4, "=>> After conversion: %ld, %i/%i)", hValue,
-	      (int)pData->UnitExp, (int)get_unit_expo(pData->Unit) );
+	/* Process exponents and units */
+	physical *= (float) expo(10,(int)pData->UnitExp - get_unit_expo(pData->Unit));
+	hValue = (long) physical;
+
+	upsdebugx(4, "=>> After conversion: %f (%ld), %i/%i)", physical,
+	      hValue, (int)pData->UnitExp, (int)get_unit_expo(pData->Unit));
 	
-	*Value = hValue;
+	*Value = physical;
 	return 1;
 }
 
@@ -710,7 +708,7 @@ char *HIDGetItemString(usb_dev_handle *udev, char *path, unsigned char *rawbuf, 
 	}
 	
 	/* now get string */
-	libusb_get_string(udev, hValue, rawbuf);
+	comm_driver->get_string(udev, hValue, rawbuf);
 	return rawbuf;
 }
 
@@ -729,11 +727,13 @@ bool HIDSetItemValue(usb_dev_handle *udev, char *path, float value, usage_tables
 		return FALSE;
 	}
 
-	TRACE(2, "=>> SET: Before set: %ld (%ld)", oldValue, (long)value);
+	upsdebugx(4, "=>> SET: Before set: %ld (%ld)", oldValue, (long)value);
 	
 	id = pData->ReportID;
 
 	/* Test if Item is settable */
+        /* FIXME: not constant == volatile, but
+         * it doesn't imply that it's RW! */
 	if (pData->Attribute == ATTR_DATA_CST) {
 		return FALSE;
 	}
@@ -742,38 +742,36 @@ bool HIDSetItemValue(usb_dev_handle *udev, char *path, float value, usage_tables
 	/* And Process exponents restoration */
 	Value = value * expo(10, get_unit_expo(pData->Unit) - (int)pData->UnitExp);
 	
-	hValue=(long) Value;
-	
-	TRACE(2, "=>> SET: after exp: %ld/%.2f (exp = %.2f)", hValue, Value,
+	upsdebugx(4, "=>> SET: after exp: %.2f (exp = %.2f)", Value,
 	      expo(10, (int)get_unit_expo(pData->Unit) - (int)pData->UnitExp));
 	
-	/* Convert Physical Min, Max and Value in Logical */
-	physical_to_logical(pData, &hValue);
-	TRACE(2, "=>> SET: after PL: %ld", hValue);
+	/* convert physical value to logical */
+	hValue = physical_to_logical(pData, Value);
+	upsdebugx(4, "=>> SET: after PL: %ld", hValue);
 	
-	dump_hex ("==> Report to set", rbuf->data[id], rbuf->len[id]);
+	upsdebug_hex (4, "==> Report to set", rbuf->data[id], rbuf->len[id]);
 
 	r = set_item_buffered(rbuf, pData, pDesc, udev, hValue);
 	if (r<0) {
-		TRACE(2, "Set report failed: (%d): %s", errno, strerror(errno));
+		upsdebugx(2, "Set report failed: (%d): %s", errno, strerror(errno));
 		return FALSE;
 	}
 	
 	/* re-read report without buffering */
 	r = get_item_buffered(rbuf, pData, 0, pDesc, udev, &newValue);
 	if (r<0) {
-		TRACE(2, "Warning: Re-read report failed: (%d): %s", errno, strerror(errno));
+		upsdebugx(2, "Warning: Re-read report failed: (%d): %s", errno, strerror(errno));
 		return TRUE;
 	}
-	dump_hex ("==> Report after set", rbuf->data[id], rbuf->len[id]);
+	upsdebug_hex (4, "==> Report after set", rbuf->data[id], rbuf->len[id]);
 
 	if (newValue != hValue) {
 		/* this is normal; device will usually correct "out of
 		   range" values */
-		TRACE(2, "Wrote %ld, got %ld\n", hValue, newValue);
+		upsdebugx(4, "Wrote %ld, got %ld\n", hValue, newValue);
 	}
 
-	TRACE(2, "Set report succeeded");
+	upsdebugx(4, "Set report succeeded");
 	return TRUE;
 }
 
@@ -781,7 +779,7 @@ bool HIDSetItemValue(usb_dev_handle *udev, char *path, float value, usage_tables
    once, instead of once for every offset. Simply pick out the items
    with the correct ReportID and Type! Return item count >=0 on
    success, <0 on error. */
-int HIDGetEvents(usb_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList, usage_tables_t *utab)
+int HIDGetEvents(hid_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList, usage_tables_t *utab)
 {
 	unsigned char buf[100];
 	char itemPath[128];
@@ -790,18 +788,18 @@ int HIDGetEvents(usb_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList, usa
 	HIDData *pData;
 	int id, r, i;
 
-	TRACE(2, "Waiting for notifications...");
+	upsdebugx(2, "Waiting for notifications...");
 	
 	/* needs libusb-0.1.8 to work => use ifdef and autoconf */
-	if ((size = libusb_get_interrupt(udev, &buf[0], 100, 5000)) <= -1)
+	if ((size = comm_driver->get_interrupt(udev, &buf[0], 100, 5000)) <= -1)
 	{
 		return size; /* propagate error code */
 	}
-	dump_hex ("Notification", buf, size);
+	upsdebug_hex (3, "Notification", buf, size);
 
 	r = file_report_buffer(rbuf, buf, size);
 	if (r < 0) {
-		TRACE(0, "Failed to buffer report: %s", strerror(errno));
+		upsdebugx(2, "Failed to buffer report: %s", strerror(errno));
 		return -errno;
 	}
 
@@ -818,8 +816,8 @@ int HIDGetEvents(usb_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList, usa
 		path_to_string(itemPath, &pData->Path, utab);
 		GetValue(buf, pData, &hValue);
 		
-		TRACE(3, "Object: %s = %ld", itemPath, hValue);
-			
+		upsdebugx(3, "Object: %s = %ld", itemPath, hValue);
+
 		/* FIXME: enhance this or fix/change the HID parser
 		   (see libhid project) */
 		eventsList[itemCount] = (HIDItem *)malloc(sizeof (HIDItem));
@@ -831,10 +829,13 @@ int HIDGetEvents(usb_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList, usa
 	return itemCount;
 }
 
-void HIDCloseDevice(usb_dev_handle *udev)
+void HIDCloseDevice(hid_dev_handle *udev)
 {
-	TRACE(2, "Closing device");
-	libusb_close(udev);
+    if (udev != NULL)
+    {
+      upsdebugx(2, "Closing device");
+      comm_driver->close(udev);
+    }
 }
 
 
@@ -844,45 +845,67 @@ void HIDCloseDevice(usb_dev_handle *udev)
 
 #define MAX_STRING      		64
 
-static void logical_to_physical(HIDData *Data, long *Value)
+static float logical_to_physical(HIDData *Data, long logical)
 {
-	if(Data->PhyMax - Data->PhyMin > 0)
+	float physical, Factor;
+
+	/* HID spec says that if one or both are undefined, or if they are
+	 * both 0, then PhyMin = LogMin, PhyMax = LogMax. */
+	if (!Data->have_PhyMax || !Data->have_PhyMin || (Data->PhyMax == 0 && Data->PhyMin == 0)) 
 	{
-		float Factor = (float)(Data->PhyMax - Data->PhyMin) / (Data->LogMax - Data->LogMin);
-		/* Convert Value */
-		*Value=(long)((*Value - Data->LogMin) * Factor) + Data->PhyMin;
-			
-		if(*Value > Data->PhyMax)
-			*Value |= ~Data->PhyMax;
+		return (float)logical;
 	}
-	else /* => nothing to do!? */
+
+   if (Data->PhyMax <= Data->PhyMin) 
 	{
-		/* Value.m_Value=(long)(pConvPrm->HValue); */
-		if(*Value > Data->LogMax)
-			*Value |= ~Data->LogMax;
-	}
+		/* this should not really happen */
+		return (float)logical;
+   }
 	
-	/* if(*Value > *Value.m_Max)
-		Value.m_Value |= ~Value.m_Max;
-	*/
+	Factor = (float)(Data->PhyMax - Data->PhyMin) / (Data->LogMax - Data->LogMin);
+	/* Convert Value */
+	physical = (long)((logical - Data->LogMin) * Factor) + Data->PhyMin;
+	
+	if (physical > Data->PhyMax){
+		physical = Data->PhyMax;
+	} else if (physical < Data->PhyMin) {
+		physical = Data->PhyMin;
+	}
+
+	return physical;
 }
 
-static void physical_to_logical(HIDData *Data, long *Value)
+static long physical_to_logical(HIDData *Data, float physical)
 {
-	TRACE(2, "PhyMax = %ld, PhyMin = %ld, LogMax = %ld, LogMin = %ld",
+	long logical, Factor;
+
+	upsdebugx(4, "PhyMax = %ld, PhyMin = %ld, LogMax = %ld, LogMin = %ld",
 		Data->PhyMax, Data->PhyMin, Data->LogMax, Data->LogMin);
 	
-	if(Data->PhyMax - Data->PhyMin > 0)
+	/* HID spec says that if one or both are undefined, or if they are
+    * both 0, then PhyMin = LogMin, PhyMax = LogMax. */
+	if (!Data->have_PhyMax || !Data->have_PhyMin || (Data->PhyMax == 0 && Data->PhyMin == 0)) 
 	{
-		float Factor=(float)(Data->LogMax - Data->LogMin) / (Data->PhyMax - Data->PhyMin);
-		
-		/* Convert Value */
-		*Value=(long)((*Value - Data->PhyMin) * Factor) + Data->LogMin;
+		return (long)physical;
 	}
-	/* else => nothing to do!?
+
+	if(Data->PhyMax <= Data->PhyMin)
 	{
-	m_ConverterTab[iTab].HValue=m_ConverterTab[iTab].DValue;
-	} */
+		/* this should not really happen */
+		return (long)physical;
+	}
+	
+	Factor = (float)(Data->LogMax - Data->LogMin) / (Data->PhyMax - Data->PhyMin);
+	/* Convert Value */
+	logical = (long)((physical - Data->PhyMin) * Factor) + Data->LogMin;
+
+	if (logical > Data->LogMax) {
+		logical = Data->LogMax;
+	} else if (logical < Data->LogMin) {
+		logical = Data->LogMin;
+	}
+	
+	return logical;
 }
 
 static long get_unit_expo(long UnitType)
@@ -925,7 +948,7 @@ static int string_to_path(char *HIDpath, HIDPath *path, usage_tables_t *utab)
 	char buf[MAX_STRING];
 	char *start, *end; 
 	
-	TRACE(3, "entering string_to_path()");
+	upsdebugx(5, "entering string_to_path()");
 	
 	strncpy(buf, HIDpath, min(strlen(HIDpath)+1, MAX_STRING));
 	buf[MAX_STRING-1] = '\0';
@@ -939,11 +962,11 @@ static int string_to_path(char *HIDpath, HIDPath *path, usage_tables_t *utab)
 		else
 			*end = '\0';
 		
-		TRACE(4, "parsing %s", start);
+		upsdebugx(4, "parsing %s", start);
 		
 		/* lookup code */
 		if ((cur_usage = hid_lookup_usage(start, utab)) == -1) {
-			TRACE(4, "%s wasn't found", start);
+			upsdebugx(4, "%s wasn't found", start);
 			return 0;
 		}
 		else {
@@ -966,7 +989,7 @@ static int path_to_string(char *HIDpath, HIDPath *path, usage_tables_t *utab)
 {
 	int i = 0;
 	
-	TRACE(3, "entering path_to_string()");
+	upsdebugx(5, "entering path_to_string()");
 	
 	HIDpath[0] = '\0';
 	
@@ -980,7 +1003,7 @@ static int path_to_string(char *HIDpath, HIDPath *path, usage_tables_t *utab)
 		/* manage indexed collection */
 		if ((path->Node[i] & 0xffff0000) == 0x00ff0000)
 		{
-			TRACE(5, "Got an indexed collection");
+			upsdebugx(5, "Got an indexed collection");
 			sprintf(strrchr(HIDpath, '.'), "[%i]", path->Node[i] & 0x0000ffff);
 		}
 		else
@@ -1007,6 +1030,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{  "ChangedStatus",			0x00840003 },
 	{  "UPS",				0x00840004 },
 	{  "PowerSupply",			0x00840005 },
+	/* 0x00840006-0x0084000f	=>	Reserved */
 	{  "BatterySystem",			0x00840010 },
 	{  "BatterySystemID",			0x00840011 },
 	{  "Battery",				0x00840012 },
@@ -1029,6 +1053,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{  "GangID",				0x00840023 },
 	{  "PowerSummary",			0x00840024 },
 	{  "PowerSummaryID",			0x00840025 },
+	/* 0x00840026-0x0084002f	=>	Reserved */
 	{  "Voltage",				0x00840030 },
 	{  "Current",				0x00840031 },
 	{  "Frequency",				0x00840032 },
@@ -1038,6 +1063,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{  "Temperature",			0x00840036 },
 	{  "Humidity",				0x00840037 },
 	{  "BadCount",				0x00840038 },
+	/* 0x00840039-0x0084003f	=>	Reserved */
 	{  "ConfigVoltage",			0x00840040 },
 	{  "ConfigCurrent",			0x00840041 },
 	{  "ConfigFrequency",			0x00840042 },
@@ -1046,6 +1072,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{  "ConfigPercentLoad",			0x00840045 },
 	{  "ConfigTemperature",			0x00840046 },
 	{  "ConfigHumidity",			0x00840047 },
+	/* 0x00840048-0x0084004f	=>	Reserved */
 	{  "SwitchOnControl",			0x00840050 },
 	{  "SwitchOffControl",			0x00840051 },
 	{  "ToggleControl",			0x00840052 },
@@ -1057,6 +1084,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{  "Test",				0x00840058 },
 	{  "ModuleReset",			0x00840059 },
 	{  "AudibleAlarmControl",		0x0084005a },
+	/* 0x0084005b-0x0084005f	=>	Reserved */
 	{  "Present",				0x00840060 },
 	{  "Good",				0x00840061 },
 	{  "InternalFailure",			0x00840062 },
@@ -1080,6 +1108,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{  "Tested",				0x00840071 },
 	{  "AwaitingPower",			0x00840072 },
 	{  "CommunicationLost",			0x00840073 },
+	/* 0x00840074-0x008400fc	=>	Reserved */
 	{  "iManufacturer",			0x008400fd },
 	{  "iProduct",				0x008400fe },
 	{  "iSerialNumber",			0x008400ff },
@@ -1095,6 +1124,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{ "SMBSelectorState",			0x00850007 },
 	{ "SMBSelectorPresets",			0x00850008 },
 	{ "SMBSelectorInfo",			0x00850009 },
+	/* 0x0085000A-0x0085000f	=>	Reserved */
 	{ "OptionalMfgFunction1",		0x00850010 },
 	{ "OptionalMfgFunction2",		0x00850011 },
 	{ "OptionalMfgFunction3",		0x00850012 },
@@ -1109,6 +1139,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{ "BatterySupported",			0x0085001b },
 	{ "SelectorRevision",			0x0085001c },
 	{ "ChargingIndicator",			0x0085001d },
+	/* 0x0085001e-0x00850027	=>	Reserved */
 	{ "ManufacturerAccess",			0x00850028 },
 	{ "RemainingCapacityLimit",		0x00850029 },
 	{ "RemainingTimeLimit",			0x0085002a },
@@ -1117,6 +1148,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{ "BroadcastToCharger",			0x0085002d },
 	{ "PrimaryBattery",			0x0085002e },
 	{ "ChargeController",			0x0085002f },
+	/* 0x00850030-0x0085003f	=>	Reserved */
 	{ "TerminateCharge",			0x00850040 },
 	{ "TerminateDischarge",			0x00850041 },
 	{ "BelowRemainingCapacityLimit",	0x00850042 },
@@ -1129,6 +1161,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{ "AtRateOK",				0x00850049 },
 	{ "SMBErrorCode",			0x0085004a },
 	{ "NeedReplacement",			0x0085004b },
+	/* 0x0085004c-0x0085005f	=>	Reserved */
 	{ "AtRateTimeToFull",			0x00850060 },
 	{ "AtRateTimeToEmpty",			0x00850061 },
 	{ "AverageCurrent",			0x00850062 },
@@ -1141,6 +1174,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{ "AverageTimeToEmpty",			0x00850069 },
 	{ "AverageTimeToFull",			0x0085006a },
 	{ "CycleCount",				0x0085006b },
+	/* 0x0085006c-0x0085007f	=>	Reserved */
 	{ "BattPackModelLevel",			0x00850080 },
 	{ "InternalChargeController",		0x00850081 },
 	{ "PrimaryBatterySupport",		0x00850082 },
@@ -1157,9 +1191,11 @@ usage_lkp_t hid_usage_lkp[] = {
 	{ "CapacityGranularity1",		0x0085008d },
 	{ "CapacityGranularity2",		0x0085008e },
 	{ "iOEMInformation",			0x0085008f },
+	/* 0x00850090-0x008500bf	=>	Reserved */
 	{ "InhibitCharge",			0x008500c0 },
 	{ "EnablePolling",			0x008500c1 },
 	{ "ResetToZero",			0x008500c2 },
+	/* 0x008500c3-0x008500cf	=>	Reserved */
 	{ "ACPresent",				0x008500d0 },
 	{ "BatteryPresent",			0x008500d1 },
 	{ "PowerFail",				0x008500d2 },
@@ -1173,13 +1209,15 @@ usage_lkp_t hid_usage_lkp[] = {
 	{ "CurrentNotRegulated",		0x008500da },
 	{ "VoltageNotRegulated",		0x008500db },
 	{ "MasterMode",				0x008500dc },
+	/* 0x008500dd-0x008500ef	=>	Reserved */
 	{ "ChargerSelectorSupport",		0x008500f0 },
 	{ "ChargerSpec",			0x008500f1 },
 	{ "Level2",				0x008500f2 },
 	{ "Level3",				0x008500f3 },
+	/* 0x008500f4-0x008500ff	=>	Reserved */
 
 	/* end of structure. */
-	{  "\0", 0x0 }
+	{  "\0",				0x00000000 }
 };
 
 /* usage conversion numeric -> string */
@@ -1189,7 +1227,7 @@ static const char *hid_lookup_path(unsigned int usage, usage_tables_t *utab)
 	static char raw_usage[10];
 	usage_lkp_t *table;
 
-	TRACE(3, "Looking up %08x", usage);
+	upsdebugx(5, "Looking up %08x", usage);
 
 	for (j=0; utab[j] != NULL; j++) {
 		table = utab[j];
@@ -1214,7 +1252,7 @@ static int hid_lookup_usage(char *name, usage_tables_t *utab)
 	char buf[20];
 	usage_lkp_t *table;
 
-	TRACE(3, "Looking up %s", name);
+	upsdebugx(5, "Looking up %s", name);
 	
 	if (name[0] == '[') { /* manage indexed collection */
 		return (0x00FF0000 + atoi(&name[1]));
@@ -1225,7 +1263,7 @@ static int hid_lookup_usage(char *name, usage_tables_t *utab)
 		{
 			if (!strcmp(table[i].usage_name, name))
 			{
-				TRACE(4, "hid_lookup_usage: found %04x",
+				upsdebugx(4, "hid_lookup_usage: found %04x",
 				      table[i].usage_code);
 				
 				return table[i].usage_code;
@@ -1242,43 +1280,3 @@ static int hid_lookup_usage(char *name, usage_tables_t *utab)
 	return value;
 }
 
-#define NIBBLE(_i)    (((_i) < 10) ? '0' + (_i) : 'A' + (_i) - 10)
-
-static void dump_hex (const char *msg, const unsigned char *buf, int len)
-{
-	int i;
-	int nlocal;
-	const unsigned char *pc;
-	char *out;
-	const unsigned char *start;
-	char c;
-	char line[100];
- 
-	start = buf;
-	out = line;
-	
-	for (i = 0, pc = buf, nlocal = len; i < 16; i++, pc++)
-	{
-		if (nlocal > 0)
-		{
-			c = *pc;
-
-			*out++ = NIBBLE ((c >> 4) & 0xF);
-			*out++ = NIBBLE (c & 0xF);
-
-			nlocal--;
-		}
-		else
-		{
-			*out++ = ' ';
-			*out++ = ' ';
-		}
-		*out++ = ' ';
-	}
-	*out++ = 0;
-
-	TRACE(3, "%s: (%d bytes) => %s", msg, len, line);
-
-	buf += 16;
-	len -= 16;
-}

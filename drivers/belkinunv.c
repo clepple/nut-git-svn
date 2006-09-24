@@ -508,7 +508,7 @@ static int belkin_std_open_tty(const char *device) {
 }
 
 /* blocking read with 1-second timeout (use non-blocking i/o) */
-static int belkin_std_upsread(int fd, char *buf, int n) {
+static int belkin_std_upsread(int fd, unsigned char *buf, int n) {
 	int count = 0;
 	int r;
 	int tries = 0;
@@ -532,7 +532,7 @@ static int belkin_std_upsread(int fd, char *buf, int n) {
 }
 
 /* blocking write with 1-second timeout (use non-blocking i/o) */
-static int belkin_std_upswrite(int fd, char *buf, int n) {
+static int belkin_std_upswrite(int fd, unsigned char *buf, int n) {
 	int count = 0;
 	int r;
 	int tries = 0;

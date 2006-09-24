@@ -19,7 +19,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define APC_DRIVER_VERSION	"1.99.7"
+#define APC_DRIVER_VERSION	"1.99.8"
 
 #include "main.h"
 #include "serial.h"
@@ -238,7 +238,7 @@ static int query_ups(const char *var, int first)
 	ret = ser_send_char(upsfd, vt->cmd);
 
 	if (ret != 1) {
-		upslog(LOG_ERR, "query_ups: ser_send_char failed");
+		upslog_with_errno(LOG_ERR, "query_ups: ser_send_char failed");
 		return 0;
 	}
 
@@ -285,7 +285,7 @@ static void do_capabilities(void)
 	ret = ser_send_char(upsfd, APC_CAPABILITY);		/* ^Z */
 
 	if (ret != 1) {
-		upslog(LOG_ERR, "do_capabilities: ser_send_char failed");
+		upslog_with_errno(LOG_ERR, "do_capabilities: ser_send_char failed");
 		return;
 	}
 
@@ -388,7 +388,7 @@ static int update_status(void)
 	ret = ser_send_char(upsfd, APC_STATUS);
 
 	if (ret != 1) {
-		upslog(LOG_ERR, "update_status: ser_send_char failed");
+		upslog_with_errno(LOG_ERR, "update_status: ser_send_char failed");
 		dstate_datastale();
 		return 0;
 	}
@@ -509,7 +509,7 @@ static int firmware_table_lookup(void)
 	ret = ser_send_char(upsfd, 'b');
 
 	if (ret != 1) {
-		upslog(LOG_ERR, "getbaseinfo: ser_send_char failed");
+		upslog_with_errno(LOG_ERR, "getbaseinfo: ser_send_char failed");
 		return 0;
 	}
 
@@ -524,7 +524,7 @@ static int firmware_table_lookup(void)
 		ret = ser_send_char(upsfd, 'V');
 
 		if (ret != 1) {
-			upslog(LOG_ERR, "getbaseinfo: ser_send_char failed");
+			upslog_with_errno(LOG_ERR, "getbaseinfo: ser_send_char failed");
 			return 0;
 		}
 
@@ -533,6 +533,10 @@ static int firmware_table_lookup(void)
 
 		/* found one, force the model information */
 		if (!strcmp(buf, "6QD")) {
+			upsdebugx(1, "Found Smart-UPS");
+			dstate_setinfo("ups.model", "Smart-UPS");
+		}
+		else if (!strcmp(buf, "6TI")) {
 			upsdebugx(1, "Found Smart-UPS");
 			dstate_setinfo("ups.model", "Smart-UPS");
 		}
@@ -583,7 +587,7 @@ static void getbaseinfo(void)
 	ret = ser_send_char(upsfd, APC_CMDSET);
 
 	if (ret != 1) {
-		upslog(LOG_ERR, "getbaseinfo: ser_send_char failed");
+		upslog_with_errno(LOG_ERR, "getbaseinfo: ser_send_char failed");
 		return;
 	}
 
@@ -639,7 +643,7 @@ static int do_cal(int start)
 	ret = ser_send_char(upsfd, APC_STATUS);
 
 	if (ret != 1) {
-		upslog(LOG_ERR, "do_cal: ser_send_char failed");
+		upslog_with_errno(LOG_ERR, "do_cal: ser_send_char failed");
 		return STAT_INSTCMD_HANDLED;		/* FUTURE: failure */
 	}
 
@@ -665,7 +669,7 @@ static int do_cal(int start)
 		ret = ser_send_char(upsfd, APC_CMD_CALTOGGLE);
 
 		if (ret != 1) {
-			upslog(LOG_ERR, "do_cal: ser_send_char failed");
+			upslog_with_errno(LOG_ERR, "do_cal: ser_send_char failed");
 			return STAT_INSTCMD_HANDLED;	/* FUTURE: failure */
 		}
 
@@ -692,7 +696,7 @@ static int do_cal(int start)
 	ret = ser_send_char(upsfd, APC_CMD_CALTOGGLE);
 
 	if (ret != 1) {
-		upslog(LOG_ERR, "do_cal: ser_send_char failed");
+		upslog_with_errno(LOG_ERR, "do_cal: ser_send_char failed");
 		return STAT_INSTCMD_HANDLED;	/* FUTURE: failure */
 	}
 
@@ -717,7 +721,7 @@ static int smartmode(void)
 		ret = ser_send_char(upsfd, APC_GOSMART);
 
 		if (ret != 1) {
-			upslog(LOG_ERR, "smartmode: ser_send_char failed");
+			upslog_with_errno(LOG_ERR, "smartmode: ser_send_char failed");
 			return 0;
 		}
 
@@ -735,7 +739,7 @@ static int smartmode(void)
 		ret = ser_send_char(upsfd, 27);	/* ESC */
 
 		if (ret != 1) {
-			upslog(LOG_ERR, "smartmode: ser_send_char failed");
+			upslog_with_errno(LOG_ERR, "smartmode: ser_send_char failed");
 			return 0;
 		}
 
@@ -899,7 +903,7 @@ static int setvar_enum(struct apc_vartab_t *vt, const char *val)
 	ret = ser_send_char(upsfd, vt->cmd);
 
 	if (ret != 1) {
-		upslog(LOG_ERR, "setvar_enum: ser_send_char failed");
+		upslog_with_errno(LOG_ERR, "setvar_enum: ser_send_char failed");
 		return STAT_SET_HANDLED;	/* FUTURE: failed */
 	}
 
@@ -922,7 +926,7 @@ static int setvar_enum(struct apc_vartab_t *vt, const char *val)
 		ret = ser_send_char(upsfd, APC_NEXTVAL);
 
 		if (ret != 1) {
-			upslog(LOG_ERR, "setvar_enum: ser_send_char failed");
+			upslog_with_errno(LOG_ERR, "setvar_enum: ser_send_char failed");
 			return STAT_SET_HANDLED;	/* FUTURE: failed */
 		}
 
@@ -942,7 +946,7 @@ static int setvar_enum(struct apc_vartab_t *vt, const char *val)
 		ret = ser_send_char(upsfd, vt->cmd);
 
 		if (ret != 1) {
-			upslog(LOG_ERR, "setvar_enum: ser_send_char failed");
+			upslog_with_errno(LOG_ERR, "setvar_enum: ser_send_char failed");
 			return STAT_SET_HANDLED;	/* FUTURE: failed */
 		}
 
@@ -994,7 +998,7 @@ static int setvar_string(struct apc_vartab_t *vt, const char *val)
 	ret = ser_send_char(upsfd, vt->cmd);
 
 	if (ret != 1) {
-		upslog(LOG_ERR, "setvar_string: ser_send_char failed");
+		upslog_with_errno(LOG_ERR, "setvar_string: ser_send_char failed");
 		return STAT_SET_HANDLED;	/* FUTURE: failed */
 	}
 
@@ -1014,7 +1018,7 @@ static int setvar_string(struct apc_vartab_t *vt, const char *val)
 	ret = ser_send_char(upsfd, APC_NEXTVAL);
 
 	if (ret != 1) {
-		upslog(LOG_ERR, "setvar_string: ser_send_char failed");
+		upslog_with_errno(LOG_ERR, "setvar_string: ser_send_char failed");
 		return STAT_SET_HANDLED;	/* FUTURE: failed */
 	}
 
@@ -1024,7 +1028,7 @@ static int setvar_string(struct apc_vartab_t *vt, const char *val)
 		ret = ser_send_char(upsfd, val[i]);
 
 		if (ret != 1) {
-			upslog(LOG_ERR, "setvar_string: ser_send_char failed");
+			upslog_with_errno(LOG_ERR, "setvar_string: ser_send_char failed");
 			return STAT_SET_HANDLED;	/* FUTURE: failed */
 		}
 
@@ -1036,7 +1040,7 @@ static int setvar_string(struct apc_vartab_t *vt, const char *val)
 		ret = ser_send_char(upsfd, 13);
 
 		if (ret != 1) {
-			upslog(LOG_ERR, "setvar_string: ser_send_char failed");
+			upslog_with_errno(LOG_ERR, "setvar_string: ser_send_char failed");
 			return STAT_SET_HANDLED;	/* FUTURE: failed */
 		}
 
@@ -1096,7 +1100,7 @@ static int do_cmd(struct apc_cmdtab_t *ct)
 	ret = ser_send_char(upsfd, ct->cmd);
 
 	if (ret != 1) {
-		upslog(LOG_ERR, "do_cmd: ser_send_char failed");
+		upslog_with_errno(LOG_ERR, "do_cmd: ser_send_char failed");
 		return STAT_INSTCMD_HANDLED;		/* FUTURE: failed */
 	}
 
@@ -1107,7 +1111,7 @@ static int do_cmd(struct apc_cmdtab_t *ct)
 		ret = ser_send_char(upsfd, ct->cmd);
 
 		if (ret != 1) {
-			upslog(LOG_ERR, "do_cmd: ser_send_char failed");
+			upslog_with_errno(LOG_ERR, "do_cmd: ser_send_char failed");
 			return STAT_INSTCMD_HANDLED;	/* FUTURE: failed */
 		}
 	}

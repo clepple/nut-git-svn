@@ -76,16 +76,18 @@ nitram: nitram.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o 
 	$(CC) $(CFLAGS) $(LDFLAGS) -o nitram nitram.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBOBJ) 
 optiups: optiups.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBDEP)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o optiups optiups.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBOBJ) 
+rhino: rhino.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBDEP)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o rhino rhino.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBOBJ) -lm
 al175.o: al175.c main.h ../include/common.h ../include/attribute.h \
   ../include/config.h ../include/proto.h ../include/version.h \
   ../include/upsconf.h dstate.h ../include/attribute.h \
   ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
   serial.h ../include/config.h al175.h
-apc-hid.o: apc-hid.c newhidups.h ../include/config.h libhid.h \
-  ../include/timehead.h hidtypes.h apc-hid.h ../include/extstate.h \
-  dstate.h ../include/attribute.h ../include/parseconf.h \
-  ../include/upshandler.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/version.h
+apc-hid.o: apc-hid.c newhidups.h ../include/config.h libhid.h hidtypes.h \
+  ../include/timehead.h apc-hid.h ../include/extstate.h dstate.h \
+  ../include/attribute.h ../include/parseconf.h ../include/upshandler.h \
+  ../include/common.h ../include/attribute.h ../include/config.h \
+  ../include/proto.h ../include/version.h
 apcsmart.o: apcsmart.c main.h ../include/common.h ../include/attribute.h \
   ../include/config.h ../include/proto.h ../include/version.h \
   ../include/upsconf.h dstate.h ../include/attribute.h \
@@ -114,7 +116,7 @@ belkin.o: belkin.c main.h ../include/common.h ../include/attribute.h \
   ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
   serial.h ../include/config.h belkin.h ../include/timehead.h
 belkin-hid.o: belkin-hid.c newhidups.h ../include/config.h libhid.h \
-  ../include/timehead.h hidtypes.h belkin-hid.h ../include/extstate.h \
+  hidtypes.h ../include/timehead.h belkin-hid.h ../include/extstate.h \
   dstate.h ../include/attribute.h ../include/parseconf.h \
   ../include/upshandler.h ../include/common.h ../include/attribute.h \
   ../include/config.h ../include/proto.h ../include/version.h
@@ -194,7 +196,7 @@ gamatronic.o: gamatronic.c main.h ../include/common.h \
   ../include/attribute.h ../include/parseconf.h ../include/upshandler.h \
   ../include/extstate.h serial.h ../include/config.h gamatronic.h
 generic-hid.o: generic-hid.c newhidups.h ../include/config.h libhid.h \
-  ../include/timehead.h hidtypes.h generic-hid.h ../include/extstate.h \
+  hidtypes.h ../include/timehead.h generic-hid.h ../include/extstate.h \
   dstate.h ../include/attribute.h ../include/parseconf.h \
   ../include/upshandler.h ../include/common.h ../include/attribute.h \
   ../include/config.h ../include/proto.h ../include/version.h main.h \
@@ -221,11 +223,16 @@ isbmex.o: isbmex.c main.h ../include/common.h ../include/attribute.h \
   ../include/upsconf.h dstate.h ../include/attribute.h \
   ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
   serial.h ../include/config.h isbmex.h
-libhid.o: libhid.c hidparser.h hidtypes.h libhid.h ../include/timehead.h \
-  libusb.h
-libusb.o: libusb.c libhid.h ../include/timehead.h hidtypes.h libusb.h \
-  ../include/config.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/version.h
+libhid.o: libhid.c hidparser.h hidtypes.h libhid.h ../include/config.h \
+  ../include/timehead.h libusb.h
+libshut.o: libshut.c serial.h ../include/attribute.h ../include/config.h \
+  libshut.h libhid.h hidtypes.h ../include/timehead.h ../include/common.h \
+  ../include/attribute.h ../include/config.h ../include/proto.h \
+  ../include/version.h
+libusb.o: libusb.c ../include/config.h libhid.h hidtypes.h \
+  ../include/timehead.h libusb.h ../include/common.h \
+  ../include/attribute.h ../include/config.h ../include/proto.h \
+  ../include/version.h
 liebert.o: liebert.c main.h ../include/common.h ../include/attribute.h \
   ../include/config.h ../include/proto.h ../include/version.h \
   ../include/upsconf.h dstate.h ../include/attribute.h \
@@ -250,11 +257,11 @@ metasys.o: metasys.c main.h ../include/common.h ../include/attribute.h \
   ../include/upsconf.h dstate.h ../include/attribute.h \
   ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
   serial.h ../include/config.h metasys.h
-mge-hid.o: mge-hid.c newhidups.h ../include/config.h libhid.h \
-  ../include/timehead.h hidtypes.h mge-hid.h ../include/extstate.h \
-  dstate.h ../include/attribute.h ../include/parseconf.h \
-  ../include/upshandler.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/version.h
+mge-hid.o: mge-hid.c newhidups.h ../include/config.h libhid.h hidtypes.h \
+  ../include/timehead.h mge-hid.h ../include/extstate.h dstate.h \
+  ../include/attribute.h ../include/parseconf.h ../include/upshandler.h \
+  ../include/common.h ../include/attribute.h ../include/config.h \
+  ../include/proto.h ../include/version.h
 mge-shut.o: mge-shut.c ../include/config.h main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
   ../include/version.h ../include/upsconf.h dstate.h \
@@ -275,9 +282,9 @@ newhidups.o: newhidups.c main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
   ../include/version.h ../include/upsconf.h dstate.h \
   ../include/attribute.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/extstate.h libhid.h ../include/timehead.h hidtypes.h \
-  libusb.h newhidups.h ../include/config.h generic-hid.h mge-hid.h \
-  apc-hid.h belkin-hid.h
+  ../include/extstate.h libhid.h ../include/config.h hidtypes.h \
+  ../include/timehead.h newhidups.h libusb.h mge-hid.h generic-hid.h \
+  apc-hid.h belkin-hid.h tripplite-hid.h
 nitram.o: nitram.c main.h ../include/common.h ../include/attribute.h \
   ../include/config.h ../include/proto.h ../include/version.h \
   ../include/upsconf.h dstate.h ../include/attribute.h \
@@ -302,6 +309,11 @@ powercom.o: powercom.c main.h ../include/common.h ../include/attribute.h \
   ../include/upsconf.h dstate.h ../include/attribute.h \
   ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
   serial.h ../include/config.h powercom.h ../include/timehead.h
+rhino.o: rhino.c main.h ../include/common.h ../include/attribute.h \
+  ../include/config.h ../include/proto.h ../include/version.h \
+  ../include/upsconf.h dstate.h ../include/attribute.h \
+  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
+  serial.h ../include/config.h rhino.h
 safenet.o: safenet.c main.h ../include/common.h ../include/attribute.h \
   ../include/config.h ../include/proto.h ../include/version.h \
   ../include/upsconf.h dstate.h ../include/attribute.h \
@@ -336,7 +348,7 @@ tripplite.o: tripplite.c main.h ../include/common.h \
   ../include/attribute.h ../include/parseconf.h ../include/upshandler.h \
   ../include/extstate.h serial.h ../include/config.h tripplite.h
 tripplite-hid.o: tripplite-hid.c newhidups.h ../include/config.h libhid.h \
-  ../include/timehead.h hidtypes.h tripplite-hid.h ../include/extstate.h \
+  hidtypes.h ../include/timehead.h tripplite-hid.h ../include/extstate.h \
   dstate.h ../include/attribute.h ../include/parseconf.h \
   ../include/upshandler.h ../include/common.h ../include/attribute.h \
   ../include/config.h ../include/proto.h ../include/version.h
@@ -349,8 +361,8 @@ tripplite_usb.o: tripplite_usb.c main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
   ../include/version.h ../include/upsconf.h dstate.h \
   ../include/attribute.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/extstate.h libhid.h ../include/timehead.h hidtypes.h \
-  libusb.h
+  ../include/extstate.h libhid.h ../include/config.h hidtypes.h \
+  ../include/timehead.h libusb.h
 upscode2.o: upscode2.c main.h ../include/common.h ../include/attribute.h \
   ../include/config.h ../include/proto.h ../include/version.h \
   ../include/upsconf.h dstate.h ../include/attribute.h \

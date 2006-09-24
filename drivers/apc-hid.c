@@ -83,7 +83,7 @@ info_lkp_t apc_date_conversion[] = {
 
 /* APC has two non-NUT-standard status items: "time limit expired" and
    "battery present". The newhidups driver currently ignores
-   batterypresent, and maps timelimitexp to LB. CyberPower has the
+   batterypres, and maps timelimitexp to LB. CyberPower has the
    non-NUT-standard status item "fully charged". The newhidups driver
    currently ignores it. */
 static info_lkp_t timelimitexpired_info[] = {
@@ -190,11 +190,11 @@ static hid_info_t apc_hid2nut[] = {
   { "battery.voltage",  0, 0, "UPS.PowerSummary.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
   { "battery.voltage.nominal", 0, 0, "UPS.Battery.ConfigVoltage", NULL, "%.1f", HU_FLAG_OK, NULL },
   { "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.1f", HU_FLAG_OK, NULL }, /* CyberPower, Back-UPS 500 */
-  { "battery.temperature", 0, 0, "UPS.Battery.Temperature", NULL, "%.1f", HU_FLAG_OK, NULL },
+  { "battery.temperature", 0, 0, "UPS.Battery.Temperature", NULL, "%s", HU_FLAG_OK, &kelvin_celsius_conversion[0] },
   { "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_OK, stringid_conversion },
   { "battery.mfr.date", 0, 0, "UPS.Battery.ManufacturerDate", NULL, "%s", HU_FLAG_OK, &date_conversion[0] },
   { "battery.mfr.date", 0, 0, "UPS.PowerSummary.APCBattReplaceDate", NULL, "%s", HU_FLAG_OK, &apc_date_conversion[0] }, /* Back-UPS 500, Back-UPS ES/CyberFort 500 */
-  { "battery.date", 0, 0, "UPS.Battery.APCBattReplaceDate", NULL, "%s", HU_FLAG_OK, &date_conversion[0] }, /* Back-UPS ES 650, actual value not observed. Perhaps use apc_date_conversion. */
+  { "battery.date", 0, 0, "UPS.Battery.APCBattReplaceDate", NULL, "%s", HU_FLAG_OK, &apc_date_conversion[0] }, /* Observed values: 0x0 on Back-UPS ES 650, 0x92501 on Back-UPS BF500 whose manufacture date was 2005/01/20 - this makes little sense but at least it's a valid date. */
 
   /* UPS page */
   { "ups.load", 0, 1, "UPS.Output.PercentLoad", NULL, "%.1f", HU_FLAG_OK, NULL },
@@ -204,7 +204,6 @@ static hid_info_t apc_hid2nut[] = {
   { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Output.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_OK, NULL}, /* CyberPower */
   { "ups.test.result", 0, 0, "UPS.Battery.Test", NULL, "%s", HU_FLAG_OK, &test_read_info[0] },
   { "ups.test.result", 0, 0, "UPS.Output.Test", NULL, "%s", HU_FLAG_OK, &test_read_info[0] }, /* CyberPower */
-  { "ups.temperature", 0, 0, "UPS.Battery.Temperature", NULL, "%.1f", HU_FLAG_OK, NULL },
   { "ups.beeper.status", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", HU_FLAG_OK, &beeper_info[0] },
   { "ups.mfr.date", 0, 0, "UPS.ManufacturerDate", NULL, "%s", HU_FLAG_OK, &date_conversion[0] },
   { "ups.mfr.date", 0, 0, "UPS.PowerSummary.ManufacturerDate", NULL, "%s", HU_FLAG_OK, &date_conversion[0] }, /* Back-UPS 500 */
@@ -244,7 +243,7 @@ static hid_info_t apc_hid2nut[] = {
 
   /* Output page */
   { "output.voltage", 0, 0, "UPS.Output.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
-  { "output.voltage.target.line", 0, 0, "UPS.Output.ConfigVoltage", NULL, "%.1f", HU_FLAG_OK, NULL },
+  { "output.voltage.nominal", 0, 0, "UPS.Output.ConfigVoltage", NULL, "%.1f", HU_FLAG_OK, NULL },
 
   /* instant commands. */
   /* test.* split into subset while waiting for extradata support
@@ -352,9 +351,38 @@ static char *apc_format_serial(HIDDevice *hd) {
  * the device is supported by this subdriver, else 0. */
 static int apc_claim(HIDDevice *hd) {
 	if (hd->VendorID == APC_VENDORID) {
-		return 1;
+		switch (hd->ProductID) {
+		case  0x0002:
+			return 1;  /* accept known UPSs */
+		default:
+			if (getval("productid")) {
+				return 1;
+			} else {
+			upsdebugx(1,
+"This particular APC device (%04x/%04x) is not (or perhaps not yet)\n"
+"supported by newhidups. Try running the driver with the '-x productid=%04x'\n"
+"option. Please report your results to the NUT developer's mailing list.\n",
+						 hd->VendorID, hd->ProductID, hd->ProductID);
+			return 0;
+			}
+		}
 	} else if (hd->VendorID == CPS_VENDORID) {
-		return 1;
+		switch (hd->ProductID) {
+		case 0x0005:
+		case 0x0501:
+			return 1;  /* accept known UPSs */
+		default:
+			if (getval("productid")) {
+				return 1;
+			} else {
+			upsdebugx(1,
+"This particular CyberPower device (%04x/%04x) is not (or perhaps not yet)\n"
+"supported by newhidups. Try running the driver with the '-x productid=%04x'\n"
+"option. Please report your results to the NUT developer's mailing list.\n",
+						 hd->VendorID, hd->ProductID, hd->ProductID);
+			return 0;
+			}
+		}
 	} else {
 		return 0;
 	}

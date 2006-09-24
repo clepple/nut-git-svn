@@ -544,8 +544,7 @@ int main(int argc, char **argv)
 
 	upsdebugx(1, "debug level is '%d'", nut_debug_level);
 
-	if ((new_uid = get_user_pwent(user)) == NULL)
-		fatal("getpwnam(%s)", user);
+	new_uid = get_user_pwent(user);
 	
 	if (chroot_path)
 		chroot_start(chroot_path);
@@ -556,7 +555,7 @@ int main(int argc, char **argv)
 	/* This avoid case where ie /var is umounted */
 	if (!do_forceshutdown)
 		if (chdir(dflt_statepath()))
-			fatal("Can't chdir to %s", dflt_statepath());
+			fatal_with_errno("Can't chdir to %s", dflt_statepath());
 
 	setup_signals();
 
