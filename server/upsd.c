@@ -44,8 +44,8 @@
 
 	upstype	*firstups = NULL;
 
-	/* default 15 seconds before data is marked stale */
-	int	maxage = 15;
+	/* default 15 seconds before data is marked stale and 5 seconds to wait for DUMPDONE */
+	int	maxage = 15, maxinit = 5;
 
 	/* preloaded to STATEPATH in main, can be overridden via upsd.conf */
 	char	*statepath = NULL;
@@ -117,15 +117,15 @@ static void check_ups(upstype *ups)
 	if ((!ups) || (!ups->fn))
 		return;
 
+	/* see if we need to (re)connect to the socket */
+	if (ups->sock_fd == -1)
+		ups->sock_fd = sstate_connect(ups);
+
 	/* throw some warnings if it's not feeding us data any more */
 	if (sstate_dead(ups, maxage))
 		ups_data_stale(ups);
 	else
 		ups_data_ok(ups);
-
-	/* see if we need to (re)connect to the socket */
-	if (ups->sock_fd == -1)
-		ups->sock_fd = sstate_connect(ups);
 }
 
 /* create a listening socket for tcp connections */
@@ -718,7 +718,7 @@ static void initial_dump_wait(void)
 	time(&start);
 	time(&now);
 
-	while (difftime(now, start) < INITIAL_WAIT_MAX) {
+	while (difftime(now, start) < maxinit) {
 
 		/* check this now in case the user is trying to ^C us */
 		if (exit_flag) {

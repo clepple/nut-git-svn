@@ -1380,6 +1380,33 @@ void set_maxage(int value) {
 }
 
 
+int get_maxinit() {
+	t_tree t;
+	
+	t = tree_search(conf, "nut.upsd.maxinit", TRUE);
+	if (t == 0) return 0;
+	if (t->type == string_type) {
+		current.rights_out = t->right;
+		return atoi(t->value.string_value);
+	}
+	return 0;
+}
+
+
+void set_maxinit(int value) {
+	t_string s;
+	
+	if (current.rights_in != invalid_right) {
+		/* an int can need 10 char to be represented (without the sign)
+		 I put 15 to be sure */
+		s = xmalloc(sizeof(char) * 15);
+		sprintf(s, "%d", value);
+		add_to_tree(conf, "nut.upsd.maxinit", s, string_type, current.rights_in);
+		free(s);
+	}
+}
+
+
 /***************************************************
  *                 UPSMON SECTION                  *
  ***************************************************/
