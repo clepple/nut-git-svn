@@ -1,3 +1,8 @@
+Mon Nov 20 19:02:57 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - server/upsd.c: don't wait for DUMPDONE before forking to the background (this
+   obsoletes the MAXINIT parameter)
+
 Sat Nov 18 11:16:07 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
  - server/upsd.c: add MAXINIT parameter to upsd.conf to make the time upsd waits

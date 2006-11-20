@@ -593,20 +593,6 @@ int get_maxage();
  */
 void set_maxage(int value);
 
-/**
- * Return the max time to wait for DUMPDONE on startup of upsd
- * 
- * @return The maxage value of upsd
- */
-int get_maxinit();
-
-/**
- * Set the max time to wait for DUMPDONE on startup of upsd
- * 
- * @value The maxage value for upsd
- */
-void set_maxinit(int value);
-
 
 /* *************************************************
  *                 UPSMON SECTION                  *
