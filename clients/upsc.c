@@ -166,10 +166,12 @@ static void check_upsdef(const char *ups)
 	exit(EXIT_FAILURE);
 }
 
+#if 0
 static int upscli_splithostname(const char *name, char **hostname, int *port)
 {
 
 }
+#endif
 
 static int list_upses(const char *name)
 {
@@ -227,6 +229,7 @@ static int list_upses(const char *name)
 		ret = upscli_list_next(&ups, numq, query, &numa, &answer);
 	}
 
+	upscli_disconnect(&ups);
 	return EXIT_SUCCESS;
 }
 
@@ -253,7 +256,7 @@ int main(int argc, char **argv)
 			help(argv[0]);
 			
 		ret = list_upses(argv[2]);
-		exit(ret);
+		exit(EXIT_SUCCESS);
 	}
 
 	check_upsdef(argv[1]);
