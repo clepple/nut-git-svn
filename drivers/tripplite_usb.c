@@ -25,7 +25,16 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#define USE_UHID
+
+#ifdef USE_UHID
+#if !(defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__))
+#error "USE_UHID is only appropriate for *BSD"
+#endif /* defined(*BSD) */
+#define DRV_VERSION "0.8-uhid"
+#else  /* USE_UHID */
 #define DRV_VERSION "0.8"
+#endif /* USE_UHID */
 
 /* % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
  *
