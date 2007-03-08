@@ -38,12 +38,17 @@
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 
 /* Communication layers and drivers (USB and MGE SHUT) */
+#if 0
 #ifdef SHUT_MODE
 	#include "libshut.h"
 	communication_subdriver_t *comm_driver = &shut_subdriver;
 #else
 	#include "libusb.h"
 	communication_subdriver_t *comm_driver = &usb_subdriver;
+#endif
+#else
+	#include "libusb.h"
+	communication_subdriver_t *comm_driver = &uhid_subdriver;
 #endif
 
 #include <errno.h>
