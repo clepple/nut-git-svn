@@ -8,7 +8,7 @@
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
    Copyright (C) 2001  Rickard E. (Rik) Faith <faith@alephnull.com>
    Copyright (C) 2004  Nicholas J. Kain <nicholas@kain.us>
-   Copyright (C) 2005,2006  Charles Lepple <clepple+nut@gmail.com>
+   Copyright (C) 2005-2007  Charles Lepple <clepple+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -28,6 +28,8 @@
 #define DRV_VERSION "0.8"
 
 /* % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+ *
+ * Protocol 1001
  *
  * OMNIVS Commands: (capital letters are literals, lower-case are variables)
  * :B     -> Bxxxxyy (xxxx/55.0: Hz in, yy/16: battery voltage)
@@ -140,7 +142,7 @@ This driver should work with older Tripp Lite UPSes which are detected as USB
 HID-class devices, but are not true HID Power-Device Class devices.  So far,
 the devices supported by tripplite_usb have product ID 0001, and the newer
 units (such as those with "LCD" in the model name) with product ID 2001 will
-work with the newhidups driver instead.  Please report success or failure to
+work with the usbhid-ups driver instead.  Please report success or failure to
 the nut-upsuser mailing list.  A key piece of information is the protocol
 number, returned in ups.debug.0.  Also, be sure to turn on debugging (C<-DDD>)
 for more informative log messages.  If your Tripp Lite UPS uses a serial port,
@@ -259,7 +261,7 @@ Email: info@relevantevidence.com
 
 =head2 The core driver:
 
-nutupsdrv(8), regex(7), newhidups(8)
+nutupsdrv(8), regex(7), usbhid-ups(8)
 
 =head2 Internet resources:
 
@@ -303,8 +305,8 @@ static enum tl_model_t {
 #define MAX_VOLT 13.4          /*!< Max battery voltage (100%) */
 #define MIN_VOLT 11.0          /*!< Min battery voltage (10%) */
 
-static HIDDevice *hd = NULL;
-static HIDDevice curDevice;
+static HIDDevice_t *hd = NULL;
+static HIDDevice_t curDevice;
 static HIDDeviceMatcher_t *reopen_matcher = NULL;
 static HIDDeviceMatcher_t *regex_matcher = NULL;
 static usb_dev_handle *udev;
@@ -327,7 +329,8 @@ static int battery_voltage_nominal = 12,
 	   input_voltage_scaled = 120,
 	/* input_voltage_maximum = -1,
 	   input_voltage_minimum = -1, */
-	   switchable_load_banks = 0;
+	   switchable_load_banks = 0,
+           unit_id = -1; /*!< range: 1-65535, most likely */
 
 /*! Time in seconds to delay before shutting down. */
 static unsigned int offdelay = DEFAULT_OFFDELAY;
@@ -670,6 +673,7 @@ static int hard_shutdown(void)
 static int instcmd(const char *cmdname, const char *extra)
 {
 	unsigned char buf[256];
+	int ret;
 
 	if(tl_model == TRIPP_LITE_SMARTPRO) {
 		if (!strcasecmp(cmdname, "test.battery.start")) {
@@ -677,12 +681,19 @@ static int instcmd(const char *cmdname, const char *extra)
 			return STAT_INSTCMD_HANDLED;
 		}
 		if (!strcasecmp(cmdname, "load.off")) {
-			send_cmd("K0", 3, buf, sizeof buf);
-			return STAT_INSTCMD_HANDLED;
+			/* ~ 3 sec delay
+			 * K0_ -> main relay
+			 * K1_ -> load 1
+			 * K2_ -> load 2
+			 * K3_ -> nothing
+			 * where low-order bit of _ is off/on
+			 */
+			ret = send_cmd("K20", 4, buf, sizeof buf);
+			return (ret == 4) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
 		}
 		if (!strcasecmp(cmdname, "load.on")) {
-			send_cmd("K1", 3, buf, sizeof buf);
-			return STAT_INSTCMD_HANDLED;
+			ret = send_cmd("K21", 4, buf, sizeof buf);
+			return (ret == 4) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
 		}
 	}
 #if 0
@@ -733,10 +744,10 @@ static int setvar(const char *varname, const char *val)
 void upsdrv_initinfo(void)
 {
 	const unsigned char proto_msg[] = "\0", f_msg[] = "F", p_msg[] = "P",
-		s_msg[] = "S", v_msg[] = "V", w_msg[] = "W\0";
+		s_msg[] = "S", u_msg[] = "U", v_msg[] = "V", w_msg[] = "W\0";
 	char *model, *model_end, proto_string[5 + sizeof("protocol ")];
-	unsigned char proto_value[9], f_value[9], p_value[9], s_value[9], v_value[9],
-		      w_value[9], buf[256];
+	unsigned char proto_value[9], f_value[9], p_value[9], s_value[9],
+	     u_value[9], v_value[9], w_value[9], buf[256];
 	int  va, ret;
 	unsigned int proto_number = 0;
 
@@ -745,12 +756,14 @@ void upsdrv_initinfo(void)
 	if(ret <= 0) {
 		if(ret == -EPIPE) {
 			fatalx("Could not reset watchdog. Please check and"
-				"see if newhidups(8) works with this UPS.");
+				"see if usbhid-ups(8) works with this UPS.");
 		} else {
 			upslogx(3, "Could not reset watchdog. Please send model "
 				"information to nut-upsdev mailing list");
 		}
 	}
+
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
 	ret = send_cmd(proto_msg, sizeof(proto_msg), proto_value, sizeof(proto_value)-1);
 	if(ret <= 0) {
@@ -768,10 +781,14 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("ups.firmware.aux", proto_string);
 
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
+
 	ret = send_cmd(s_msg, sizeof(s_msg), s_value, sizeof(s_value)-1);
 	if(ret <= 0) {
 		fatalx("Could not retrieve status ... is this an OMNIVS model?");
 	}
+
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
 	dstate_setinfo("ups.mfr", "%s", "Tripp Lite");
 
@@ -799,6 +816,9 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("ups.power.nominal", "%d", va);
 
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
+
+        /* Fetch firmware version: */
 	ret = send_cmd(f_msg, sizeof(f_msg), f_value, sizeof(f_value)-1);
 
 	toprint_str(f_value+1, 6);
@@ -809,6 +829,24 @@ void upsdrv_initinfo(void)
 	ret = send_cmd(v_msg, sizeof(v_msg), v_value, sizeof(v_value)-1);
 
 	decode_v(v_value);
+
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
+
+        /* Unit ID might not be supported by all models: */
+	ret = send_cmd(u_msg, sizeof(u_msg), u_value, sizeof(u_value)-1);
+	if(ret <= 0) {
+		upslogx(LOG_DEBUG,"Unit ID not retrieved (not available on all models)");
+	} else {
+		unit_id = (int)((unsigned)(u_value[1]) << 8) 
+			| (unsigned)(u_value[2]);
+	}
+
+	if(unit_id >= 0) {
+		dstate_setinfo("ups.id", "%d", unit_id);
+		upslogx(LOG_DEBUG,"Unit ID: %d", unit_id);
+	}
+
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
 	dstate_setinfo("input.voltage.nominal", "%d", input_voltage_nominal);
 	dstate_setinfo("battery.voltage.nominal", "%d", battery_voltage_nominal);
@@ -833,8 +871,11 @@ void upsdrv_initinfo(void)
 
 	if(tl_model == TRIPP_LITE_SMARTPRO) {
 		dstate_addcmd("test.battery.start");
+		/* FIXME: load.on/off still broken */
+#if 0
 		dstate_addcmd("load.on");
 		dstate_addcmd("load.off");
+#endif
 	}
 
 	dstate_addcmd("shutdown.return");
@@ -900,6 +941,7 @@ void upsdrv_updateinfo(void)
 	double bv;
 
 	int ret;
+	unsigned battery_charge;
 
 	status_init();
 
@@ -1016,6 +1058,9 @@ void upsdrv_updateinfo(void)
 		} else {
 			status_set("OL");
 		}
+
+		battery_charge = (unsigned)(s_value[5]);
+		dstate_setinfo("battery.charge",  "%u", battery_charge);
 	}
 
 	switch(s_value[1]) {
@@ -1138,7 +1183,7 @@ void upsdrv_updateinfo(void)
 
 	if(tl_model != TRIPP_LITE_OMNIVS && tl_model != TRIPP_LITE_OMNIVS_2001) {
 		debug_message("D", 2);
-		debug_message("V", 2);
+		debug_message("V", 2); /* Probably not necessary - seems to be static */
 
 		/* We already grabbed these above: */
 		if(tl_model != TRIPP_LITE_SMARTPRO) {
@@ -1247,4 +1292,3 @@ void upsdrv_cleanup(void)
 		udev = NULL;
 	}
 }
-/* vim:se tw=78: */

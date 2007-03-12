@@ -1,6 +1,6 @@
 # don't know how different I can do this
 %define majorver 2.0
-%define version @NUT-VERSION@
+%define version @PACKAGE_VERSION@
 %define relver 1
 %define nutuser nutmon
 
@@ -21,7 +21,7 @@ Group: Applications/System
 Summary: Multi-vendor UPS Monitoring Project Client Utilities
 Version: %{version}
 Release: %{relver}
-Source: http://www.exploits.org/nut/release/%{majorver}/%{name}-%{version}.tar.gz
+Source: http://www.networkupstools.org/source/%{majorver}/%{name}-%{version}.tar.gz
 Copyright: GPL
 BuildRoot: /var/tmp/%{name}-%{version}-root
 Prereq: chkconfig fileutils
@@ -31,6 +31,7 @@ Obsoletes: nut-client
 # confdir etc are not really negotiable, so are not configurable here
 %define PACKAGE		ups
 %define CGIPATH        	%{_localstatedir}/www/cgi-bin
+%define HTMLPATH	%{_localstatedir}/www/html/%{PACKAGE}
 
 %description
 These programs are part of a developing project to monitor the assortment 
@@ -79,6 +80,22 @@ live status tracking on web pages, and more.
 This package adds the web CGI programs.   These can be installed on a
 separate machine to the rest of the NUT package.
 
+%package snmp
+Group: Applications/System
+Summary: SNMP support for Multi-vendor UPS Monitoring Project
+Requires: net-snmp openssl nut-server
+BuildRequires: net-snmp-devel openssl-devel
+
+%description snmp
+These programs are part of a developing project to monitor the assortment 
+of UPSes that are found out there in the field. Many models have serial 
+serial ports of some kind that allow some form of state checking. This
+capability has been harnessed where possible to allow for safe shutdowns, 
+live status tracking on web pages, and more.
+
+This package adds the snmp-ups driver, that allow NUT to monitor a SNMP
+capable UPS.
+
 %prep
 %setup -q
 autoconf
@@ -92,6 +109,7 @@ CFLAGS="$RPM_OPT_FLAGS" ./configure \
 	--with-statepath=%{_localstatedir}/%{PACKAGE} \
 	--with-drvpath=%{_sbindir} \
 	--with-cgipath=%{CGIPATH} \
+	--with-htmlpath=%{HTMLPATH} \
 	--with-cgi \
 	--with-user=%{nutuser} \
 	--with-group=%{nutuser} \
@@ -109,13 +127,12 @@ rm -rf %{buildroot}
 mkdir -p %{buildroot}%{_sysconfdir}/%{PACKAGE}
 mkdir -p %{buildroot}%{_sbindir}
 mkdir -p %{buildroot}%{CGIPATH}
+mkdir -p %{buildroot}%{HTMLPATH}
 mkdir -p %{buildroot}%{_localstatedir}/%{PACKAGE}
 mkdir -p %{buildroot}%{_mandir}
 mkdir -p %{buildroot}%{_bindir}
 make DESTDIR=%{buildroot} install
-make DESTDIR=%{buildroot} install-conf
-make DESTDIR=%{buildroot} install-cgi
-make DESTDIR=%{buildroot} install-cgi-conf
+(cd conf; make DESTDIR=%{buildroot} install)
 
 # move the *.sample config files to their real locations
 # we don't need to worry about overwriting anything since
@@ -140,23 +157,23 @@ install scripts/RedHat/ups %{buildroot}/etc/sysconfig
 
 %pre
 %{_sbindir}/groupadd -r -f %{nutuser}
-grep \^nutmon /etc/passwd >/dev/null
+grep \^%{nutuser}: /etc/passwd >/dev/null
 if [ $? -ne 0 ]; then
-  %{_sbindir}/useradd -d /etc/nut -g %{nutuser} -M -r %{nutuser}
+  %{_sbindir}/useradd -d /etc/${PACKAGE} -g %{nutuser} -M -r %{nutuser}
 fi
 
 %pre server
 %{_sbindir}/groupadd -r -f %{nutuser}
-grep \^nutmon /etc/passwd >/dev/null
+grep \^%{nutuser}: /etc/passwd >/dev/null
 if [ $? -ne 0 ]; then
-  %{_sbindir}/useradd -d /etc/nut -g %{nutuser} -M -r %{nutuser}
+  %{_sbindir}/useradd -d /etc/${PACKAGE} -g %{nutuser} -M -r %{nutuser}
 fi
 
 %pre cgi
 %{_sbindir}/groupadd -r -f %{nutuser}
-grep \^nutmon /etc/passwd >/dev/null
+grep \^%{nutuser}: /etc/passwd >/dev/null
 if [ $? -ne 0 ]; then
-  %{_sbindir}/useradd -d /etc/nut -g %{nutuser} -M -r %{nutuser}
+  %{_sbindir}/useradd -d /etc/${PACKAGE} -g %{nutuser} -M -r %{nutuser}
 fi
 
 %preun
@@ -205,7 +222,51 @@ rm -rf %{buildroot}
 
 %files server
 %defattr(-,root,root)
-%{_sbindir}
+%{_sbindir}/upsd
+%{_sbindir}/upsdrvctl
+# serial
+%{_sbindir}/al175
+%{_sbindir}/apcsmart
+%{_sbindir}/bcmxcp
+%{_sbindir}/belkin
+%{_sbindir}/belkinunv
+%{_sbindir}/bestfcom
+%{_sbindir}/bestuferrups
+%{_sbindir}/bestups
+%{_sbindir}/cpsups
+%{_sbindir}/cyberpower
+%{_sbindir}/dummy-ups
+%{_sbindir}/etapro
+%{_sbindir}/everups
+%{_sbindir}/gamatronic
+%{_sbindir}/genericups
+%{_sbindir}/isbmex
+%{_sbindir}/liebert
+%{_sbindir}/masterguard
+%{_sbindir}/megatec
+%{_sbindir}/metasys
+%{_sbindir}/mge-shut
+%{_sbindir}/mge-utalk
+%{_sbindir}/newmge-shut
+%{_sbindir}/nitram
+%{_sbindir}/oneac
+%{_sbindir}/optiups
+%{_sbindir}/powercom
+%{_sbindir}/rhino
+%{_sbindir}/safenet
+%{_sbindir}/skel
+%{_sbindir}/solis
+%{_sbindir}/tripplite
+%{_sbindir}/tripplitesu
+%{_sbindir}/upscode2
+%{_sbindir}/victronups
+%{_sbindir}/powerpanel
+# libusb
+%{_sbindir}/usbhid-ups
+%{_sbindir}/bcmxcp_usb
+%{_sbindir}/tripplite_usb
+# hiddev
+%{_sbindir}/energizerups
 ##%attr(755,root,root) %{_initrddir}/upspowerdown
 %attr(755,root,root) %{_initrddir}/upsd
 %attr(400,root,root) %{_initrddir}/halt.patch
@@ -213,6 +274,7 @@ rm -rf %{buildroot}
 %config(noreplace) %attr(444,root,root) %{_sysconfdir}/%{PACKAGE}/ups.conf
 %config(noreplace) %attr(444,root,root) %{_sysconfdir}/%{PACKAGE}/upsd.conf
 %config(noreplace) %attr(400,root,root) %{_sysconfdir}/%{PACKAGE}/upsd.users
+%{_mandir}/man8/al175.8.gz
 %{_mandir}/man8/apcsmart.8.gz
 %{_mandir}/man8/bcmxcp.8.gz
 %{_mandir}/man8/belkin.8.gz
@@ -222,30 +284,35 @@ rm -rf %{buildroot}
 %{_mandir}/man8/bestups.8.gz
 %{_mandir}/man8/cpsups.8.gz
 %{_mandir}/man8/cyberpower.8.gz
+%{_mandir}/man8/dummy-ups.8.gz
+%{_mandir}/man8/energizerups.8.gz
 %{_mandir}/man8/etapro.8.gz
 %{_mandir}/man8/everups.8.gz
-%{_mandir}/man8/fentonups.8.gz
 %{_mandir}/man8/gamatronic.8.gz
 %{_mandir}/man8/genericups.8.gz
-%{_mandir}/man8/ippon.8.gz
 %{_mandir}/man8/isbmex.8.gz
 %{_mandir}/man8/liebert.8.gz
 %{_mandir}/man8/masterguard.8.gz
+%{_mandir}/man8/megatec.8.gz
 %{_mandir}/man8/metasys.8.gz
 %{_mandir}/man8/mge-shut.8.gz
 %{_mandir}/man8/mge-utalk.8.gz
-%{_mandir}/man8/mustek.8.gz
+%{_mandir}/man8/nitram.8.gz
 %{_mandir}/man8/nutupsdrv.8.gz
 %{_mandir}/man8/oneac.8.gz
+%{_mandir}/man8/optiups.8.gz
 %{_mandir}/man8/powercom.8.gz
-%{_mandir}/man8/powermust.8.gz
+%{_mandir}/man8/powerpanel.8.gz
+%{_mandir}/man8/rhino.8.gz
 %{_mandir}/man8/safenet.8.gz
-%{_mandir}/man8/sms.8.gz
 %{_mandir}/man8/solis.8.gz
 %{_mandir}/man8/tripplite.8.gz
 %{_mandir}/man8/tripplitesu.8.gz
 %{_mandir}/man8/upscode2.8.gz
 %{_mandir}/man8/victronups.8.gz
+%{_mandir}/man8/bcmxcp_usb.8.gz
+%{_mandir}/man8/tripplite_usb.8.gz
+%{_mandir}/man8/usbhid-ups.8.gz
 %{_mandir}/man8/upsd.8.gz
 %{_mandir}/man8/upsdrvctl.8.gz
 %{_mandir}/man5/ups.conf.5.gz
@@ -253,11 +320,15 @@ rm -rf %{buildroot}
 %{_mandir}/man5/upsd.users.5.gz
 %{_datadir}/%{PACKAGE}
 
+%files snmp
+%defattr(-,root,root)
+%{_mandir}/man8/snmp-ups.8.gz
+%{_sbindir}/snmp-ups
+
 %files
 %defattr(-,root,root)
 %doc ChangeLog COPYING AUTHORS INSTALL README docs/
 %dir %attr(755,root,root) %{_sysconfdir}/%{PACKAGE}
-##%config(noreplace) %attr(644,root,root) %{_sysconfdir}/%{PACKAGE}/hosts.conf
 %config(noreplace) %attr(400,%{nutuser},%{nutuser}) %{_sysconfdir}/%{PACKAGE}/upsmon.conf
 %config(noreplace) %attr(400,%{nutuser},%{nutuser}) %{_sysconfdir}/%{PACKAGE}/upssched.conf
 %config(noreplace) %attr(644,root,root) %{_sysconfdir}/sysconfig/ups
@@ -269,6 +340,7 @@ rm -rf %{buildroot}
 %{_bindir}/upslog
 %{_sbindir}/upsmon
 %{_sbindir}/upssched
+%config(noreplace) %{_bindir}/upssched-cmd
 %{_mandir}/man5/upsmon.conf.5.gz
 %{_mandir}/man5/upssched.conf.5.gz
 %{_mandir}/man8/nutupsdrv.8.gz
@@ -296,8 +368,18 @@ rm -rf %{buildroot}
 %{CGIPATH}/upsimage.cgi
 %{CGIPATH}/upsset.cgi
 %{CGIPATH}/upsstats.cgi
+%dir %{HTMLPATH}
+%{HTMLPATH}/index.html
+%{HTMLPATH}/header.html
+%{HTMLPATH}/bottom.html
+%{HTMLPATH}/nut-banner.png
 
 %changelog
+* Mon Jan 08 2007 Niels Baggesen <nba@users.sourceforge.net>
+- Further added/removed files
+- Added the snmp sub-package
+- Fix some left-over explicit nutmon
+
 * Tue May 02 2006 William Bell <w.bell@physics.gla.ac.uk>
 - Corrected files list for other man pages.
 - Modified install paths to use the RH standards from /usr/lib/rpm/macros

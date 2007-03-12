@@ -44,27 +44,24 @@ static void usage(const char *prog)
 	printf("  -u <username> set username for command authentication\n");
 	printf("  -p <password> set password for command authentication\n");
 	printf("\n");
-	printf("  <ups>         UPS identifier - <upsname>@<hostname>[:<port>]\n");
+	printf("  <ups>         UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
 	printf("\n");
 	printf("Call without -s to show all possible read/write variables.\n");
 
 	exit(EXIT_SUCCESS);
 }
 
-static void clean_exit(UPSCONN *ups, char *upsname, char *hostname, int code)
+static void clean_exit(UPSCONN_t *ups, char *upsname, char *hostname, int code)
 {
-	if (upsname)
-		free(upsname);
-
-	if (hostname)
-		free(hostname);
+	free(upsname);
+	free(hostname);
 
 	upscli_disconnect(ups);
 
 	exit(code);
 }
 
-static int do_set(UPSCONN *ups, const char *upsname, const char *varname, 
+static int do_set(UPSCONN_t *ups, const char *upsname, const char *varname, 
 	const char *newval)
 {
 	char	buf[SMALLBUF], enc[SMALLBUF];
@@ -95,7 +92,7 @@ static int do_set(UPSCONN *ups, const char *upsname, const char *varname,
 	return EXIT_SUCCESS;
 }
 
-static int do_setvar(UPSCONN *ups, const char *varname, char *uin,
+static int do_setvar(UPSCONN_t *ups, const char *varname, char *uin,
 		const char *pass, char *upsname, char *hostname)
 {
 	char	newval[SMALLBUF], temp[SMALLBUF], user[SMALLBUF], *ptr;
@@ -193,7 +190,7 @@ static int do_setvar(UPSCONN *ups, const char *varname, char *uin,
 
 	/* no upsname means die */
 	if (!upsname) {
-		fprintf(stderr, "Error: a UPS name must be specified (upsname@hostname)\n");
+		fprintf(stderr, "Error: a UPS name must be specified (upsname[@hostname[:port]])\n");
 		return EXIT_FAILURE;
 	}
 
@@ -206,7 +203,7 @@ static int do_setvar(UPSCONN *ups, const char *varname, char *uin,
 	return do_set(ups, upsname, varname, newval);
 }	
 
-static const char *get_data(const char *type, UPSCONN *ups, 
+static const char *get_data(const char *type, UPSCONN_t *ups, 
 	const char *upsname, const char *varname)
 {
 	int	ret;
@@ -228,7 +225,7 @@ static const char *get_data(const char *type, UPSCONN *ups,
 	return answer[3];
 }
 
-static void do_string(UPSCONN *ups, const char *upsname, const char *varname)
+static void do_string(UPSCONN_t *ups, const char *upsname, const char *varname)
 {
 	const	char	*val;
 
@@ -244,7 +241,7 @@ static void do_string(UPSCONN *ups, const char *upsname, const char *varname)
 	printf("Value: %s\n", val);
 }
 
-static void do_enum(UPSCONN *ups, const char *upsname, const char *varname)
+static void do_enum(UPSCONN_t *ups, const char *upsname, const char *varname)
 {
 	int	ret;
 	unsigned int	numq, numa;
@@ -304,7 +301,7 @@ static void do_enum(UPSCONN *ups, const char *upsname, const char *varname)
 	free(val);
 }
 
-static void do_type(UPSCONN *ups, const char *upsname, const char *varname)
+static void do_type(UPSCONN_t *ups, const char *upsname, const char *varname)
 {
 	int	ret;
 	unsigned int	i, numq, numa;
@@ -345,7 +342,7 @@ static void do_type(UPSCONN *ups, const char *upsname, const char *varname)
 
 }
 
-static void print_rw(UPSCONN *ups, const char *upsname, const char *varname)
+static void print_rw(UPSCONN_t *ups, const char *upsname, const char *varname)
 {
 	const	char	*tmp;
 
@@ -363,7 +360,7 @@ static void print_rw(UPSCONN *ups, const char *upsname, const char *varname)
 	printf("\n");
 }	
 
-static int print_rwlist(UPSCONN *ups, const char *upsname)
+static int print_rwlist(UPSCONN_t *ups, const char *upsname)
 {
 	int	ret;
 	unsigned int	numq, numa;
@@ -373,7 +370,7 @@ static int print_rwlist(UPSCONN *ups, const char *upsname)
 
 	/* the upsname is now required */
 	if (!upsname) {
-		fprintf(stderr, "Error: a UPS name must be specified (upsname@hostname)\n");
+		fprintf(stderr, "Error: a UPS name must be specified (upsname[@hostname[:port]])\n");
 		return EXIT_FAILURE;
 	}
 
@@ -441,31 +438,17 @@ static int print_rwlist(UPSCONN *ups, const char *upsname)
 	return EXIT_SUCCESS;
 }
 
-static void check_upsdef(const char *ups)
-{
-	char	*ptr;
-
-	ptr = strchr(ups, '@');
-
-	if (ptr)
-		return;
-
-	fprintf(stderr, "Error: invalid UPS definition.  Required format: upsname@hostname[:port]\n");
-
-	exit(EXIT_FAILURE);
-}
-
 int main(int argc, char **argv)
 {
 	int	i, port, ret;
 	char	*upsname, *hostname, *setvar, *prog;
 	char	*password = NULL, *username = NULL;
-	UPSCONN	ups;
+	UPSCONN_t	ups;
 
 	setvar = username = NULL;
 	prog = argv[0];
 
-	while ((i = getopt(argc, argv, "+s:p:u:V")) != EOF) {
+	while ((i = getopt(argc, argv, "+s:p:u:V")) != -1) {
 		switch (i) {
 		case 's':
 			setvar = optarg;
@@ -491,12 +474,12 @@ int main(int argc, char **argv)
 	if (argc < 1)
 		usage(prog);
 
-	check_upsdef(argv[0]);
-
 	upsname = hostname = NULL;
 
-	if (upscli_splitname(argv[0], &upsname, &hostname, &port) != 0)
+	if (upscli_splitname(argv[0], &upsname, &hostname, &port) != 0) {
+		fprintf(stderr, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
 		clean_exit(&ups, upsname, hostname, EXIT_FAILURE);
+	}
 
 	if (upscli_connect(&ups, hostname, port, 0) < 0) {
 		fprintf(stderr, "Can't connect: %s\n", upscli_strerror(&ups));

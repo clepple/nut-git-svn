@@ -39,8 +39,7 @@ static void conf_args(int numargs, char **arg)
 	/* look for section headers - [upsname] */
 	if ((arg[0][0] == '[') && (arg[0][strlen(arg[0])-1] == ']')) {
 		
-		if (ups_section)
-			free(ups_section);
+		free(ups_section);
 
 		arg[0][strlen(arg[0])-1] = '\0';
 		ups_section = xstrdup(&arg[0][1]);
@@ -82,7 +81,7 @@ static void upsconf_err(const char *errmsg)
 void read_upsconf(void)
 {
 	char	fn[SMALLBUF];
-	PCONF_CTX	ctx;
+	PCONF_CTX_t	ctx;
 
 	ups_section = NULL;
 	snprintf(fn, sizeof(fn), "%s/ups.conf", confpath());
@@ -104,6 +103,5 @@ void read_upsconf(void)
 
 	pconf_finish(&ctx);
 
-	if (ups_section)
-		free(ups_section);
+	free(ups_section);
 }

@@ -40,7 +40,7 @@
 
 	static	int	port, reopen_flag = 0, exit_flag = 0;
 	static	char	*upsname, *hostname;
-	static	UPSCONN	ups;
+	static	UPSCONN_t	ups;
 
 	static	FILE	*logfile;
 	static	const	char *logfn, *monhost;
@@ -379,7 +379,7 @@ int main(int argc, char **argv)
 
 	prog = argv[0];
 
-	while ((i = getopt(argc, argv, "+hs:l:i:f:u:V")) != EOF) {
+	while ((i = getopt(argc, argv, "+hs:l:i:f:u:V")) != -1) {
 		switch(i) {
 			case 'h':
 				help(prog);
@@ -450,8 +450,9 @@ int main(int argc, char **argv)
 	printf("logging status of %s to %s (%is intervals)\n", 
 		monhost, logfn, interval);
 
-	if (upscli_splitname(monhost, &upsname, &hostname, &port) != 0)
-		fatalx("Fatal error: unusable UPS definition");
+	if (upscli_splitname(monhost, &upsname, &hostname, &port) != 0) {
+		fatalx("Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
+	}
 
 	if (upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0)
 		fprintf(stderr, "Warning: initial connect failed: %s\n", 

@@ -1,4 +1,4 @@
-/* newhidups.c - Driver for serial/USB HID UPS units
+/* usbhid-ups.h - Driver for serial/USB HID UPS units
  *
  * Copyright (C)
  *  2003 / 2005 - Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef NEWHIDUPS_H
-#define NEWHIDUPS_H
+#ifndef USBHID_UPS_H
+#define USBHID_UPS_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,7 +34,7 @@
 #define DRIVER_VERSION		"0.30"
 
 #ifdef SHUT_MODE
-	extern shut_dev_handle *udev;
+	extern shut_dev_handle_t *udev;
 #else
 	extern usb_dev_handle *udev;
 #endif
@@ -141,6 +141,7 @@ extern info_lkp_t test_read_info[];
 extern info_lkp_t beeper_info[];
 extern info_lkp_t yes_no_info[];
 extern info_lkp_t on_off_info[];
+extern info_lkp_t fullycharged_info[];
 extern info_lkp_t date_conversion[];
 extern info_lkp_t hex_conversion[];
 extern info_lkp_t stringid_conversion[];
@@ -201,7 +202,7 @@ typedef struct {
 
 struct subdriver_s {
 	char *name;                  /* name of this subdriver */
-	int (*claim)(HIDDevice *hd); /* return 1 if device covered by
+	int (*claim)(HIDDevice_t *hd); /* return 1 if device covered by
 				      * this subdriver */
 	usage_tables_t *utab;        /* points to array of usage tables */
 	hid_info_t *hid2nut;         /* main table of vars and instcmds */
@@ -209,9 +210,9 @@ struct subdriver_s {
                                      /* driver-specific shutdown cmd.
 					Returns 1 on success, 0 on
 					failure */
-	char *(*format_model)(HIDDevice *hd);  /* driver-specific methods */
-	char *(*format_mfr)(HIDDevice *hd);    /* for preparing human-    */
-	char *(*format_serial)(HIDDevice *hd); /* readable information    */
+	char *(*format_model)(HIDDevice_t *hd);  /* driver-specific methods */
+	char *(*format_mfr)(HIDDevice_t *hd);    /* for preparing human-    */
+	char *(*format_serial)(HIDDevice_t *hd); /* readable information    */
 };
 typedef struct subdriver_s subdriver_t;
 
@@ -220,4 +221,4 @@ typedef struct subdriver_s subdriver_t;
 int instcmd(const char *cmdname, const char *extradata);
 int setvar(const char *varname, const char *val);
 
-#endif /* NEWHIDUPS_H */
+#endif /* USBHID_UPS_H */

@@ -28,15 +28,15 @@ MANPATH, or just do this:
   Prepare your system
   ===================
 
- 1. Create at least one user and a group for running this software.
-    You might call it "nut" or "ups".  The exact name isn't important as
+ 1. Create at least one user and a group for running this software. You
+    might call them "ups" and "nut".  The exact names aren't important as
     long as you are consistent.
 
     The process for doing this varies from one system to the next, and
     explaining how to add users is beyond the scope of this document.
 
     For the purposes of this document, the user name and group name 
-    will both be "nut".
+    will be "ups" and "nut" respectively.
 
     Be sure the new user is a member of the new group!  If you forget to
     do this, you will have problems later on when you try to start upsd.
@@ -49,10 +49,11 @@ MANPATH, or just do this:
   =================
 
 
- 1. Configure the source tree for your system.  Add the --with-user
-    switch to set the user name that you created above.
+ 1. Configure the source tree for your system.  Add the --with-user and
+    --with-group switch to set the user name and group that you created
+    above.
 
-	./configure --with-user=nut
+	./configure --with-user=ups --with-group=nut
 
     If you need any other switches for configure, add them here.  For
     example:
@@ -122,8 +123,8 @@ MANPATH, or just do this:
     owned by the user you created.
 
 	mkdir -p /var/state/ups
-	chmod 0700 /var/state/ups
-	chown nut:nut /var/state/ups
+	chmod 0770 /var/state/ups
+	chown root:nut /var/state/ups
 
 ---------------------------------------------------------------------------
 
@@ -135,8 +136,8 @@ MANPATH, or just do this:
     Slackware system.  On FreeBSD, that would be cuaa1.  Serial ports
     vary greatly, so yours may be called something else.
 
-	chmod 0600 /dev/ttyS1
-	chown nut:nut /dev/ttyS1
+	chmod 0660 /dev/ttyS1
+	chown root:nut /dev/ttyS1
 
     The setup for USB ports is slightly more complicated. Device files
     for USB devices, such as /proc/bus/usb/002/001, are usually
@@ -146,7 +147,7 @@ MANPATH, or just do this:
     permissions for the USB device, you may need to set up (operating
     system dependent) hotplugging scripts.  Sample scripts and
     information are provided in the scripts/hotplug and
-    scripts/hotplug-ng directories. (If you want to try if a driver
+    scripts/udev directories. (If you want to try if a driver
     works without setting up hotplugging, you can add the "-u root"
     option to upsd, upsmon, and drivers; this should allow you to
     follow the below instructions. However, don't forget to set up the
@@ -177,11 +178,11 @@ MANPATH, or just do this:
 		port = /dev/ttyS1
 		desc = "Workstation"
 
-    NOTE: newhidups is a special case and ignores the "port" value.
+    NOTE: usbhid-ups is a special case and ignores the "port" value.
     You must still set this value, but it does not matter what you set
     it to; you can set "port" to "auto" if you like. If you only own
     one local UBS UPS, the driver will find it automatically. If you
-    own more than one UBS UPS, refer to the newhidups(8) man page for
+    own more than one UBS UPS, refer to the usbhid-ups(8) man page for
     more information.
 
     *** References: man pages: ups.conf(5), nutupsdrv(8), plus
@@ -314,7 +315,7 @@ MANPATH, or just do this:
 	battery.charge: 82
 	battery.charge.low: 30
 	battery.runtime: 1563
-	driver.name: newhidups
+	driver.name: usbhid-ups
 	driver.parameter.port: auto
 	driver.version: 2.0.3
 	driver.version.data: MGE HID 0.8

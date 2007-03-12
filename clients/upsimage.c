@@ -56,7 +56,7 @@ static	char	*monhost = NULL, *cmd = NULL;
 
 static	int	port;
 static	char	*upsname, *hostname;
-static	UPSCONN	ups;
+static	UPSCONN_t	ups;
 
 #define RED(x)		((x >> 16) & 0xff)
 #define GREEN(x)	((x >> 8)  & 0xff)
@@ -72,17 +72,13 @@ void parsearg(char *var, char *value)
 		return;
 
 	if (!strcmp(var, "host")) {
-		if (monhost)
-			free(monhost);
-
+		free(monhost);
 		monhost = xstrdup(value);
 		return;
 	}
 
 	if (!strcmp(var, "display")) {
-		if (cmd)
-			free(cmd);
-
+		free(cmd);
 		cmd = xstrdup(value);
 		return;
 	}
@@ -524,7 +520,7 @@ int main(int argc, char **argv)
 	upsname = hostname = NULL;
 
 	if (upscli_splitname(monhost, &upsname, &hostname, &port) != 0) {
-		noimage("Invalid UPS definition (upsname@hostname)\n");
+		noimage("Invalid UPS definition (upsname[@hostname[:port]])\n");
 		exit(EXIT_FAILURE);
 	}
 

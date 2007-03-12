@@ -1,4 +1,4 @@
-/* newhidups.c - Driver for USB and serial (MGE SHUT) HID UPS units
+/* usbhid-ups.c - Driver for USB and serial (MGE SHUT) HID UPS units
  * 
  * Copyright (C)
  *   2003-2005 Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
@@ -23,7 +23,7 @@
 
 #include "main.h"
 #include "libhid.h"
-#include "newhidups.h"
+#include "usbhid-ups.h"
 #ifdef SHUT_MODE
 	#include "libshut.h"
 #else
@@ -58,15 +58,15 @@ static subdriver_t *subdriver_list[] = {
 static subdriver_t *subdriver;
 
 /* Global vars */
-static HIDDevice *hd;
-static HIDDevice curDevice;
+static HIDDevice_t *hd;
+static HIDDevice_t curDevice;
 static HIDDeviceMatcher_t *reopen_matcher = NULL;
 static HIDDeviceMatcher_t *regex_matcher = NULL;
 static int pollfreq = DEFAULT_POLLFREQ;
 static int ups_status = 0;
-static bool data_has_changed = FALSE; /* for SEMI_STATIC data polling */
+static bool_t data_has_changed = FALSE; /* for SEMI_STATIC data polling */
 static time_t lastpoll; /* Timestamp the last polling */
-hid_dev_handle *udev;
+hid_dev_handle_t *udev;
 
 /* support functions */
 static hid_info_t *find_nut_info(const char *varname);
@@ -77,7 +77,7 @@ static long hu_find_valinfo(info_lkp_t *hid2info, const char* value);
 static void process_status_info(char *nutvalue);
 static void ups_status_set(void);
 static void identify_ups ();
-static bool hid_ups_walk(int mode);
+static bool_t hid_ups_walk(int mode);
 static void reconnect_ups(void);
 
 /* ---------------------------------------------------------------------- */
@@ -247,6 +247,12 @@ info_lkp_t on_off_info[] = {
 	{ 0, "NULL", NULL }
 };
 
+info_lkp_t fullycharged_info[] = { /* used by CyberPower and TrippLite */
+  { 1, "fullycharged", NULL },
+  { 0, "!fullycharged", NULL },
+  { 0, "NULL", NULL }
+};
+
 /* returns statically allocated string - must not use it again before
    done with result! */
 static char *date_conversion_fun(long value) {
@@ -329,7 +335,7 @@ info_lkp_t kelvin_celsius_conversion[] = {
  */
 
 #ifndef SHUT_MODE
-static int match_function_subdriver(HIDDevice *d, void *privdata) {
+static int match_function_subdriver(HIDDevice_t *d, void *privdata) {
 	int i;
 
 	for (i=0; subdriver_list[i] != NULL; i++) {
@@ -531,8 +537,8 @@ void upsdrv_updateinfo(void)
 	hid_info_t *item;
 	char *nutvalue;
 	int retcode, evtCount = 0;
-	HIDEvent *eventlist;
-	HIDEvent *p;
+	HIDEvent_t *eventlist;
+	HIDEvent_t *p;
 
 	upsdebugx(1, "upsdrv_updateinfo...");
 
@@ -705,7 +711,7 @@ void upsdrv_initups(void)
 	 * But SHUT is a serial protocol, so it need
 	 * the device path
 	 */
-	udev = (hid_dev_handle *)xmalloc(sizeof(hid_dev_handle));
+	udev = (hid_dev_handle_t *)xmalloc(sizeof(hid_dev_handle_t));
 	udev->device_path = strdup(device_path);
 
 #endif /* SHUT_MODE */
@@ -790,10 +796,12 @@ static void identify_ups ()
 	if (serial != NULL) {
 		dstate_setinfo("ups.serial", "%s", serial);
 	}
+	dstate_setinfo("ups.vendorid", "%04x", hd->VendorID);
+	dstate_setinfo("ups.productid", "%04x", hd->ProductID);
 }
 
 /* walk ups variables and set elements of the info array. */
-static bool hid_ups_walk(int mode)
+static bool_t hid_ups_walk(int mode)
 {
 	hid_info_t *item;
 	float value;
@@ -910,6 +918,8 @@ static bool hid_ups_walk(int mode)
 					nutvalue = hu_find_infoval(item->hid2info, (long)value);
 					if (nutvalue != NULL)
 					  dstate_setinfo(item->info_type, item->dfl, nutvalue);
+					else
+					  dstate_setinfo(item->info_type, "%ld", (long)value);
 				  }
 				else
 				  dstate_setinfo(item->info_type, item->dfl, value);

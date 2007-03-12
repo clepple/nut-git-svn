@@ -31,7 +31,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <sys/types.h>
-#include <sys/time.h>
 #include <sys/stat.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -40,6 +39,7 @@
 #include <unistd.h>
 #include <assert.h>
 
+#include "timehead.h"
 #include "attribute.h"
 #include "config.h"
 #include "proto.h"
@@ -108,7 +108,7 @@ void *xcalloc(size_t number, size_t size);
 void *xrealloc(void *ptr, size_t size);
 char *xstrdup(const char *string);
 
-void rtrim(char *in, char sep);
+char *rtrim(char *in, const char sep);
 
 /* Buffer sizes used for various functions */
 #define SMALLBUF	512

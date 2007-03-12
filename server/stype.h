@@ -1,8 +1,6 @@
-/* blazer.h - model specific routines for Blazer UPS models
+/* stype.h - server data definitions for upsd
 
-   Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
-                 2002  Phil Hutton <blazer-driver@hutton.sh>
-                 2003  Arnaud Quette <arnaud.quette@free.fr>
+   Copyright (C) 2007  Arjen de Korte <arjen@de-korte.org>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -19,4 +17,24 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define DRV_VERSION	"0.07"
+#ifndef STYPE_H_SEEN
+#define STYPE_H_SEEN 1
+
+#include <netdb.h>
+
+#ifndef NI_MAXHOST
+#define NI_MAXHOST      1025
+#endif
+
+#ifndef NI_MAXSERV
+#define NI_MAXSERV      32
+#endif
+
+typedef struct {
+	char	*addr;
+	char	*port;
+	int	sock_fd;
+	void	*next;
+}	stype_t;
+
+#endif	/* STYPE_H_SEEN */

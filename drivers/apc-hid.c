@@ -24,7 +24,7 @@
  *
  */
 
-#include "newhidups.h"
+#include "usbhid-ups.h"
 #include "apc-hid.h"
 #include "extstate.h" /* for ST_FLAG_STRING */
 #include "dstate.h"   /* for STAT_INSTCMD_HANDLED */
@@ -83,9 +83,9 @@ info_lkp_t apc_date_conversion[] = {
 };
 
 /* APC has two non-NUT-standard status items: "time limit expired" and
-   "battery present". The newhidups driver currently ignores
+   "battery present". The usbhid-ups driver currently ignores
    batterypres, and maps timelimitexp to LB. CyberPower has the
-   non-NUT-standard status item "fully charged". The newhidups driver
+   non-NUT-standard status item "fully charged". The usbhid-ups driver
    currently ignores it. */
 static info_lkp_t timelimitexpired_info[] = {
   { 1, "timelimitexp", NULL },
@@ -99,9 +99,12 @@ static info_lkp_t batterypresent_info[] = {
   { 0, "NULL", NULL }
 };
 
-static info_lkp_t fullycharged_info[] = {
-  { 1, "fullycharged", NULL },
-  { 0, "!fullycharged", NULL },
+/* This was determined empirically from observing a BackUPS LS 500.
+ */
+static info_lkp_t apcstatusflag_info[] = {
+  { 8, "!off", NULL },  /* Normal operation */
+  { 16, "!off", NULL }, /* This occurs briefly during power-on, and corresponds to status 'DISCHRG'. */
+  { 0, "off", NULL },
   { 0, "NULL", NULL }
 };
 
@@ -203,6 +206,7 @@ static hid_info_t apc_hid2nut[] = {
   { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_OK, NULL},
   { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, "%.0f", HU_FLAG_OK, NULL}, /* APC */
   { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Output.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_OK, NULL}, /* CyberPower */
+  { "ups.delay.restart", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Output.DelayBeforeStartup", NULL, "%.0f", HU_FLAG_OK, NULL}, /* CyberPower */
   { "ups.test.result", 0, 0, "UPS.Battery.Test", NULL, "%s", HU_FLAG_OK, &test_read_info[0] },
   { "ups.test.result", 0, 0, "UPS.Output.Test", NULL, "%s", HU_FLAG_OK, &test_read_info[0] }, /* CyberPower */
   { "ups.beeper.status", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", HU_FLAG_OK, &beeper_info[0] },
@@ -231,6 +235,7 @@ static hid_info_t apc_hid2nut[] = {
   { "ups.status", 0, 1, "UPS.PowerSummary.ACPresent", NULL, "%.0f", HU_FLAG_OK, &online_info[0] }, /* Back-UPS 500 */
   { "ups.status", 0, 1, "UPS.PowerSummary.BelowRemainingCapacityLimit", NULL, "%.0f", HU_FLAG_OK, &lowbatt_info[0] }, /* Back-UPS 500 */
   { "ups.status", 0, 1, "UPS.PowerSummary.ShutdownImminent", NULL, "%.0f", HU_FLAG_OK, &shutdownimm_info[0] },
+  { "ups.status", 0, 1, "UPS.PowerSummary.APCStatusFlag", NULL, "%.0f", HU_FLAG_OK, &apcstatusflag_info[0] }, /* APC Back-UPS LS 500 */
 
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.FullyCharged", NULL, "%.0f", HU_FLAG_OK, &fullycharged_info[0] }, /* CyberPower */
   { "ups.status", 0, 1, "UPS.Output.Overload", NULL, "%.0f", HU_FLAG_OK, &overload_info[0] }, /* CyberPower */
@@ -309,7 +314,7 @@ static int apc_shutdown(int ondelay, int offdelay) {
 	return 0;
 }
 
-static char *apc_format_model(HIDDevice *hd) {
+static char *apc_format_model(HIDDevice_t *hd) {
 	char *model;
         char *ptr1, *ptr2;
 
@@ -332,7 +337,7 @@ static char *apc_format_model(HIDDevice *hd) {
 	return model;
 }
 
-static char *apc_format_mfr(HIDDevice *hd) {
+static char *apc_format_mfr(HIDDevice_t *hd) {
 	if (hd->Vendor) {
 		return hd->Vendor;
 	} else if (hd->VendorID == APC_VENDORID) {
@@ -344,13 +349,13 @@ static char *apc_format_mfr(HIDDevice *hd) {
 	}
 }
 
-static char *apc_format_serial(HIDDevice *hd) {
+static char *apc_format_serial(HIDDevice_t *hd) {
 	return hd->Serial;
 }
 
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
-static int apc_claim(HIDDevice *hd) {
+static int apc_claim(HIDDevice_t *hd) {
 	if (hd->VendorID == APC_VENDORID) {
 		switch (hd->ProductID) {
 		case  0x0002:
@@ -360,26 +365,32 @@ static int apc_claim(HIDDevice *hd) {
 				return 1;
 			} else {
 			upsdebugx(1,
-"This particular APC device (%04x/%04x) is not (or perhaps not yet)\n"
-"supported by newhidups. Try running the driver with the '-x productid=%04x'\n"
-"option. Please report your results to the NUT developer's mailing list.\n",
+"This APC device (%04x/%04x) is not (or perhaps not yet) supported\n"
+"by usbhid-ups. Please make sure you have an up-to-date version of NUT. If\n"
+"this does not fix the problem, try running the driver with the\n"
+"'-x productid=%04x' option. Please report your results to the NUT user's\n"
+"mailing list <nut-upsuser@lists.alioth.debian.org>.\n",
 						 hd->VendorID, hd->ProductID, hd->ProductID);
 			return 0;
 			}
 		}
 	} else if (hd->VendorID == CPS_VENDORID) {
 		switch (hd->ProductID) {
-		case 0x0005:
-		case 0x0501:
+		case 0x0005:  /* Cyber Power 900AVR/BC900D, CP1200AVR/BC1200D */
+			           /* fixme: are the above really HID devices? */
+			           /* Dynex DX-800U */
+		case 0x0501:  /* Cyber Power AE550, Geek Squad GS1285U */
 			return 1;  /* accept known UPSs */
 		default:
 			if (getval("productid")) {
 				return 1;
 			} else {
 			upsdebugx(1,
-"This particular CyberPower device (%04x/%04x) is not (or perhaps not yet)\n"
-"supported by newhidups. Try running the driver with the '-x productid=%04x'\n"
-"option. Please report your results to the NUT developer's mailing list.\n",
+"This CyberPower device (%04x/%04x) is not (or perhaps not yet) supported\n"
+"by usbhid-ups. Please make sure you have an up-to-date version of NUT. If\n"
+"this does not fix the problem, try running the driver with the\n"
+"'-x productid=%04x' option. Please report your results to the NUT user's\n"
+"mailing list <nut-upsuser@lists.alioth.debian.org>.\n",
 						 hd->VendorID, hd->ProductID, hd->ProductID);
 			return 0;
 			}

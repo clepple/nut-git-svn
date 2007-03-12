@@ -49,8 +49,8 @@
 	static vartab_t	*vartab_h = NULL;
 
 	/* variables possibly set by the global part of ups.conf */
-	static unsigned int	poll_interval = 2;
-	static char		*chroot_path = NULL, *user = NULL;
+	unsigned int	poll_interval = 2;
+	static char	*chroot_path = NULL, *user = NULL;
 
 	/* signal handling */
 	int	exit_flag = 0;
@@ -70,7 +70,8 @@ static void forceshutdown(void)
 	exit(EXIT_SUCCESS);
 }
 
-static void help(void)
+/* this function only prints the usage message; it does not call exit() */
+static void help_msg(void)
 {
 	vartab_t	*tmp;
 
@@ -108,8 +109,6 @@ static void help(void)
 	}
 
 	upsdrv_help();
-
-	exit(EXIT_SUCCESS);
 }
 
 /* store these in dstate as driver.(parameter|flag) */
@@ -148,9 +147,7 @@ static void storeval(const char *var, char *val)
 
 		/* later definitions overwrite earlier ones */
 		if (!strcasecmp(tmp->var, var)) {
-			if (tmp->val)
-				free(tmp->val);
-
+			free(tmp->val);
 			if (val)
 				tmp->val = xstrdup(val);
 
@@ -274,22 +271,16 @@ static void do_global_args(const char *var, const char *val)
 {
 	if (!strcmp(var, "pollinterval")) {
 		poll_interval = atoi(val);
-		/* store this too */
-		dparam_setinfo("pollinterval", val);
 		return;
 	}
 
 	if (!strcmp(var, "chroot")) {
-		if (chroot_path)
-			free(chroot_path);
-
+		free(chroot_path);
 		chroot_path = xstrdup(val);
 	}
 
 	if (!strcmp(var, "user")) {
-		if (user)
-			free(user);
-
+		free(user);
 		user = xstrdup(val);
 	}
 
@@ -338,8 +329,6 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 	/* allow per-driver overrides of the global setting */
 	if (!strcmp(var, "pollinterval")) {
 		poll_interval = atoi(val);
-		/* store this too (might override the global one) */
-		dparam_setinfo("pollinterval", val);
 		return;
 	}
 
@@ -406,12 +395,9 @@ static void vartab_free(void)
 	while (tmp) {
 		next = tmp->next;
 
-		if (tmp->var)
-			free(tmp->var);
-		if (tmp->val)
-			free(tmp->val);
-		if (tmp->desc)
-			free(tmp->desc);
+		free(tmp->var);
+		free(tmp->val);
+		free(tmp->desc);
 		free(tmp);
 
 		tmp = next;
@@ -422,12 +408,10 @@ static void exit_cleanup(void)
 {
 	upsdrv_cleanup();
 
-	if (chroot_path)
-		free(chroot_path);
-	if (device_path)
-		free(device_path);
-	if (user)
-		free(user);
+	free(chroot_path);
+	free(device_path);
+	free(user);
+
 	if (pidfn) {
 		unlink(pidfn);
 		free(pidfn);
@@ -510,7 +494,7 @@ int main(int argc, char **argv)
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();
 
-	while ((i = getopt(argc, argv, "+a:kDhx:Lr:u:Vi:")) != EOF) {
+	while ((i = getopt(argc, argv, "+a:kDhx:Lr:u:Vi:")) != -1) {
 		switch (i) {
 			case 'a':
 				upsname = optarg;
@@ -547,21 +531,29 @@ int main(int argc, char **argv)
 				splitxarg(optarg);
 				break;
 			case 'h':
+				help_msg();
+				exit(EXIT_SUCCESS);
 			default:
-				help();
+				fprintf(stderr, "Error: unknown option -%c. Try -h for help.\n", i);
+				exit(EXIT_FAILURE);
 				break;
 		}
 	}
 
 	argc -= optind;
 	argv += optind;
-	optind = 1;
+
+	if (argc > 1) {
+		fprintf(stderr, "Error: too many non-option arguments. Try -h for help.\n");
+		exit(EXIT_FAILURE);
+	}
 
 	/* we need to get the port from somewhere */
 	if (argc < 1) {
 		if (!device_path) {
 			fprintf(stderr, "Error: You must specify a port name in ups.conf or on the command line.\n");
-			help();
+			fprintf(stderr, "Try -h for help.\n");
+			exit(EXIT_FAILURE);
 		}
 	}
 
@@ -626,6 +618,9 @@ int main(int argc, char **argv)
 	/* publish the top-level data: version number, driver name */
 	dstate_setinfo("driver.version", "%s", UPS_VERSION);
 	dstate_setinfo("driver.name", "%s", progname);
+
+	/* The poll_interval may have been changed from the default */
+	dstate_setinfo("driver.parameter.pollinterval", "%d", poll_interval);
 
 	if (nut_debug_level == 0) {
 		background();

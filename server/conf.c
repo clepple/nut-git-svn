@@ -27,14 +27,14 @@
 
 	extern	int	maxage;
 	extern	char	*statepath, *datapath, *certfile;
-	extern	upstype	*firstups;
+	extern	upstype_t	*firstups;
 	ups_t	*upstable = NULL;
 	int	num_ups = 0;
 
 /* add another UPS for monitoring from ups.conf */
 static void ups_create(const char *fn, const char *name, const char *desc)
 {
-	upstype	*temp, *last;
+	upstype_t	*temp, *last;
 
 	temp = last = firstups;
 
@@ -52,7 +52,7 @@ static void ups_create(const char *fn, const char *name, const char *desc)
 	}
 
 	/* grab some memory and add the info */
-	temp = xmalloc(sizeof(upstype));
+	temp = xmalloc(sizeof(upstype_t));
 
 	temp->name = xstrdup(name);
 	temp->fn = xstrdup(fn);
@@ -93,7 +93,7 @@ static void ups_create(const char *fn, const char *name, const char *desc)
 /* change the configuration of an existing UPS (used during reloads) */
 static void ups_update(const char *fn, const char *name, const char *desc)
 {
-	upstype	*temp;
+	upstype_t	*temp;
 
 	temp = get_ups_ptr(name);
 
@@ -131,8 +131,7 @@ static void ups_update(const char *fn, const char *name, const char *desc)
 
 	/* update the description */
 
-	if (temp->desc)
-		free(temp->desc);
+	free(temp->desc);
 
 	if (desc)
 		temp->desc = xstrdup(desc);
@@ -158,27 +157,21 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 
 	/* STATEPATH <dir> */
 	if (!strcmp(arg[0], "STATEPATH")) {
-		if (statepath)
-			free(statepath);
-
+		free(statepath);
 		statepath = xstrdup(arg[1]);
 		return 1;
 	}
 
 	/* DATAPATH <dir> */
 	if (!strcmp(arg[0], "DATAPATH")) {
-		if (datapath)
-			free(datapath);
-
+		free(datapath);
 		datapath = xstrdup(arg[1]);
 		return 1;
 	}
 
 	/* CERTFILE <dir> */
 	if (!strcmp(arg[0], "CERTFILE")) {
-		if (certfile)
-			free(certfile);
-
+		free(certfile);
 		certfile = xstrdup(arg[1]);
 		return 1;
 	}
@@ -194,6 +187,15 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 	if (!strcmp(arg[0], "REJECT")) {
 		access_add(ACCESS_REJECT, numargs - 1, 
 			(const char **) &arg[1]);
+		return 1;
+	}
+
+	/* LISTEN <address> [<port>] */
+	if (!strcmp(arg[0], "LISTEN")) {
+		if (numargs < 3)
+			listen_add(arg[1], string_const(PORT));
+		else
+			listen_add(arg[1], arg[2]);
 		return 1;
 	}
 
@@ -225,10 +227,10 @@ static void upsd_conf_err(const char *errmsg)
 	upslogx(LOG_ERR, "Fatal error in parseconf (upsd.conf): %s", errmsg);
 }
 
-static void load_upsdconf(int reloading)
+void load_upsdconf(int reloading)
 {
 	char	fn[SMALLBUF];
-	PCONF_CTX	ctx;
+	PCONF_CTX_t	ctx;
 
 	snprintf(fn, sizeof(fn), "%s/upsd.conf", confpath());
 
@@ -323,7 +325,7 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 }
 
 /* add valid UPSes from ups.conf to the internal structures */
-static void upsconf_add(int reloading)
+void upsconf_add(int reloading)
 {
 	ups_t	*tmp = upstable, *next;
 	char	statefn[SMALLBUF];
@@ -361,14 +363,10 @@ static void upsconf_add(int reloading)
 
 		/* free tmp's resources */
 
-		if (tmp->driver)
-			free(tmp->driver);
-		if (tmp->port)
-			free(tmp->port);
-		if (tmp->desc)
-			free(tmp->desc);
-		if (tmp->upsname)
-			free(tmp->upsname);
+		free(tmp->driver);
+		free(tmp->port);
+		free(tmp->desc);
+		free(tmp->upsname);
 		free(tmp);
 
 		tmp = next;
@@ -379,9 +377,9 @@ static void upsconf_add(int reloading)
 }
 
 /* remove a UPS from the linked list */
-static void delete_ups(upstype *target)
+static void delete_ups(upstype_t *target)
 {
-	upstype	*ptr, *last;
+	upstype_t	*ptr, *last;
 
 	if (!target)
 		return;
@@ -409,12 +407,9 @@ static void delete_ups(upstype *target)
 			sstate_cmdfree(ptr);
 			pconf_finish(&ptr->sock_ctx);
 
-			if (ptr->fn)
-				free(ptr->fn);
-			if (ptr->name)
-				free(ptr->name);
-			if (ptr->desc)
-				free(ptr->desc);
+			free(ptr->fn);
+			free(ptr->name);
+			free(ptr->desc);
 			free(ptr);
 
 			return;
@@ -450,7 +445,7 @@ static int check_file(const char *fn)
 /* called after SIGHUP */
 void conf_reload(void)
 {
-	upstype	*upstmp, *upsnext;
+	upstype_t	*upstmp, *upsnext;
 
 	upslogx(LOG_INFO, "SIGHUP: reloading configuration");
 
@@ -502,19 +497,5 @@ void conf_reload(void)
 	user_flush();
 
 	/* and finally reread from upsd.users */
-	user_load();
-}
-
-/* startup: load config files */
-void conf_load(void)
-{
-	/* upsd.conf */
-	load_upsdconf(0);	/* 0 = initial */
-
-	/* handle ups.conf */
-	read_upsconf();
-	upsconf_add(0);
-
-	/* upsd.users */
 	user_load();
 }

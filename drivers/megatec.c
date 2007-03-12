@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <limits.h>
 #include <string.h>
+#include <stdlib.h>
 
 
 #define ENDCHAR  '\r'
@@ -44,8 +45,8 @@
 #define IDENT_MAXTRIES   5
 #define IDENT_MINSUCCESS 3
 
-#define SEND_PACE    100000  /* 100ms interval between chars */
-#define READ_TIMEOUT 2       /* 2 seconds timeout on read */
+#define SEND_PACE    100000  /* interval between chars on send (usec)*/
+#define READ_TIMEOUT 2       /* timeout on read (seconds) */
 
 #define MAX_START_DELAY    9999
 #define MAX_SHUTDOWN_DELAY 99
@@ -77,7 +78,7 @@ typedef struct {
 	char mfr[UPS_MFR_CHARS + 1];
 	char model[UPS_MODEL_CHARS + 1];
 	char version[UPS_VERSION_CHARS + 1];
-} UPSInfo;
+} UPSInfo_t;
 
 
 /* The values returned by the UPS for an "F" query */
@@ -86,7 +87,7 @@ typedef struct {
 	float current;
 	float battvolt;
 	float freq;
-} FirmwareValues;
+} FirmwareValues_t;
 
 
 /* The values returned by the UPS for an "Q1" query */
@@ -99,7 +100,7 @@ typedef struct {
 	float battvolt;
 	float temp;
 	char flags[N_FLAGS + 1];
-} QueryValues;
+} QueryValues_t;
 
 
 /* Parameters for known battery types */
@@ -109,16 +110,17 @@ typedef struct {
 	float max;    /* upper bound for a single battery of "nominal" voltage (see "set_battery_params" below) */
 	float empty;  /* fully discharged battery */
 	float full;   /* fully charged battery */
-} BatteryVolts;
+	float low;    /* low battery (unused) */
+} BatteryVolts_t;
 
 
 /* Known battery types must be in ascending order by "nominal" first, and then by "max". */
-static BatteryVolts batteries[] = {{ 12,  9.0, 16.0,  9.7, 13.7 },   /* Mustek PowerMust 600VA Plus */
-                                   { 12, 18.0, 30.0, 18.8, 26.8 },   /* PowerWalker Line-Interactive VI 1000 (LB at 22.3V) */
-                                   { 24, 18.0, 30.0, 19.4, 27.4 },   /* Mustek PowerMust 1000VA Plus (LB at 22.2V) */
-                                   { 36,  1.5,  3.0, 1.64, 2.31 },   /* Mustek PowerMust 1000VA On-Line (LB at 1.88V) */
-                                   { 96,  1.5,  3.0, 1.63, 2.29 },   /* Ablerex MS3000RT (LB at 1.8V, 25% charge) */
-                                   {  0,  0.0,  0.0,  0.0,  0.0 }};  /* END OF DATA */
+static BatteryVolts_t batteries[] = {{ 12,  9.0, 16.0,  9.7, 13.7,  0.0 },   /* Mustek PowerMust 600VA Plus (LB unknown) */
+                                     { 12, 18.0, 30.0, 18.8, 26.8, 22.3 },   /* PowerWalker Line-Interactive VI 1000 */
+                                     { 24, 18.0, 30.0, 19.4, 27.4, 22.2 },   /* Mustek PowerMust 1000VA Plus */
+                                     { 36,  1.5,  3.0, 1.64, 2.31, 1.88 },   /* Mustek PowerMust 1000VA On-Line */
+                                     { 96,  1.5,  3.0, 1.63, 2.29,  1.8 },   /* Ablerex MS3000RT (LB at 25% charge) */
+                                     {  0,  0.0,  0.0,  0.0,  0.0,  0.0 }};  /* END OF DATA */
 
 /* Defined in upsdrv_initinfo */
 static float battvolt_empty = -1;  /* unknown */
@@ -143,9 +145,9 @@ static char *copy_field(char* dest, char *src, int field_len);
 static float get_battery_charge(float battvolt);
 static int set_battery_params(float volt_nominal, float volt_now);
 static int check_ups(void);
-static int get_ups_info(UPSInfo *info);
-static int get_firmware_values(FirmwareValues *values);
-static int run_query(QueryValues *values);
+static int get_ups_info(UPSInfo_t *info);
+static int get_firmware_values(FirmwareValues_t *values);
+static int run_query(QueryValues_t *values);
 
 int instcmd(const char *cmdname, const char *extra);
 int setvar(const char *varname, const char *val);
@@ -260,7 +262,7 @@ static int check_ups(void)
 }
 
 
-static int get_ups_info(UPSInfo *info)
+static int get_ups_info(UPSInfo_t *info)
 {
 	char buffer[RECV_BUFFER_LEN];
 	char *anchor;
@@ -277,7 +279,7 @@ static int get_ups_info(UPSInfo *info)
 
 	upsdebugx(3, "UPS information: %s", buffer);
 
-	memset(info, 0, sizeof(UPSInfo));
+	memset(info, 0, sizeof(UPSInfo_t));
 
 	/*
 	 * Get the manufacturer, model and version fields, skipping
@@ -291,7 +293,7 @@ static int get_ups_info(UPSInfo *info)
 }
 
 
-static int get_firmware_values(FirmwareValues *values)
+static int get_firmware_values(FirmwareValues_t *values)
 {
 	char buffer[RECV_BUFFER_LEN];
 	int ret;
@@ -314,9 +316,10 @@ static int get_firmware_values(FirmwareValues *values)
 }
 
 
-static int run_query(QueryValues *values)
+static int run_query(QueryValues_t *values)
 {
 	char buffer[RECV_BUFFER_LEN];
+	char temperature[8];
 	int ret;
 
 	upsdebugx(1, "Asking for UPS status (\"Q1\" command)...");
@@ -330,8 +333,15 @@ static int run_query(QueryValues *values)
 
 	upsdebugx(3, "UPS status: %s", buffer);
 
-	sscanf(buffer, "%f %f %f %f %f %f %f %s", &values->ivolt, &values->fvolt, &values->ovolt,
-	       &values->load, &values->freq, &values->battvolt, &values->temp, values->flags);
+	sscanf(buffer, "%f %f %f %f %f %f %s %s", &values->ivolt, &values->fvolt, &values->ovolt,
+	       &values->load, &values->freq, &values->battvolt, temperature, values->flags);
+
+	/*
+	 * UPS temperature must be parsed on its own. Some models put
+	 * something other than a float in this field, meaning there is no
+	 * temperature reading available.
+	 */
+	values->temp = atof(temperature);
 
 	return 0;
 }
@@ -341,10 +351,15 @@ void upsdrv_initinfo(void)
 {
 	int i;
 	int success = 0;
-	FirmwareValues values;
-	QueryValues query;
-	UPSInfo info;
+	FirmwareValues_t values;
+	QueryValues_t query;
+	UPSInfo_t info;
 
+	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
+
+	/*
+	 * UPS detection sequence.
+	 */
 	upsdebugx(1, "Starting UPS detection process...");
 	for (i = 0; i < IDENT_MAXTRIES; i++) {
 		upsdebugx(2, "Attempting to detect the UPS...");
@@ -363,8 +378,6 @@ void upsdrv_initinfo(void)
 			fatalx("Megatec protocol UPS not detected.");
 		}
 	}
-
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 
 	/*
 	 * Try to identify the UPS.
@@ -386,6 +399,9 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("ups.serial", "%s", getval("serial") ? getval("serial") : "unknown");
 
+	/*
+	 * Set battery-related values.
+	 */
 	if (get_firmware_values(&values) >= 0) {
 		dstate_setinfo("output.voltage.nominal", "%.1f", values.volt);
 		dstate_setinfo("battery.voltage.nominal", "%.1f", values.battvolt);
@@ -399,14 +415,31 @@ void upsdrv_initinfo(void)
 		}
 	}
 
+	if (getval("battvolts")) {
+		upsdebugx(3, getval("battvolts"));
+	
+		if (sscanf(getval("battvolts"), "%f:%f", &battvolt_empty, &battvolt_full) != 2) {
+			fatalx("Error in \"battvolts\" parameter.");
+		}
+		
+	    upslogx(LOG_NOTICE, "Overriding battery voltage interval [%.1fV, %.1fV].", battvolt_empty, battvolt_full);		
+	}
+
+	if (battvolt_empty < 0 || battvolt_full < 0) {
+		upslogx(LOG_NOTICE, "Cannot calculate charge percentage for this UPS.");
+	}
+
 	if (getval("lowbatt")) {
 		if (battvolt_empty < 0 || battvolt_full < 0) {
-			upslogx(LOG_NOTICE, "Cannot calculate charge percentage for this UPS. Ignoring \"lowbatt\" parameter.");
+			upslogx(LOG_NOTICE, "Ignoring \"lowbatt\" parameter.");
 		} else {
 			lowbatt = CLAMP(atof(getval("lowbatt")), 0, 100);
 		}
 	}
 
+	/*
+	 * Set the restart and shutdown delays.
+	 */
 	if (getval("ondelay")) {
 		start_delay = CLAMP(atoi(getval("ondelay")), 0, MAX_START_DELAY);
 	}
@@ -453,7 +486,7 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	QueryValues query;
+	QueryValues_t query;
 	float charge;
 
 	if (run_query(&query) < 0) {
@@ -481,6 +514,8 @@ void upsdrv_updateinfo(void)
 	charge = get_battery_charge(query.battvolt);
 	if (charge >= 0) {
 		dstate_setinfo("battery.charge", "%.1f", charge);
+		
+		upsdebugx(3, "Charge: %.1f%%", charge);
 	}
 
 	status_init();
@@ -730,6 +765,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "lowbatt", "Low battery level (%)");
 	addvar(VAR_VALUE, "ondelay", "Delay before UPS startup (minutes)");
 	addvar(VAR_VALUE, "offdelay", "Delay before UPS shutdown (minutes)");
+	addvar(VAR_VALUE, "battvolts", "Battery voltages (empty:full)");
 }
 
 

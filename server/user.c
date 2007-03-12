@@ -71,9 +71,9 @@ static void user_add(const char *un)
 	curr_user = tmp;
 }
 
-static acllist *addallow(acllist *base, const char *acl)
+static acllist_t *addallow(acllist_t *base, const char *acl)
 {
-	acllist	*tmp, *last;
+	acllist_t	*tmp, *last;
 
 	if (!acl)
 		return base;
@@ -85,7 +85,7 @@ static acllist *addallow(acllist *base, const char *acl)
 		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(struct acl_t));
+	tmp = xmalloc(sizeof(acllist_t));
 	tmp->aclname = xstrdup(acl);
 	tmp->next = NULL;
 
@@ -133,7 +133,7 @@ static void user_password(const char *pw)
 /* attach allowed instcmds to user */
 static void user_add_instcmd(const char *cmd)
 {
-	instcmdlist	*tmp, *last;
+	instcmdlist_t	*tmp, *last;
 
 	if (!curr_user) {
 		upslogx(LOG_WARNING, "Ignoring instcmd definition outside "
@@ -157,7 +157,7 @@ static void user_add_instcmd(const char *cmd)
 		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(instcmdlist));
+	tmp = xmalloc(sizeof(instcmdlist_t));
 
 	tmp->cmd = xstrdup(cmd);
 	tmp->next = NULL;
@@ -168,9 +168,9 @@ static void user_add_instcmd(const char *cmd)
 		curr_user->firstcmd = tmp;
 }
 
-static actionlist *addaction(actionlist *base, const char *action)
+static actionlist_t *addaction(actionlist_t *base, const char *action)
 {
-	actionlist	*tmp, *last;
+	actionlist_t	*tmp, *last;
 
 	if (!action)
 		return base;
@@ -182,7 +182,7 @@ static actionlist *addaction(actionlist *base, const char *action)
 		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(actionlist));
+	tmp = xmalloc(sizeof(actionlist_t));
 	tmp->action = xstrdup(action);
 	tmp->next = NULL;
 
@@ -206,51 +206,48 @@ static void user_add_action(const char *act)
 	curr_user->firstaction = addaction(curr_user->firstaction, act);
 }
 
-static void flushacl(acllist *first)
+static void flushacl(acllist_t *first)
 {
-	acllist	*ptr, *next;
+	acllist_t	*ptr, *next;
 
 	ptr = first;
 
 	while (ptr) {
 		next = ptr->next;
 
-		if (ptr->aclname)
-			free(ptr->aclname);
-
-		free(ptr);
-		ptr = next;
-	}
-}
-
-static void flushcmd(instcmdlist *first)
-{
-	instcmdlist	*ptr, *next;
-
-	ptr = first;
-
-	while (ptr) {
-		next = ptr->next;
-
-		if (ptr->cmd)
-			free(ptr->cmd);
+		free(ptr->aclname);
 		free(ptr);
 
 		ptr = next;
 	}
 }
 
-static void flushaction(actionlist *first)
+static void flushcmd(instcmdlist_t *first)
 {
-	actionlist	*ptr, *next;
+	instcmdlist_t	*ptr, *next;
 
 	ptr = first;
 
 	while (ptr) {
 		next = ptr->next;
 
-		if (ptr->action)
-			free(ptr->action);
+		free(ptr->cmd);
+		free(ptr);
+
+		ptr = next;
+	}
+}
+
+static void flushaction(actionlist_t *first)
+{
+	actionlist_t	*ptr, *next;
+
+	ptr = first;
+
+	while (ptr) {
+		next = ptr->next;
+
+		free(ptr->action);
 		free(ptr);
 
 		ptr = next;
@@ -267,14 +264,8 @@ void user_flush(void)
 	while (ptr) {
 		next = ptr->next;
 
-		if (ptr->username)
-			free(ptr->username);
-
 		if (ptr->firstacl)
 			flushacl(ptr->firstacl);
-
-		if (ptr->password)
-			free(ptr->password);
 
 		if (ptr->firstcmd)
 			flushcmd(ptr->firstcmd);
@@ -282,6 +273,8 @@ void user_flush(void)
 		if (ptr->firstaction)
 			flushaction(ptr->firstaction);
 
+		free(ptr->username);
+		free(ptr->password);
 		free(ptr);
 
 		ptr = next;
@@ -290,9 +283,13 @@ void user_flush(void)
 	users = NULL;
 }	
 
+#ifndef	HAVE_IPV6
 static int user_matchacl(ulist_t *user, const struct sockaddr_in *addr)
+#else
+static int user_matchacl(ulist_t *user, const struct sockaddr_storage *addr)
+#endif
 {
-	acllist	*tmp;
+	acllist_t	*tmp;
 
 	tmp = user->firstacl;
 
@@ -312,7 +309,7 @@ static int user_matchacl(ulist_t *user, const struct sockaddr_in *addr)
 
 static int user_matchinstcmd(ulist_t *user, const char * cmd)
 {
-	instcmdlist	*tmp = user->firstcmd;
+	instcmdlist_t	*tmp = user->firstcmd;
 
 	/* no commands means no access (fail-safe) */
 	if (!tmp)
@@ -328,7 +325,11 @@ static int user_matchinstcmd(ulist_t *user, const char * cmd)
 	return 0;	/* fail */
 }
 
+#ifndef	HAVE_IPV6
 int user_checkinstcmd(const struct sockaddr_in *addr, 
+#else
+int user_checkinstcmd(const struct sockaddr_storage *addr, 
+#endif
 	const char *un, const char *pw, const char *cmd)
 {
 	ulist_t	*tmp = users;
@@ -370,7 +371,7 @@ int user_checkinstcmd(const struct sockaddr_in *addr,
 
 static int user_matchaction(ulist_t *user, const char *action)
 {
-	actionlist	*tmp = user->firstaction;
+	actionlist_t	*tmp = user->firstaction;
 
 	/* no actions means no access (fail-safe) */
 	if (!tmp)
@@ -385,7 +386,11 @@ static int user_matchaction(ulist_t *user, const char *action)
 	return 0;	/* fail */
 }
 
+#ifndef	HAVE_IPV6
 int user_checkaction(const struct sockaddr_in *addr, 
+#else
+int user_checkaction(const struct sockaddr_storage *addr, 
+#endif
 	const char *un, const char *pw, const char *action)
 {
 	ulist_t	*tmp = users;
@@ -569,7 +574,7 @@ static void upsd_user_err(const char *errmsg)
 void user_load(void)
 {
 	char	fn[SMALLBUF];
-	PCONF_CTX	ctx;
+	PCONF_CTX_t	ctx;
 
 	curr_user = NULL;
 

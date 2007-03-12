@@ -1,10 +1,4 @@
 EXTRA_DIST = README \
-hotplug/libhidups.in \
-hotplug/libhid.usermap \
-hotplug-ng/nut-usbups.hotplug.in \
-hotplug-ng/nut-usbups.rules.in \
-hotplug-ng/README \
-hotplug/README \
 HP-UX/Makefile \
 HP-UX/nut-drvctl \
 HP-UX/nut-drvctl.sh \
@@ -24,3 +18,5 @@ Solaris8/S99upsmon \
 subdriver/path-to-subdriver.sh \
 Windows/halt.c \
 Windows/Makefile
+
+SUBDIRS = hotplug udev

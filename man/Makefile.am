@@ -1,9 +1,10 @@
 # Network UPS Tools: man
 
 LIB_PAGES = upsclient.3 upscli_connect.3 upscli_disconnect.3	\
- upscli_readline.3 upscli_sendline.3 upscli_splitname.3		\
- upscli_strerror.3 upscli_fd.3 upscli_get.3 upscli_list_next.3	\
- upscli_list_start.3 upscli_ssl.3 upscli_upserror.3
+ upscli_readline.3 upscli_sendline.3 upscli_splitaddr.3		\
+ upscli_splitname.3 upscli_strerror.3 upscli_fd.3 upscli_get.3	\
+ upscli_list_next.3 upscli_list_start.3 upscli_ssl.3		\
+ upscli_upserror.3
 CONF_PAGES = ups.conf.5 upssched.conf.5 upsd.conf.5 upsmon.conf.5	\
  upsd.users.5
 CLIENT_PAGES = upsc.8 upsrw.8 upscmd.8 upslog.8 upssched.8	\
@@ -26,17 +27,14 @@ SERIAL_PAGES = \
 	dummy-ups.8	\
 	etapro.8	\
 	everups.8	\
-	fentonups.8 	\
 	gamatronic.8	\
 	genericups.8	\
-	ippon.8		\
 	isbmex.8	\
 	liebert.8	\
 	masterguard.8	\
 	metasys.8	\
 	mge-shut.8	\
 	mge-utalk.8	\
-	mustek.8	\
 	nitram.8	\
 	oneac.8		\
 	optiups.8	\
@@ -45,7 +43,6 @@ SERIAL_PAGES = \
 	megatec.8	\
 	rhino.8		\
 	safenet.8	\
-	sms.8		\
 	solis.8		\
 	tripplite.8	\
 	tripplitesu.8	\
@@ -54,8 +51,8 @@ SERIAL_PAGES = \
 
 SNMP_PAGES = snmp-ups.8
 
-USB_LIBUSB_PAGES = newhidups.8 bcmxcp_usb.8 tripplite_usb.8 
-USB_HIDDEV_PAGES = hidups.8 energizerups.8
+USB_LIBUSB_PAGES = usbhid-ups.8 bcmxcp_usb.8 tripplite_usb.8 
+USB_HIDDEV_PAGES = energizerups.8
 
 # decide which pages to install
 man_MANS = $(CONF_PAGES) $(CLIENT_PAGES)

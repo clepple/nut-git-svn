@@ -39,7 +39,7 @@ static	char	*monhostdesc = NULL;
 static	int	port;
 static	char	*upsname, *hostname;
 static	char	*upsimgpath="upsimage.cgi", *upsstatpath="upsstats.cgi";
-static	UPSCONN	ups;
+static	UPSCONN_t	ups;
 
 static	FILE	*tf;
 static	long	forofs = 0;
@@ -56,9 +56,7 @@ void parsearg(char *var, char *value)
 		return;
 
 	if (!strcmp(var, "host")) {
-		if (monhost)
-			free(monhost);
-
+		free(monhost);
 		monhost = xstrdup(value);
 		return;
 	}
@@ -384,10 +382,8 @@ static void ups_connect(void)
 
 	upscli_disconnect(&ups);
 
-	if (upsname)
-		free(upsname);
-	if (hostname)
-		free(hostname);
+	free(upsname);
+	free(hostname);
 
 	if (upscli_splitname(currups->sys, &upsname, &hostname, &port) != 0) {
 		printf("Unusable UPS definition [%s]\n", currups->sys);
@@ -655,9 +651,7 @@ static int parse_line(const char *buf)
 	if (buf[strlen(buf) - 1] != '@')
 		return 0;
 
-	if (cmd)
-		free(cmd);
-
+	free(cmd);
 	cmd = xstrdup(&buf[1]);
 
 	/* strip off final @ */
@@ -879,14 +873,6 @@ static void display_tree(int verbose)
 		return;
 	}
 
-	/* FIXME: numa is uninitialized here. What's the intention of this? */
-	if (numa < numq) {
-		if (verbose)
-			printf("[Invalid response]\n");
-		
-		return;
-	}
-
 	ret = upscli_list_next(&ups, numq, query, &numa, &answer);
 
 	printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\"\n");
@@ -968,7 +954,7 @@ static void upsstats_hosts_err(const char *errmsg)
 static void load_hosts_conf(void)
 {
 	char	fn[SMALLBUF];
-	PCONF_CTX	ctx;
+	PCONF_CTX_t	ctx;
 
 	snprintf(fn, sizeof(fn), "%s/hosts.conf", CONFPATH);
 

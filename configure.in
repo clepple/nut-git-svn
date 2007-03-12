@@ -5,6 +5,7 @@ dnl +------------------------------------------------------------------+
 dnl NUT version number is defined here and *only* here (no more include/version)
 AC_INIT(nut, 2.1.0)
 AC_CONFIG_SRCDIR(server/upsd.c)
+echo "Network UPS Tools version ${PACKAGE_VERSION}"
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(include/config.h)
 AC_PREFIX_DEFAULT(/usr/local/ups)
@@ -29,13 +30,21 @@ STATEPATH="/var/state/ups"
 cgiexecdir='${exec_prefix}/cgi-bin'
 driverexecdir='${exec_prefix}/bin'
 htmldir='${prefix}/html'
-if test -d /usr/lib/pkgconfig; then
-   pkgcfgdir='/usr/lib/pkgconfig'
-else
+pkgcfgdir='/usr/lib/pkgconfig'
+if test ! -d "${pkgcfgdir}"; then
    pkgcfgdir=''
+fi
+hotplugdir='/etc/hotplug'
+if test ! -d "${hotplugdir}"; then
+   hotplugdir=''
+fi
+udevdir='/etc/udev'
+if test ! -d "${udevdir}"; then
+   udevdir=''
 fi
 
 RUN_AS_USER="nobody"
+RUN_AS_GROUP="nobody"
 PIDPATH="/var/run"
 
 dnl Define directory where LIBOBJS replacement functions are
@@ -119,13 +128,8 @@ dnl Solaris compatibility - check for -lnsl and -lsocket if connect() is gone
 AC_CHECK_FUNCS(connect)
 
 if ( test "${ac_cv_func_connect}" = "no" ); then
-	AC_CHECK_LIB(nsl, printf, [
-	  	NETLIBS="-lnsl"
-	], [], [])
-
-	AC_CHECK_LIB(socket, printf, [
-		NETLIBS="${NETLIBS} -lsocket"
-	], [], [])
+	AC_CHECK_LIB(nsl, gethostbyname)
+	AC_CHECK_LIB(socket, connect)
 fi
 
 AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h sys/termios.h)
@@ -239,6 +243,30 @@ if test "${nut_with_ssl}" = "yes"; then
    AC_DEFINE(HAVE_SSL, 1, [Define to enable SSL development code])
 fi
 NUT_REPORT_FEATURE([enable SSL development code], [${nut_with_ssl}])
+
+dnl ----------------------------------------------------------------------
+dnl check whether to compile IPv6 features 
+
+NUT_ARG_WITH([ipv6], [enable IPv6 support], [auto])
+
+dnl ${nut_with_ipv6}: any value except "yes" or "no" is treated as "auto". 
+if test "${nut_with_ipv6}" != "no"; then
+   dnl check for IPv6 prerequisites
+   NUT_CHECK_IPV6
+fi
+
+if test "${nut_with_ipv6}" = "yes" -a "${nut_have_ipv6}" != "yes"; then
+   AC_MSG_ERROR(["Some feature required for IPv6 support is missing"])
+fi
+
+if test "${nut_with_ipv6}" != "no"; then
+   nut_with_ipv6="${nut_have_ipv6}"
+fi
+
+if test "${nut_with_ipv6}" = "yes"; then
+   AC_DEFINE(HAVE_IPV6, 1, [Define to enable IPv6 support])
+fi
+NUT_REPORT_FEATURE([enable IPv6 support], [${nut_with_ipv6}])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-cgi
@@ -480,6 +508,7 @@ AC_HELP_STRING([--with-port=PORT], [port for network communications (3493)]),
 AC_DEFINE_UNQUOTED(PORT, ${PORT}, [Port for network communications])
 AC_MSG_RESULT(${PORT})
 
+nut_user_given=
 AC_MSG_CHECKING(user to run as)
 AC_ARG_WITH(user,
 AC_HELP_STRING([--with-user=username], [user for programs started as root (nobody)]),
@@ -488,12 +517,37 @@ AC_HELP_STRING([--with-user=username], [user for programs started as root (nobod
 		;;
 	*)
 		RUN_AS_USER="${withval}"
+		nut_user_given=yes
 		;;
 	esac],
 )
 AC_DEFINE_UNQUOTED(RUN_AS_USER, "${RUN_AS_USER}",
 	[User to switch to if started as root])
 AC_MSG_RESULT(${RUN_AS_USER})
+
+nut_group_given=
+AC_MSG_CHECKING(group membership of user to run as)
+AC_ARG_WITH(group,
+AC_HELP_STRING([--with-group=groupname], [group membership of user for programs started as root (nogroup)]),
+[	case "${withval}" in
+	yes|no)
+		;;
+	*)
+		RUN_AS_GROUP="${withval}"
+		nut_group_given=yes
+		;;
+	esac],
+)
+AC_DEFINE_UNQUOTED(RUN_AS_GROUP, "${RUN_AS_GROUP}",
+	[Group membership of user to switch to if started as root])
+AC_MSG_RESULT(${RUN_AS_GROUP})
+
+dnl check that --with-user is given iff --with-group is given.
+if test -n "$nut_user_given" -a -z "$nut_group_given"; then
+   AC_MSG_ERROR(["If you specify --with-user, you also must specify --with-group"])
+elif test -z "$nut_user_given" -a -n "$nut_group_given"; then
+   AC_MSG_ERROR(["If you specify --with-group, you also must specify --with-user"])
+fi
 
 AC_MSG_CHECKING(facility for syslog)
 AC_ARG_WITH(logfacility,
@@ -574,16 +628,22 @@ AC_MSG_CHECKING(whether to enable pkg-config support)
 AC_ARG_WITH(pkgconfig-dir,
  AC_HELP_STRING([--with-pkgconfig-dir=PATH], [where to install pkg-config *.pc files (/usr/lib/pkgconfig)]),
  [
-	case "${withval}" in
-		yes)
-		;;
-		no)
-			pkgcfgdir=""
-		;;
-		*)
-			pkgcfgdir="${withval}"
-		;;
-	esac
+    case "${withval}" in
+        yes)
+            if test -z "${pkgcfgdir}"; then
+	       AC_MSG_RESULT(no)
+               AC_MSG_ERROR(["pkg-config directory requested but not found])
+            fi
+        ;;
+        auto)
+        ;;
+        no)
+            pkgcfgdir=""
+        ;;
+        *)
+            pkgcfgdir="${withval}"
+        ;;
+    esac
  ],
  )
 if test -n "${pkgcfgdir}"; then
@@ -591,7 +651,65 @@ if test -n "${pkgcfgdir}"; then
 else
   AC_MSG_RESULT(no)
 fi
-AM_CONDITIONAL(WITH_PKG_CONFIG, test -n ${pkgcfgdir})
+AM_CONDITIONAL(WITH_PKG_CONFIG, test -n "${pkgcfgdir}")
+
+AC_MSG_CHECKING(whether to install hotplug rules)
+AC_ARG_WITH(hotplug-dir,
+ AC_HELP_STRING([--with-hotplug-dir=PATH], [where to install hotplug rules (/etc/hotplug)]),
+ [
+    case "${withval}" in
+        yes)
+            if test -z "${hotplugdir}"; then
+	       AC_MSG_RESULT(no)
+               AC_MSG_ERROR(["hotplug directory requested but not found])
+            fi
+        ;;
+        auto)
+        ;;
+        no)
+            hotplugdir=""
+        ;;
+        *)
+            hotplugdir="${withval}"
+        ;;
+    esac
+ ],
+ )
+if test -n "${hotplugdir}"; then
+  AC_MSG_RESULT(using ${hotplugdir})
+else
+  AC_MSG_RESULT(no)
+fi
+AM_CONDITIONAL(WITH_HOTPLUG, test -n "${hotplugdir}")
+
+AC_MSG_CHECKING(whether to install udev rules)
+AC_ARG_WITH(udev-dir,
+ AC_HELP_STRING([--with-udev-dir=PATH], [where to install udev rules (/etc/udev)]),
+ [
+    case "${withval}" in
+        yes)
+            if test -z "${udevdir}"; then
+	       AC_MSG_RESULT(no)
+               AC_MSG_ERROR(["udev directory requested but not found])
+            fi
+        ;;
+        auto)
+        ;;
+        no)
+            udevdir=""
+        ;;
+        *)
+            udevdir="${withval}"
+        ;;
+    esac
+ ],
+ )
+if test -n "${udevdir}"; then
+  AC_MSG_RESULT(using ${udevdir})
+else
+  AC_MSG_RESULT(no)
+fi
+AM_CONDITIONAL(WITH_UDEV, test -n "${udevdir}")
 
 dnl 'long long' check - this gets used down in snprintf.o
 dnl
@@ -634,6 +752,7 @@ AC_SUBST(NETLIBS)
 AC_SUBST(SERLIBS)
 AC_SUBST(STATEPATH)
 AC_SUBST(RUN_AS_USER)
+AC_SUBST(RUN_AS_GROUP)
 AC_SUBST(LINUX_HIDDEV)
 AC_SUBST(SUN_LIBUSB)
 AC_SUBST(WORDS_BIGENDIAN)
@@ -641,6 +760,8 @@ AC_SUBST(cgiexecdir)
 AC_SUBST(driverexecdir)
 AC_SUBST(htmldir)
 AC_SUBST(pkgcfgdir)
+AC_SUBST(hotplugdir)
+AC_SUBST(udevdir)
 
 AC_OUTPUT([
  clients/Makefile
@@ -660,12 +781,15 @@ AC_OUTPUT([
  packaging/debian/Makefile
  packaging/mandriva/Makefile
  packaging/RedHat/Makefile
+ packaging/RedHat/nut.spec
+ scripts/hotplug/Makefile
  scripts/hotplug/libhidups
- scripts/hotplug-ng/nut-usbups.hotplug
- scripts/hotplug-ng/nut-usbups.rules
+ scripts/udev/Makefile
+ scripts/udev/nut-usbups.rules
  scripts/Makefile
  server/Makefile
  Makefile
 ])
 
 NUT_PRINT_FEATURE_REPORT
+
