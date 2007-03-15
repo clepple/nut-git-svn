@@ -122,8 +122,8 @@ usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 energizerups_SOURCES = energizerups.c
 energizerups_LDADD = $(LDADD_DRIVERS)
 
-tripplite_usb_SOURCES = tripplite_usb.c libhid-uhid.c hidparser.c
-# tripplite_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) -lm
+tripplite_usb_SOURCES = tripplite_usb.c libhid.c libuhid.c hidparser.c
+tripplite_usb_CFLAGS = $(AM_CFLAGS) -DUHID_MODE
 tripplite_usb_LDADD = $(LDADD_DRIVERS) -lm
 
 bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c nut_usb.c

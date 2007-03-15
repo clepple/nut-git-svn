@@ -41,6 +41,9 @@
 #ifdef SHUT_MODE
 	#include "libshut.h"
 	communication_subdriver_t *comm_driver = &shut_subdriver;
+#elif defined(UHID_MODE)
+	#include "libuhid.h"
+	communication_subdriver_t *comm_driver = &uhid_subdriver;
 #else
 	#include "libusb.h"
 	communication_subdriver_t *comm_driver = &usb_subdriver;

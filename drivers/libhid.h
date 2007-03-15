@@ -39,7 +39,7 @@
 #endif
 
 #include "timehead.h"
-#ifdef SHUT_MODE
+#if defined(SHUT_MODE) || defined(UHID_MODE)
 	struct shut_dev_handle_t_s {
 		int upsfd;		/* point to main.c/upsfd */
 		char *device_path;
