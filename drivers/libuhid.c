@@ -61,117 +61,6 @@ struct my_hid_descriptor {
         uint16_t wDescriptorLength;
 };
 
-#if 0
-/*!********************************************************
- * USB spec information, synchronised with (ripped from) libusb
- */
-
-/*
- * Device and/or Interface Class codes
- */
-#define USB_CLASS_PER_INTERFACE		0	/* for DeviceClass */
-#define USB_CLASS_AUDIO			1
-#define USB_CLASS_COMM			2
-#define USB_CLASS_HID			3
-#define USB_CLASS_PRINTER		7
-#define USB_CLASS_MASS_STORAGE		8
-#define USB_CLASS_HUB			9
-#define USB_CLASS_DATA			10
-#define USB_CLASS_VENDOR_SPEC		0xff
-
-/*
- * Descriptor types
- */
-#define USB_DT_DEVICE			0x01
-#define USB_DT_CONFIG			0x02
-#define USB_DT_STRING			0x03
-#define USB_DT_INTERFACE		0x04
-#define USB_DT_ENDPOINT			0x05
-
-#define USB_DT_HID			0x21
-#define USB_DT_REPORT			0x22
-#define USB_DT_PHYSICAL			0x23
-#define USB_DT_HUB			0x29
-
-/*
- * Descriptor sizes per descriptor type
- */
-#define USB_DT_DEVICE_SIZE		18
-#define USB_DT_CONFIG_SIZE		9
-#define USB_DT_INTERFACE_SIZE		9
-#define USB_DT_ENDPOINT_SIZE		7
-#define USB_DT_ENDPOINT_AUDIO_SIZE	9	/* Audio extension */
-#define USB_DT_HUB_NONVAR_SIZE		7
-
-/*
- * Standard requests
- */
-#define USB_REQ_GET_STATUS              0x00
-#define USB_REQ_CLEAR_FEATURE           0x01
-/* 0x02 is reserved */
-#define USB_REQ_SET_FEATURE             0x03
-/* 0x04 is reserved */
-#define USB_REQ_SET_ADDRESS             0x05
-#define USB_REQ_GET_DESCRIPTOR          0x06
-#define USB_REQ_SET_DESCRIPTOR          0x07
-#define USB_REQ_GET_CONFIGURATION       0x08
-#define USB_REQ_SET_CONFIGURATION       0x09
-#define USB_REQ_GET_INTERFACE           0x0A
-#define USB_REQ_SET_INTERFACE           0x0B
-#define USB_REQ_SYNCH_FRAME             0x0C
-
-#define USB_TYPE_STANDARD               (0x00 << 5)
-#define USB_TYPE_CLASS                  (0x01 << 5)
-#define USB_TYPE_VENDOR                 (0x02 << 5)
-#define USB_TYPE_RESERVED               (0x03 << 5)
-
-#define USB_RECIP_DEVICE                0x00
-#define USB_RECIP_INTERFACE             0x01
-#define USB_RECIP_ENDPOINT              0x02
-#define USB_RECIP_OTHER                 0x03
-
-/*
- * Various libusb API related stuff
- */
-#define USB_ENDPOINT_IN                 0x80
-#define USB_ENDPOINT_OUT                0x00
-/*!
- * end of USB spec information
- *********************************************************/
-
-/*!
- * HID definitions
- */
-#define HID_REPORT_TYPE_INPUT	0x01
-#define HID_REPORT_TYPE_OUTPUT	0x02
-#define HID_REPORT_TYPE_FEATURE	0x03
-
-#define REQUEST_TYPE_USB        0x80
-#define REQUEST_TYPE_HID        0x81
-#define REQUEST_TYPE_GET_REPORT 0xa1
-#define REQUEST_TYPE_SET_REPORT 0x21
-
-#define MAX_REPORT_SIZE         0x1800
-
-/*!
- * SHUT definitions - From Simplified SHUT spec
- */
-
-#define SHUT_TYPE_REQUEST       0x01
-#define SHUT_TYPE_RESPONSE      0x04
-#define SHUT_TYPE_NOTIFY        0x05
-#define SHUT_OK                 0x06
-#define SHUT_NOK                0x15
-/* sync signals are also used to set the notification level */
-#define SHUT_SYNC               0x16 /* complete notifications - not yet managed */
-				     /* but needed for some early Ellipse models */
-#define SHUT_SYNC_LIGHT         0x17 /* partial notifications */
-#define SHUT_SYNC_OFF           0x18 /* disable notifications - only do polling */
-#define SHUT_PKT_LAST           0x80
-
-#define SHUT_TIMEOUT 3000
-#endif
-
 int shut_get_descriptor(shut_dev_handle_t *sdev, unsigned char type,
 			unsigned char index, void *buf, int size);
 int shut_get_string_simple(shut_dev_handle_t *dev, int index,
@@ -515,13 +404,14 @@ int libuhid_get_interrupt(shut_dev_handle_t *devp, unsigned char *buf,
 #if 0
 	  /* FIXME: hardcoded interrupt EP => need to get EP descr for IF descr */
 	  ret = shut_interrupt_read(devp, 0x81, buf, bufsize, timeout);
+#else
+	usleep(100*1000);
+	ret = read(devp->upsfd, buf, 8);
+#endif
 	  if (ret > 0)
 		upsdebugx(6, " ok");
 	  else
 		upsdebugx(6, " none (%i)", ret);
-#else
-	ret = read(devp->upsfd, buf, 8);
-#endif
   }
 
   return ret;
@@ -924,38 +814,4 @@ int shut_control_msg(shut_dev_handle_t *sdev, int requesttype, int request,
 	return ret;
 }
 
-/**********************************************************************
- * shut_wait_ack()
- *
- * wait for an ACK packet
- *
- * returns 0 on success, -1 on error, -2 on NACK, -3 on NOTIFICATION
- * 
- *********************************************************************/
-int shut_wait_ack (int fd)
-{
-	int retCode = -1;
-	u_char c = '\0';
-
-	ser_get_char(fd, &c, SHUT_TIMEOUT/1000, 0);
-	if (c == SHUT_OK)
-	{
-		upsdebugx (2, "shut_wait_ack(): ACK received");
-		retCode = 0;
-	}
-	else if (c == SHUT_NOK)
-	{
-		upsdebugx (2, "shut_wait_ack(): NACK received");
-		retCode = -2;
-	}
-	else if ((c & SHUT_PKT_LAST) == SHUT_TYPE_NOTIFY)
-	{
-		upsdebugx (2, "shut_wait_ack(): NOTIFY received");
-		retCode = -3;
-	}
-	else if (c == '\0')
-		upsdebugx (2, "shut_wait_ack(): Nothing received");
-	
-	return retCode;
-}
 #endif

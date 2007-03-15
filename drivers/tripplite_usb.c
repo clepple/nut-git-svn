@@ -25,9 +25,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define USE_UHID
-
-#ifdef USE_UHID
+#ifdef UHID_MODE
 #if !(defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__))
 #error "USE_UHID is only appropriate for *BSD"
 #endif /* defined(*BSD) */
@@ -302,7 +300,7 @@ static enum tl_model_t {
 #define SEND_WAIT_SEC 0
 #define SEND_WAIT_NSEC (1000*1000*100)
 
-#define MAX_RECV_TRIES 3
+#define MAX_RECV_TRIES 10
 #define RECV_WAIT_MSEC 1000	/*! was 100 for OMNIVS; SMARTPRO units need longer */
 
 #define MAX_RECONNECT_TRIES 10
@@ -590,7 +588,7 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
 			return ret;
 		}
 
-		if(!done) { usleep(1000*100); /* TODO: nanosleep */ }
+		if(!done) { usleep(1000*200); /* TODO: nanosleep */ }
 
 		for(recv_try=0; !done && recv_try < MAX_RECV_TRIES; recv_try++) {
 			upsdebugx(7, "send_cmd recv_try %d", recv_try+1);
@@ -766,6 +764,7 @@ void upsdrv_initinfo(void)
 	unsigned int proto_number = 0;
 
 	/* Reset watchdog: */
+#ifndef UHID_MODE
 	ret = send_cmd(w_msg, sizeof(w_msg), w_value, sizeof(w_value)-1);
 	if(ret <= 0) {
 		if(ret == -EPIPE) {
@@ -776,6 +775,7 @@ void upsdrv_initinfo(void)
 				"information to nut-upsdev mailing list");
 		}
 	}
+#endif
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
