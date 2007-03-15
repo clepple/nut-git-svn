@@ -318,7 +318,12 @@ static HIDDevice_t *hd = NULL;
 static HIDDevice_t curDevice;
 static HIDDeviceMatcher_t *reopen_matcher = NULL;
 static HIDDeviceMatcher_t *regex_matcher = NULL;
+#ifndef UHID_MODE
 static usb_dev_handle *udev;
+#else
+static hid_dev_handle_t *udev;
+#endif
+
 
 /* We calculate battery charge (q) as a function of voltage (V).
  * It seems that this function probably varies by firmware revision or
@@ -1268,6 +1273,11 @@ void upsdrv_initups(void)
 	} else if (r) {
 		fatalx("invalid regular expression: %s", regex_array[r]);
 	}
+
+#ifdef UHID_MODE
+        udev = (hid_dev_handle_t *)xmalloc(sizeof(hid_dev_handle_t));
+        udev->device_path = strdup(device_path);
+#endif
 
 	/* Search for the first supported UPS matching the regular
 	 *            expression */

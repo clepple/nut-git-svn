@@ -480,6 +480,8 @@ int libuhid_set_report(shut_dev_handle_t *devp, int ReportId,
 		report.ucr_report = UHID_OUTPUT_REPORT;
 		memcpy(&(report.ucr_data), raw_buf, ReportSize);
 		ret = ioctl(devp->upsfd, USB_SET_REPORT, &report);
+		if(ret == 0)
+			ret = 8;
 #endif
 	}
 	return ret;
