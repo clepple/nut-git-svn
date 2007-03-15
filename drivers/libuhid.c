@@ -200,6 +200,13 @@ int libuhid_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
 		upsdebugx(2, "Communication with UPS established");
 	}
 
+	curDevice->VendorID = 0;
+	curDevice->ProductID = 0;
+	curDevice->Vendor = strdup("TRIPP LITE");
+	curDevice->Product = strdup("unknown");
+	curDevice->Serial = strdup("unknown");
+	curDevice->Bus = strdup("uhid");
+
 #if 0
 	/* Get DEVICE descriptor */
 	dev_descriptor = (struct device_descriptor_s *)buf;
@@ -353,7 +360,7 @@ int libuhid_set_report(shut_dev_handle_t *devp, int ReportId,
 {
 	int ret = 0;
 	
-	upsdebugx(1, "Entering libuhid_set_report");
+	upsdebugx(4, "Entering libuhid_set_report");
 
 	if (devp != NULL)
 	{
@@ -366,6 +373,13 @@ int libuhid_set_report(shut_dev_handle_t *devp, int ReportId,
 			0, raw_buf, ReportSize, SHUT_TIMEOUT);
 #else
 		struct usb_ctl_report report;
+
+		close(devp->upsfd);
+		if((devp->upsfd = open(devp->device_path, O_RDWR)) < 0) {
+			perror("open(uhid)");
+			return -1;
+		}
+
 		report.ucr_report = UHID_OUTPUT_REPORT;
 		memcpy(&(report.ucr_data), raw_buf, ReportSize);
 		ret = ioctl(devp->upsfd, USB_SET_REPORT, &report);
