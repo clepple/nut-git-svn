@@ -9,7 +9,7 @@
 Summary: Network UPS Tools
 Name: nut
 Version: @NUT-VERSION@
-Release: 1
+Release: 2
 Group: Applications/System
 License: GPL
 Buildroot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -22,8 +22,7 @@ Patch0: nut-1.4.0-buildroot.patch
 Patch1: nut-0.45.0-conffiles.patch
 Patch2: nut-0.45.4-conf.patch
 Patch3: nut-2.0.5-multilib.patch
-Patch4: nut-ipv6.patch
-Patch5: nut-2.0.5-pkgconfig.patch
+Patch4: nut-2.0.5-pkgconfig.patch
 
 Requires: nut-client
 Requires(post): fileutils /sbin/chkconfig /sbin/service
@@ -89,8 +88,7 @@ necessary to develop NUT client applications.
 %patch1 -p1 -b .conf
 %patch2 -p1 -b .conf1
 %patch3 -p1 -b .multilib
-%patch4 -p1 -b .IPv6
-%patch5 -p1 -b .pkgconfig
+%patch4 -p1 -b .pkgconfig
 
 iconv -f iso-8859-1 -t utf-8 < man/newhidups.8 > man/newhidups.8_
 mv man/newhidups.8_ man/newhidups.8
@@ -288,10 +286,15 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libupsclient.pc
 
 %changelog
+* Wed May 30 2007 Arjen de Korte <arjen@de-korte.org> 2.1.0-2
+- remove IPv6 patch (is already in the trunk)
+- always start driver(s) through upsdrvctl (the old method
+  of starting them directly with command line parameters
+  without configuring ups.conf no longer works)
+
 * Mon May 07 2007 Arnaud Quette <aquette-dev@gmail.com> 2.1.0-1
 - update to 2.1.0 development tree
 - HAL, ...
-
 
 * Mon Mar 26 2007 Than Ngo <than@redhat.com> 2.0.5-3
 - cleanup
