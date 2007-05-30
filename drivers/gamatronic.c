@@ -125,7 +125,7 @@ void addquery(char *cmd, int field, int varnum, int pollflag)
 void sec_setinfo(int varnum, char *value)
 {	
 
-	if (sec_varlist[varnum].setcmd != ""){
+	if (*sec_varlist[varnum].setcmd){/*Not empty*/
 		
 		if (sec_varlist[varnum].flags == FLAG_STRING) {
 			dstate_setinfo(sec_varlist[varnum].setcmd,"%s", value);
@@ -250,7 +250,7 @@ void upsdrv_initinfo(void)
  
     
     if (strlen(avail_list) == 0){
-     fatalx("No available variables found!");}
+     fatalx(EXIT_FAILURE, "No available variables found!");}
     a = avail_list;
     e = 0;
    while ((p = strtok(a, ",")) != NULL) {  

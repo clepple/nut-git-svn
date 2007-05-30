@@ -492,7 +492,7 @@ void upsdrv_updateinfo(void)
     /* Should never be reached */
     else
     {
-        fatalx("Error, no Query mode defined. Please file bug against driver.");
+        fatalx(EXIT_FAILURE, "Error, no Query mode defined. Please file bug against driver.");
     }
 
     sleep( UPSDELAY );
@@ -599,18 +599,17 @@ void upsdrv_initups(void)
     } while( (count<MAXTRIES) | (good) );
 
     if( ! good )
-    {        
-        printf( "No MASTERGUARD UPS found\n" );
-        exit(EXIT_FAILURE);
+    {
+        fatalx(EXIT_FAILURE,  "No MASTERGUARD UPS found" );
     }
        
-    printf( "MASTERGUARD UPS found\n" );
+    upslogx(LOG_INFO, "MASTERGUARD UPS found\n" );
     
     /* Cancel Shutdown */
     if( testvar("CS") )
     {
        ser_send_pace(upsfd, UPS_PACE, "%s", "C\x0D" );
-       exit(EXIT_FAILURE);
+       fatalx(EXIT_FAILURE, "Shutdown cancelled");
     }
 }
 

@@ -2,7 +2,7 @@
  *
  *  Based on NetSNMP API (Simple Network Management Protocol V1-2)
  *
- *  Copyright (C) 2002-2004 
+ *  Copyright (C) 2002-2006 
  *  			Arnaud Quette <arnaud.quette@free.fr>
  *  			Dmitry Frolov <frolov@riss-telecom.ru>
  *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
@@ -39,8 +39,24 @@
 #include "netvisionmib.h"
 #include "pwmib.h"
 
+mib2nut_info_t mib2nut[] = {
+	{ "apcc", APCC_MIB_VERSION, APCC_OID_POWER_STATUS,
+		".1.3.6.1.4.1.318.1.1.1.1.1.1.0", apcc_mib },
+	{ "mge", MGE_MIB_VERSION, "",
+		MGE_OID_MODEL_NAME, mge_mib },
+	{ "netvision", NETVISION_MIB_VERSION, "",
+		NETVISION_OID_UPSIDENTMODEL, netvision_mib },
+	{ "pw", PW_MIB_VERSION, "",
+		PW_OID_MODEL_NAME, pw_mib },
+	{ "ietf", IETF_MIB_VERSION, IETF_OID_POWER_STATUS,
+		IETF_OID_MFR_NAME, ietf_mib },
+	{ NULL }
+};
+
 /* pointer to the Snmp2Nut lookup table */
 snmp_info_t *snmp_info;
+const char *mibname;
+const char *mibvers;
 
 time_t lastpoll;
 
@@ -50,14 +66,18 @@ time_t lastpoll;
 void upsdrv_initinfo(void)
 {
 	snmp_info_t *su_info_p;
+	char version[128];
 
 	upsdebugx(1, "SNMP UPS driver : entering upsdrv_initinfo()");
 
-	dstate_setinfo("driver.version.internal", DRIVER_VERSION);
+	snprintf(version, sizeof version, "%s (mib: %s %s)",
+		DRIVER_VERSION, mibname, mibvers);
+	dstate_setinfo("driver.version.internal", version);
 	
 	/* add instant commands to the info database. */
 	for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++)			
-		if (su_info_p->flags & SU_TYPE_CMD)
+		su_info_p->flags |= SU_FLAG_OK;
+		if (SU_TYPE(su_info_p) == SU_TYPE_CMD)
 			dstate_addcmd(su_info_p->info_type);
 
 	/* setup handlers for instcmd and setvar functions */
@@ -100,24 +120,29 @@ void upsdrv_shutdown(void)
 	/* TODO: su_shutdown_ups(); */
 	
 	/* replace with a proper shutdown function */
-	fatalx("shutdown not supported");
+	fatalx(EXIT_FAILURE, "shutdown not supported");
 }
 
 void upsdrv_help(void)
 {
-  upsdebugx(1, "entering upsdrv_help");
+	upsdebugx(1, "entering upsdrv_help");
 }
 
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
-  upsdebugx(1, "entering upsdrv_makevartable()");
+	upsdebugx(1, "entering upsdrv_makevartable()");
 
-  addvar(VAR_VALUE, SU_VAR_MIBS, "Set MIB compliance (default=ietf, allowed mge,apcc,netvision,pw)");
-  addvar(VAR_VALUE | VAR_SENSITIVE, SU_VAR_COMMUNITY, "Set community name (default=public)");
-  addvar(VAR_VALUE, SU_VAR_VERSION, "Set SNMP version (default=v1, allowed v2c)");
-  addvar(VAR_VALUE, SU_VAR_POLLFREQ, "Set polling frequency in seconds, to reduce network flow (default=30)");
-  addvar(VAR_FLAG, "notransferoids", "Disable transfer OIDs (use on APCC Symmetras)");
+	addvar(VAR_VALUE, SU_VAR_MIBS,
+	    "Set MIB compliance (default=ietf, allowed mge,apcc,netvision,pw)");
+	addvar(VAR_VALUE | VAR_SENSITIVE, SU_VAR_COMMUNITY,
+	    "Set community name (default=public)");
+	addvar(VAR_VALUE, SU_VAR_VERSION,
+	    "Set SNMP version (default=v1, allowed v2c)");
+	addvar(VAR_VALUE, SU_VAR_POLLFREQ,
+	    "Set polling frequency in seconds, to reduce network flow (default=30)");
+	addvar(VAR_FLAG, "notransferoids",
+	    "Disable transfer OIDs (use on APCC Symmetras)");
 }
 
 void upsdrv_banner(void)
@@ -132,17 +157,21 @@ void upsdrv_initups(void)
 {
 	snmp_info_t *su_info_p;
 	char model[SU_INFOSIZE];
-	bool status;
+	bool_t status;
+	const char *community, *version, *mibs;
 
 	upsdebugx(1, "SNMP UPS driver : entering upsdrv_initups()");
+	
+	community = testvar(SU_VAR_COMMUNITY) ? getval(SU_VAR_COMMUNITY) : "public";
+	version = testvar(SU_VAR_VERSION) ? getval(SU_VAR_VERSION) : "v1";
+	mibs = testvar(SU_VAR_MIBS) ? getval(SU_VAR_MIBS) : "auto";
+
+	/* init SNMP library, etc... */
+	nut_snmp_init(progname, device_path, version, community);
 
 	/* Load the SNMP to NUT translation data */
 	/* read_mibconf(SU_VAR_MIBS) ? getval(SU_VAR_MIBS) : "ietf"); */
-	load_mib2nut(testvar(SU_VAR_MIBS) ? getval(SU_VAR_MIBS) : "ietf");
-	
-	/* init SNMP library, etc... */
-	nut_snmp_init(progname, device_path,
-		(testvar(SU_VAR_COMMUNITY) ? getval(SU_VAR_COMMUNITY) : "public"));
+	load_mib2nut(mibs);
 
 	/* init polling frequency */
 	if (getval(SU_VAR_POLLFREQ))
@@ -155,10 +184,10 @@ void upsdrv_initups(void)
 	status = nut_snmp_get_str(su_info_p->OID, model, sizeof(model), NULL);
 
 	if (status == TRUE)
-		upslogx(0, "detected %s on host %s", model, device_path);
+		upslogx(0, "Detected %s on host %s (mib: %s %s)",
+			 model, device_path, mibname, mibvers);
 	else
-		fatalx("%s MIB wasn't found on %s", testvar(SU_VAR_MIBS) ? getval(SU_VAR_MIBS) : "ietf",
-			g_snmp_sess.peername);   
+		fatalx(EXIT_FAILURE, "%s MIB wasn't found on %s", mibs, g_snmp_sess.peername);   
 }
 
 void upsdrv_cleanup(void)
@@ -170,10 +199,11 @@ void upsdrv_cleanup(void)
  * SNMP functions.
  * ----------------------------------------------------------- */
 
-void nut_snmp_init(const char *type, const char *hostname, const char *community)
+void nut_snmp_init(const char *type, const char *hostname, const char *version,
+		const char *community)
 {  
-	upsdebugx(2, "SNMP UPS driver : entering nut_snmp_init(%s, %s, %s)",
-		type, hostname, community);
+	upsdebugx(2, "SNMP UPS driver : entering nut_snmp_init(%s, %s, %s, %s)",
+		type, hostname, version, community);
 
 	/* Initialize the SNMP library */
 	init_snmp(type);
@@ -184,14 +214,19 @@ void nut_snmp_init(const char *type, const char *hostname, const char *community
 	g_snmp_sess.peername = xstrdup(hostname);
 	g_snmp_sess.community = xstrdup(community);
 	g_snmp_sess.community_len = strlen(community);
-	g_snmp_sess.version = SNMP_VERSION_1;
+	if (strcmp(version, "v1") == 0)
+		g_snmp_sess.version = SNMP_VERSION_1;
+	else if (strcmp(version, "v2c") == 0)
+		g_snmp_sess.version = SNMP_VERSION_2c;
+	else
+		fatalx(EXIT_FAILURE, "Bad SNMP version: %s", version);
 
 	/* Open the session */
 	SOCK_STARTUP;
 	g_snmp_sess_p = snmp_open(&g_snmp_sess);	/* establish the session */
 	if (g_snmp_sess_p == NULL) {
 		nut_snmp_perror(&g_snmp_sess, 0, NULL, "nut_snmp_init: snmp_open");
-		exit(EXIT_FAILURE);
+		fatalx(EXIT_FAILURE, "Unable to establish communication");
 	}
 }
 
@@ -214,16 +249,16 @@ struct snmp_pdu *nut_snmp_get(const char *OID)
 	static unsigned int numerr = 0;
 
 	/* create and send request. */
-	if (!read_objid(OID, name, &name_len)) {
+	if (!snmp_parse_oid(OID, name, &name_len)) {
 		upslogx(LOG_ERR, "[%s] nut_snmp_get: %s: %s",
-			upsname, OID, snmp_api_errstring(snmp_errno));
+			upsname?upsname:device_name, OID, snmp_api_errstring(snmp_errno));
 		return NULL;
 	}
 
 	pdu = snmp_pdu_create(SNMP_MSG_GET);
 	
 	if (pdu == NULL)
-		fatalx("Not enough memory");
+		fatalx(EXIT_FAILURE, "Not enough memory");
 	
 	snmp_add_null_var(pdu, name, name_len);
 
@@ -234,20 +269,25 @@ struct snmp_pdu *nut_snmp_get(const char *OID)
 
 	if (!((status == STAT_SUCCESS) && (response->errstat == SNMP_ERR_NOERROR)))
 	{
+		if (mibname == NULL) {
+			/* We are probing for proper mib - ignore errors */
+			snmp_free_pdu(response);
+			return NULL;
+		}
+
 		numerr++;
 
 		if ((numerr == SU_ERR_LIMIT) || ((numerr % SU_ERR_RATE) == 0))
 			upslogx(LOG_WARNING, "[%s] Warning: excessive poll "
 				"failures, limiting error reporting",
-				upsname);
+				upsname?upsname:device_name);
 
 		if ((numerr < SU_ERR_LIMIT) || ((numerr % SU_ERR_RATE) == 0))
 			nut_snmp_perror(g_snmp_sess_p, status, response, 
 				"nut_snmp_get: %s", OID);
 
-/*		snmp_free_pdu(pdu);
 		snmp_free_pdu(response);
-*/		response = NULL;
+		response = NULL;
 	} else {
 		numerr = 0;
 	}
@@ -255,7 +295,7 @@ struct snmp_pdu *nut_snmp_get(const char *OID)
 	return response;
 }
 
-bool nut_snmp_get_str(const char *OID, char *buf, size_t buf_len, info_lkp_t *oid2info)
+bool_t nut_snmp_get_str(const char *OID, char *buf, size_t buf_len, info_lkp_t *oid2info)
 {
 	size_t len = 0;
 	struct snmp_pdu *pdu;
@@ -297,7 +337,7 @@ bool nut_snmp_get_str(const char *OID, char *buf, size_t buf_len, info_lkp_t *oi
 		break;
 	default:
 		upslogx(LOG_ERR, "[%s] unhandled ASN 0x%x recieved from %s",
-			upsname, pdu->variables->type, OID);
+			upsname?upsname:device_name, pdu->variables->type, OID);
 		return FALSE;
 		break;
 	}
@@ -307,7 +347,7 @@ bool nut_snmp_get_str(const char *OID, char *buf, size_t buf_len, info_lkp_t *oi
 	return TRUE;
 }
 
-bool nut_snmp_get_int(const char *OID, long *pval)
+bool_t nut_snmp_get_int(const char *OID, long *pval)
 {
 	struct snmp_pdu *pdu;
 	long value;
@@ -336,7 +376,7 @@ bool nut_snmp_get_int(const char *OID, long *pval)
 		break;
 	default:
 		upslogx(LOG_ERR, "[%s] unhandled ASN 0x%x recieved from %s",
-			upsname, pdu->variables->type, OID);
+			upsname?upsname:device_name, pdu->variables->type, OID);
 		return FALSE;
 		break;
 	}
@@ -349,27 +389,27 @@ bool nut_snmp_get_int(const char *OID, long *pval)
 	return TRUE;
 }
 
-bool nut_snmp_set(const char *OID, char type, const char *value)
+bool_t nut_snmp_set(const char *OID, char type, const char *value)
 {
 	int status;
-	bool ret = FALSE;
+	bool_t ret = FALSE;
 	struct snmp_pdu *pdu, *response = NULL;
 	oid name[MAX_OID_LEN];
 	size_t name_len = MAX_OID_LEN;
 	
-	if (!read_objid(OID, name, &name_len)) {
+	if (!snmp_parse_oid(OID, name, &name_len)) {
 		upslogx(LOG_ERR, "[%s] nut_snmp_set: %s: %s",
-			upsname, OID, snmp_api_errstring(snmp_errno));
+			upsname?upsname:device_name, OID, snmp_api_errstring(snmp_errno));
 		return FALSE;
 	}
 
 	pdu = snmp_pdu_create(SNMP_MSG_SET);
 	if (pdu == NULL)
-		fatalx("Not enough memory");
+		fatalx(EXIT_FAILURE, "Not enough memory");
 
 	if (snmp_add_var(pdu, name, name_len, type, value)) {
 		upslogx(LOG_ERR, "[%s] nut_snmp_set: %s: %s",
-			upsname, OID, snmp_api_errstring(snmp_errno));
+			upsname?upsname:device_name, OID, snmp_api_errstring(snmp_errno));
 		
 		return FALSE;
 	}
@@ -386,12 +426,12 @@ bool nut_snmp_set(const char *OID, char type, const char *value)
 	return ret;
 }
 
-bool nut_snmp_set_str(const char *OID, const char *value)
+bool_t nut_snmp_set_str(const char *OID, const char *value)
 {
 	return nut_snmp_set(OID, 's', value);
 }
 
-bool nut_snmp_set_int(const char *OID, long value)
+bool_t nut_snmp_set_int(const char *OID, long value)
 {
 	char buf[SU_BUFSIZE];
 
@@ -399,7 +439,7 @@ bool nut_snmp_set_int(const char *OID, long value)
 	return nut_snmp_set(OID, 'i', buf);
 }
 
-bool nut_snmp_set_time(const char *OID, long value)
+bool_t nut_snmp_set_time(const char *OID, long value)
 {
 	char buf[SU_BUFSIZE];
 
@@ -423,19 +463,19 @@ void nut_snmp_perror(struct snmp_session *sess, int status,
 	if (response == NULL) {
 		snmp_error(sess, &cliberr, &snmperr, &snmperrstr);
 		upslogx(LOG_ERR, "[%s] %s: %s",
-			upsname, buf, snmperrstr);
+			upsname?upsname:device_name, buf, snmperrstr);
 		free(snmperrstr);
 	} else if (status == STAT_SUCCESS) {
 		if (response->errstat != SNMP_ERR_NOERROR)
 			upslogx(LOG_ERR, "[%s] %s: Error in packet: %s",
-				upsname, buf, snmp_errstring(response->errstat));
+				upsname?upsname:device_name, buf, snmp_errstring(response->errstat));
 	} else if (status == STAT_TIMEOUT) {
 		upslogx(LOG_ERR, "[%s] %s: Timeout: no response from %s",
-			upsname, buf, sess->peername);
+			upsname?upsname:device_name, buf, sess->peername);
 	} else {
 		snmp_sess_error(sess, &cliberr, &snmperr, &snmperrstr);
 		upslogx(LOG_ERR, "[%s] %s: %s",
-			upsname, buf, snmperrstr);
+			upsname?upsname:device_name, buf, snmperrstr);
 		free(snmperrstr);
 	}
 }
@@ -473,7 +513,7 @@ void su_setinfo(const char *type, const char *value, int flags, int auxdata)
 			
 	su_info_p = su_find_info(type);
 	
-	if (su_info_p->flags & SU_TYPE_CMD)
+	if (SU_TYPE(su_info_p) == SU_TYPE_CMD)
 		return;
 
 	if (strcasecmp(type, "ups.status")) {
@@ -509,42 +549,41 @@ snmp_info_t *su_find_info(const char *type)
 		if (!strcasecmp(su_info_p->info_type, type))
 			return su_info_p;
 		
-	fatalx("nut_snmp_find_info: unknown info type: %s", type);
+	fatalx(EXIT_FAILURE, "nut_snmp_find_info: unknown info type: %s", type);
 	return NULL;
 }
 
 /* Load the right snmp_info_t structure matching mib parameter */
 void load_mib2nut(const char *mib)
 {
+	mib2nut_info_t *mp = mib2nut;
 	upsdebugx(2, "SNMP UPS driver : entering load_mib2nut(%s)", mib);
 	
 /*	read_mibconf(mib); */
 	
-	if (!strcmp(mib, "apcc")) {
-		upsdebugx(1, "load_mib2nut: using apcc mib");
-		snmp_info = &apcc_mib[0];
-		OID_pwr_status = APCC_OID_POWER_STATUS;
-	} else if (!strcmp(mib, "mge")) {
-		upsdebugx(1, "load_mib2nut: using mge (MGE UPS SYSTEMS) mib");
-		snmp_info = &mge_mib[0];
-		OID_pwr_status = "";
-/*		read_mibconf("mgemib"); */
-	} else if (!strcmp(mib, "netvision")) {
-		upsdebugx(1, "load_mib2nut: using netvision (SOCOMEC SICON UPS) mib");
-		snmp_info = &netvision_mib[0];
-		OID_pwr_status = "";
-/*             read_mibconf("netvisionmib"); */
-	} else if (!strcmp(mib, "pw")) {
-		upsdebugx(1, "load_mib2nut: using using pw (Powerware) mib");
-		snmp_info = &pw_mib[0];
-		OID_pwr_status = "";
-/*             read_mibconf("pw"); */
-	} else {
-		upsdebugx(1, "load_mib2nut: using ietf (RFC 1628) mib");
-		snmp_info = &ietf_mib[0];
-		OID_pwr_status = IETF_OID_POWER_STATUS;
-/*		read_mibconf("ietfmib"); */
+	while (mp->mib_name) {
+		if (strcmp(mib, mp->mib_name) == 0)
+			break;
+		else if (strcmp(mib, "auto") == 0) {
+			int status;
+			char buf[1024];
+			upsdebugx(1, "load_mib2nut: trying %s mib", mp->mib_name);
+			status = nut_snmp_get_str(mp->oid_auto_check,
+						buf, sizeof buf, NULL);
+			if (status)
+				break;
+		}
+		mp++;
 	}
+	if (mp->mib_name) {
+		snmp_info = mp->snmp_info;
+		OID_pwr_status = mp->oid_pwr_status;
+		mibname = mp->mib_name;
+		mibvers = mp->mib_version;
+		upsdebugx(1, "load_mib2nut: using %s mib", mibname);
+	}
+	else
+		fatalx(EXIT_FAILURE, "Unknown mibs value: %s", mib);
 }
 
 /* find the OID value matching that INFO_* value */
@@ -599,16 +638,16 @@ static void disable_competition(snmp_info_t *entry)
 }
 
 /* walk ups variables and set elements of the info array. */
-bool snmp_ups_walk(int mode)
+bool_t snmp_ups_walk(int mode)
 {
 	static unsigned long iterations = 0;
 	snmp_info_t *su_info_p;
-	bool status = FALSE;
+	bool_t status = FALSE;
 	
 	for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++) {
 
 		/* skip instcmd. */
-		if (su_info_p->info_flags & SU_TYPE_CMD) {
+		if (SU_TYPE(su_info_p) == SU_TYPE_CMD) {
 			upsdebugx(1, "SU_CMD_MASK => %s", su_info_p->OID);
 			continue;
 		}
@@ -640,6 +679,50 @@ bool snmp_ups_walk(int mode)
 				(iterations % SU_STALE_RETRY) != 0)
 			continue;
 
+		if (su_info_p->flags & SU_INPHASES) {
+			upsdebugx(1, "Check inphases");
+		    	if (input_phases == 0) continue;
+			upsdebugx(1, "inphases is set");
+			if (su_info_p->flags & SU_INPUT_1) {
+			    	if (input_phases == 1)
+					su_info_p->flags &= ~SU_INPHASES;
+				else {
+					upsdebugx(1, "inphases is not 1");
+				    	su_info_p->flags &= ~SU_FLAG_OK;
+					continue;
+				}
+			}
+			else if (su_info_p->flags & SU_INPUT_3) {
+			    	if (input_phases == 3)
+					su_info_p->flags &= ~SU_INPHASES;
+				else {
+					upsdebugx(1, "inphases is not 3");
+				    	su_info_p->flags &= ~SU_FLAG_OK;
+					continue;
+				}
+			}
+		}
+
+		if (su_info_p->flags & SU_OUTPHASES) {
+		    	if (output_phases == 0) continue;
+			if (su_info_p->flags & SU_OUTPUT_1) {
+			    	if (output_phases == 1)
+					su_info_p->flags &= ~SU_OUTPHASES;
+				else {
+					su_info_p->flags &= ~SU_FLAG_OK;
+					continue;
+				}
+			}
+			else if (su_info_p->flags & SU_OUTPUT_3) {
+			    	if (output_phases == 3)
+					su_info_p->flags &= ~SU_OUTPHASES;
+				else {
+				    	su_info_p->flags &= ~SU_FLAG_OK;
+					continue;
+				}
+			}
+		}
+
 		/* ok, update this element. */
 		status = su_ups_get(su_info_p);
 		
@@ -647,9 +730,9 @@ bool snmp_ups_walk(int mode)
 		if (status == TRUE) {
 			if (su_info_p->flags & SU_FLAG_STALE) {
 				upslogx(LOG_INFO, "[%s] snmp_ups_walk: data resumed for %s",
-					upsname, su_info_p->info_type);
+					upsname?upsname:device_name, su_info_p->info_type);
+				su_info_p->flags &= ~SU_FLAG_STALE;
 			}
-			su_info_p->flags &= ~SU_FLAG_STALE;
 			if(su_info_p->flags & SU_FLAG_UNIQUE) {
 				/* We should be the only provider of this */
 				disable_competition(su_info_p);
@@ -663,9 +746,9 @@ bool snmp_ups_walk(int mode)
 			} else	{
 				if (!(su_info_p->flags & SU_FLAG_STALE)) {
 					upslogx(LOG_INFO, "[%s] snmp_ups_walk: data stale for %s",
-						upsname, su_info_p->info_type);
+						upsname?upsname:device_name, su_info_p->info_type);
+					su_info_p->flags |= SU_FLAG_STALE;
 				}
-				su_info_p->flags |= SU_FLAG_STALE;
 				dstate_datastale();
 			}
 		}
@@ -676,10 +759,10 @@ bool snmp_ups_walk(int mode)
 	return status;	
 }
 
-bool su_ups_get(snmp_info_t *su_info_p)
+bool_t su_ups_get(snmp_info_t *su_info_p)
 {
 	static char buf[SU_INFOSIZE];
-	bool status;
+	bool_t status;
 	long value;
 
 	upsdebugx(2, "su_ups_get: %s %s", su_info_p->info_type, su_info_p->OID);
@@ -692,6 +775,7 @@ bool su_ups_get(snmp_info_t *su_info_p)
 			su_status_set(su_info_p, value);
 			upsdebugx(2, "=> value: %ld", value);
 		}
+		else upsdebugx(2, "=> Failed");
 
 		return status;
 	}
@@ -735,8 +819,13 @@ bool su_ups_get(snmp_info_t *su_info_p)
 				su_info_p->flags &= ~SU_FLAG_OK;
 				if(su_info_p->flags&SU_FLAG_UNIQUE) {
 					disable_competition(su_info_p);
+					su_info_p->flags &= ~SU_FLAG_UNIQUE;
 				}
 				return FALSE;
+			}
+			if (su_info_p->flags & SU_FLAG_SETINT) {
+			    	upsdebugx(1, "setvar %s", su_info_p->OID);
+			    	*su_info_p->setvar = value;
 			}
 			sprintf(buf, "%.1f", value * su_info_p->info_len);
 		}
@@ -750,7 +839,7 @@ bool su_ups_get(snmp_info_t *su_info_p)
 		
 		upsdebugx(2, "=> value: %s", buf);
 	}
-
+	else upsdebugx(2, "=> Failed");
 	return status;
 }
 
@@ -758,7 +847,7 @@ bool su_ups_get(snmp_info_t *su_info_p)
 int su_setvar(const char *varname, const char *val)
 {
 	snmp_info_t *su_info_p;
-	bool ret;
+	bool_t ret;
 
 	upsdebugx(2, "entering su_setvar()");
 
@@ -835,7 +924,7 @@ void su_shutdown_ups(void)
 	long pwr_status;
 
 	if (nut_snmp_get_int(OID_pwr_status, &pwr_status) == FALSE)
-		fatalx("cannot determine UPS status");
+		fatalx(EXIT_FAILURE, "cannot determine UPS status");
 
 	if (testvar(SU_VAR_SDTYPE))
 		sdtype = atoi(getval(SU_VAR_SDTYPE));
@@ -879,7 +968,7 @@ void su_shutdown_ups(void)
 /* return 1 if usable, 0 if not */
 static int parse_mibconf_args(int numargs, char **arg)
 {
-	bool ret;
+	bool_t ret;
 	
 	/* everything below here uses up through arg[1] */
 	if (numargs < 6)
@@ -918,7 +1007,7 @@ static void mibconf_err(const char *errmsg)
 void read_mibconf(char *mib)
 {
 	char	fn[SMALLBUF];
-	PCONF_CTX	ctx;
+	PCONF_CTX_t	ctx;
 
 	upsdebugx(2, "SNMP UPS driver : entering read_mibconf(%s)", mib);
 	
@@ -927,7 +1016,7 @@ void read_mibconf(char *mib)
 	pconf_init(&ctx, mibconf_err);
 
 	if (!pconf_file_begin(&ctx, fn))
-		fatalx("%s", ctx.errmsg);
+		fatalx(EXIT_FAILURE, "%s", ctx.errmsg);
 
 	while (pconf_file_next(&ctx)) {
 		if (pconf_parse_error(&ctx)) {

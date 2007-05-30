@@ -43,18 +43,22 @@
 #include "ctype.h"
 #include "upstype.h"
 
-#define INITIAL_WAIT_MAX 15	/* max 15 seconds for DUMPDONEs to arrive */
 #define NUT_NET_ANSWER_MAX SMALLBUF
 
 /* prototypes from upsd.c */
 
-upstype *get_ups_ptr(const char *upsname);
-int ups_available(const upstype *ups, ctype *client);
+upstype_t *get_ups_ptr(const char *upsname);
+int ups_available(const upstype_t *ups, ctype_t *client);
+
+void listen_add(const char *addr, const char *port);
 
 void kick_login_clients(const char *upsname);
-int sendback(ctype *client, const char *fmt, ...)
+int sendback(ctype_t *client, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
-int send_err(ctype *client, const char *errtype);
+int send_err(ctype_t *client, const char *errtype);
+
+void server_load(void);
+void server_free(void);
 
 void check_perms(const char *fn);
 
@@ -62,6 +66,11 @@ void check_perms(const char *fn);
 
 #define SIGCMD_STOP	SIGTERM
 #define SIGCMD_RELOAD	SIGHUP
+
+/* awkward way to make a string out of a numeric constant */
+
+#define string_const_aux(x)	#x
+#define string_const(x)		string_const_aux(x)
 
 #ifdef SHUT_RDWR
 #define shutdown_how SHUT_RDWR

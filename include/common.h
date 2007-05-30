@@ -31,7 +31,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <sys/types.h>
-#include <sys/time.h>
 #include <sys/stat.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -40,10 +39,12 @@
 #include <unistd.h>
 #include <assert.h>
 
+#include "timehead.h"
 #include "attribute.h"
 #include "config.h"
 #include "proto.h"
-#include "version.h"
+
+extern const char *UPS_VERSION;
 
 /* get the syslog ready for us */
 void open_syslog(const char *progname);
@@ -97,10 +98,10 @@ void upsdebugx(int level, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 void upsdebug_hex(int level, const char *msg, const unsigned char *buf, int len);
 		
-void fatal_with_errno(const char *fmt, ...)
-	__attribute__ ((__format__ (__printf__, 1, 2))) __attribute((noreturn));
-void fatalx(const char *fmt, ...)
-	__attribute__ ((__format__ (__printf__, 1, 2))) __attribute((noreturn));
+void fatal_with_errno(int status, const char *fmt, ...)
+	__attribute__ ((__format__ (__printf__, 2, 3))) __attribute((noreturn));
+void fatalx(int status, const char *fmt, ...)
+	__attribute__ ((__format__ (__printf__, 2, 3))) __attribute((noreturn));
 
 extern int nut_debug_level;
 

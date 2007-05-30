@@ -41,10 +41,8 @@ static void list_free(struct dlist_t *ptr)
 	while (ptr) {
 		next = ptr->next;
 
-		if (ptr->name)
-			free(ptr->name);
-		if (ptr->desc)
-			free(ptr->desc);
+		free(ptr->name);
+		free(ptr->desc);
 		free(ptr);
 
 		ptr = next;
@@ -78,9 +76,7 @@ static void desc_add(struct dlist_t **list, const char *name, const char *desc)
 
 		/* replace duplicates */
 		if (!strcasecmp(tmp->name, name)) {
-			if (tmp->desc)
-				free(tmp->desc);
-
+			free(tmp->desc);
 			tmp->desc = xstrdup(desc);
 			return;
 		}
@@ -110,7 +106,7 @@ static void desc_file_err(const char *errmsg)
 void desc_load(void)
 {
 	char	fn[SMALLBUF];
-	PCONF_CTX	ctx;
+	PCONF_CTX_t	ctx;
 
 	snprintf(fn, sizeof(fn), "%s/cmdvartab", datapath);
 

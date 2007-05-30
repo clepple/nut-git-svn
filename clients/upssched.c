@@ -54,9 +54,9 @@ typedef struct {
 	char	*name;
 	time_t	etime;
 	void	*next;
-}	ttype;
+}	ttype_t;
 
-	ttype	*thead = NULL;
+	ttype_t	*thead = NULL;
 	static	struct	conn_t	*connhead = NULL;
 	char	*cmdscript = NULL, *pipefn = NULL, *lockfn = NULL;
 	int	verbose = 0;		/* use for debugging */
@@ -100,23 +100,21 @@ static void exec_cmd(const char *cmd)
 	return;
 }
 
-static void removetimer(ttype *tfind)
+static void removetimer(ttype_t *tfind)
 {
-	ttype	*tmp, *last;
+	ttype_t	*tmp, *last;
 
 	last = NULL;
 	tmp = thead;
 
 	while (tmp) {
 		if (tmp == tfind) {	/* found it */
-			if (tmp->name)
-				free(tmp->name);
-
 			if (last == NULL)	/* deleting first */
 				thead = tmp->next;
 			else
 				last->next = tmp->next;
 
+			free(tmp->name);
 			free(tmp);
 			return;
 		}
@@ -127,12 +125,12 @@ static void removetimer(ttype *tfind)
 
 	/* this one should never happen */
 
-	upslogx(LOG_ERR, "removetimer: failed to locate target at %p", tfind);
+	upslogx(LOG_ERR, "removetimer: failed to locate target at %p", (void *)tfind);
 }
 
 static void checktimers(void)
 {
-	ttype	*tmp, *tmpnext;
+	ttype_t	*tmp, *tmpnext;
 	time_t	now;
 	static	int	emptyctr = 0;
 
@@ -184,7 +182,7 @@ static void start_timer(const char *name, const char *ofsstr)
 {
 	time_t	now;
 	int	ofs;
-	ttype	*tmp, *last;
+	ttype_t	*tmp, *last;
 
 	/* get the time */
 	time(&now);
@@ -208,7 +206,7 @@ static void start_timer(const char *name, const char *ofsstr)
 		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(ttype));
+	tmp = xmalloc(sizeof(ttype_t));
 	tmp->name = xstrdup(name);
 	tmp->etime = now + ofs;
 	tmp->next = NULL;
@@ -221,7 +219,7 @@ static void start_timer(const char *name, const char *ofsstr)
 
 static void cancel_timer(const char *name, const char *cname)
 {
-	ttype	*tmp;
+	ttype_t	*tmp;
 
 	for (tmp = thead; tmp != NULL; tmp = tmp->next) {
 		if (!strcmp(tmp->name, name)) {		/* match */
@@ -252,7 +250,7 @@ static void us_serialize(int op)
 			ret = pipe(pipefd);
 
 			if (ret != 0)
-				fatal_with_errno("serialize: pipe");
+				fatal_with_errno(EXIT_FAILURE, "serialize: pipe");
 
 			break;
 
@@ -277,7 +275,7 @@ static int open_sock(void)
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
 	if (fd < 0)
-		fatal_with_errno("Can't create a unix domain socket");
+		fatal_with_errno(EXIT_FAILURE, "Can't create a unix domain socket");
 
 	ssaddr.sun_family = AF_UNIX;
 	snprintf(ssaddr.sun_path, sizeof(ssaddr.sun_path), "%s", pipefn);
@@ -289,17 +287,17 @@ static int open_sock(void)
 	ret = bind(fd, (struct sockaddr *) &ssaddr, sizeof ssaddr);
 
 	if (ret < 0)
-		fatal_with_errno("bind %s failed", pipefn);
+		fatal_with_errno(EXIT_FAILURE, "bind %s failed", pipefn);
 
 	ret = chmod(pipefn, 0660);
 
 	if (ret < 0)
-		fatal_with_errno("chmod(%s, 0660) failed", pipefn);
+		fatal_with_errno(EXIT_FAILURE, "chmod(%s, 0660) failed", pipefn);
 
 	ret = listen(fd, US_LISTEN_BACKLOG);
 
 	if (ret < 0)
-		fatal_with_errno("listen(%d, %d) failed", fd, US_LISTEN_BACKLOG);
+		fatal_with_errno(EXIT_FAILURE, "listen(%d, %d) failed", fd, US_LISTEN_BACKLOG);
 
 	return fd;
 }
@@ -506,7 +504,7 @@ static void start_daemon(int lockfd)
 	us_serialize(SERIALIZE_INIT);
 
 	if ((pid = fork()) < 0)
-		fatal_with_errno("Unable to enter background");
+		fatal_with_errno(EXIT_FAILURE, "Unable to enter background");
 
 	if (pid != 0) {		/* parent */
 
@@ -522,9 +520,15 @@ static void start_daemon(int lockfd)
 	close(1);
 	close(2);
 
-	(void) open("/dev/null", O_RDWR);
-	dup(0);
-	dup(0);
+	/* make fds 0-2 point somewhere defined */
+	if (open("/dev/null", O_RDWR) != 0)
+		fatal_with_errno(EXIT_FAILURE, "open /dev/null");
+
+	if (dup(0) == -1)
+		fatal_with_errno(EXIT_FAILURE, "dup");
+
+	if (dup(0) == -1)
+		fatal_with_errno(EXIT_FAILURE, "dup");
 
 	pipefd = open_sock();
 
@@ -598,7 +602,7 @@ static int try_connect(void)
 	pipefd = socket(AF_UNIX, SOCK_STREAM, 0);
 
 	if (pipefd == -1)
-		fatal_with_errno("socket");
+		fatal_with_errno(EXIT_FAILURE, "socket");
 
 	ret = connect(pipefd, (const struct sockaddr *) &saddr, sizeof(saddr));
 
@@ -743,7 +747,7 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 		/* try again ... */
 	}
 
-	fatalx("Unable to connect to daemon and unable to start daemon");
+	fatalx(EXIT_FAILURE, "Unable to connect to daemon and unable to start daemon");
 }
 
 static void parse_at(const char *ntype, const char *un, const char *cmd, 
@@ -753,17 +757,17 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 
 	if (!cmdscript) {
 		printf("CMDSCRIPT must be set before any ATs in the config file!\n");
-		fatalx("CMDSCRIPT must be set before any ATs in the config file!");
+		fatalx(EXIT_FAILURE, "CMDSCRIPT must be set before any ATs in the config file!");
 	}
 
 	if (!pipefn) {
 		printf("PIPEFN must be set before any ATs in the config file!\n");
-		fatalx("PIPEFN must be set before any ATs in the config file!");
+		fatalx(EXIT_FAILURE, "PIPEFN must be set before any ATs in the config file!");
 	}
 
 	if (!lockfn) {
 		printf("LOCKFN must be set before any ATs in the config file!\n");
-		fatalx("LOCKFN must be set before any ATs in the config file!");
+		fatalx(EXIT_FAILURE, "LOCKFN must be set before any ATs in the config file!");
 	}
 
 	/* check upsname: does this apply to us? */
@@ -853,7 +857,7 @@ static void upssched_err(const char *errmsg)
 static void checkconf(void)
 {
 	char	fn[SMALLBUF];
-	PCONF_CTX	ctx;
+	PCONF_CTX_t	ctx;
 
 	snprintf(fn, sizeof(fn), "%s/upssched.conf", confpath());
 
@@ -861,7 +865,7 @@ static void checkconf(void)
 
 	if (!pconf_file_begin(&ctx, fn)) {
 		pconf_finish(&ctx);
-		fatalx("%s", ctx.errmsg);
+		fatalx(EXIT_FAILURE, "%s", ctx.errmsg);
 	}
 
 	while (pconf_file_next(&ctx)) {

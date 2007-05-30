@@ -24,6 +24,14 @@
 #include <pwd.h>
 #include <grp.h>
 
+/* the reason we define UPS_VERSION as a static string, rather than a
+	macro, is to make dependency tracking easier (only common.o depends
+	on nut_version_macro.h), and also to prevent all sources from
+	having to be recompiled each time the version changes (they only
+	need to be re-linked). */
+#include "nut_version.h"
+const char *UPS_VERSION = NUT_VERSION_MACRO;
+
 	int	nut_debug_level = 0;
 	static	int	upslog_flags = UPSLOG_STDERR;
 
@@ -70,7 +78,7 @@ void background(void)
 	int	pid;
 
 	if ((pid = fork()) < 0)
-		fatal_with_errno("Unable to enter background");
+		fatal_with_errno(EXIT_FAILURE, "Unable to enter background");
 
 	xbit_set(&upslog_flags, UPSLOG_SYSLOG);
 	xbit_clear(&upslog_flags, UPSLOG_STDERR);
@@ -86,9 +94,13 @@ void background(void)
 
 	/* make fds 0-2 point somewhere defined */
 	if (open("/dev/null", O_RDWR) != 0)
-		fatal_with_errno("open /dev/null");
-	dup(0);
-	dup(0);
+		fatal_with_errno(EXIT_FAILURE, "open /dev/null");
+
+	if (dup(0) == -1)
+		fatal_with_errno(EXIT_FAILURE, "dup");
+
+	if (dup(0) == -1)
+		fatal_with_errno(EXIT_FAILURE, "dup");
 
 #ifdef HAVE_SETSID
 	setsid();		/* make a new session to dodge signals */
@@ -109,9 +121,9 @@ struct passwd *get_user_pwent(const char *name)
 	   some implementations of getpwnam() do not set errno when this
 	   happens. */
 	if (errno == 0)
-		fatalx("user %s not found", name);
+		fatalx(EXIT_FAILURE, "user %s not found", name);
 	else
-		fatal_with_errno("getpwnam(%s)", name);
+		fatal_with_errno(EXIT_FAILURE, "getpwnam(%s)", name);
 		
 	return NULL;  /* to make the compiler happy */
 }
@@ -125,29 +137,29 @@ void become_user(struct passwd *pw)
 
 	if (getuid() == 0)
 		if (seteuid(0))
-			fatal_with_errno("getuid gave 0, but seteuid(0) failed");
+			fatal_with_errno(EXIT_FAILURE, "getuid gave 0, but seteuid(0) failed");
 
 	if (initgroups(pw->pw_name, pw->pw_gid) == -1)
-		fatal_with_errno("initgroups");
+		fatal_with_errno(EXIT_FAILURE, "initgroups");
 
 	if (setgid(pw->pw_gid) == -1)
-		fatal_with_errno("setgid");
+		fatal_with_errno(EXIT_FAILURE, "setgid");
 
 	if (setuid(pw->pw_uid) == -1)
-		fatal_with_errno("setuid");
+		fatal_with_errno(EXIT_FAILURE, "setuid");
 }
 
 /* drop down into a directory and throw away pointers to the old path */
 void chroot_start(const char *path)
 {
 	if (chdir(path))
-		fatal_with_errno("chdir(%s)", path);
+		fatal_with_errno(EXIT_FAILURE, "chdir(%s)", path);
 
 	if (chroot(path))
-		fatal_with_errno("chroot(%s)", path);
+		fatal_with_errno(EXIT_FAILURE, "chroot(%s)", path);
 
 	if (chdir("/"))
-		fatal_with_errno("chdir(/)");
+		fatal_with_errno(EXIT_FAILURE, "chdir(/)");
 
 	upsdebugx(1, "chrooted into %s", path);
 }
@@ -191,8 +203,10 @@ int sendsignalfn(const char *pidfn, int sig)
 		return -1;
 	}
 
-	fgets(buf, sizeof(buf), pidf);
-	buf[strlen(buf)-1] = '\0';
+	if (fgets(buf, sizeof(buf), pidf) == NULL) {
+		upslogx(LOG_NOTICE, "Failed to read pid from %s", pidfn);
+		return -1;
+	}	
 
 	pid = strtol(buf, (char **)NULL, 10);
 
@@ -384,7 +398,7 @@ static void vfatal(const char *fmt, va_list va, int use_strerror)
 	vupslog(LOG_ERR, fmt, va, use_strerror);
 }
 
-void fatal_with_errno(const char *fmt, ...)
+void fatal_with_errno(int status, const char *fmt, ...)
 {
 	va_list va;
 
@@ -392,10 +406,10 @@ void fatal_with_errno(const char *fmt, ...)
 	vfatal(fmt, va, (errno > 0) ? 1 : 0);
 	va_end(va);
 
-	exit(EXIT_FAILURE);
+	exit(status);
 }
 
-void fatalx(const char *fmt, ...)
+void fatalx(int status, const char *fmt, ...)
 {
 	va_list va;
 
@@ -403,7 +417,7 @@ void fatalx(const char *fmt, ...)
 	vfatal(fmt, va, 0);
 	va_end(va);
 
-	exit(EXIT_FAILURE);
+	exit(status);
 }
 
 static const char *oom_msg = "Out of memory";
@@ -413,7 +427,7 @@ void *xmalloc(size_t size)
 	void *p = malloc(size);
 
 	if (p == NULL)
-		fatal_with_errno("%s", oom_msg);
+		fatal_with_errno(EXIT_FAILURE, "%s", oom_msg);
 	return p;
 }
 
@@ -422,7 +436,7 @@ void *xcalloc(size_t number, size_t size)
 	void *p = calloc(number, size);
 
 	if (p == NULL)
-		fatal_with_errno("%s", oom_msg);
+		fatal_with_errno(EXIT_FAILURE, "%s", oom_msg);
 	return p;
 }
 
@@ -431,7 +445,7 @@ void *xrealloc(void *ptr, size_t size)
 	void *p = realloc(ptr, size);
 
 	if (p == NULL)
-		fatal_with_errno("%s", oom_msg);
+		fatal_with_errno(EXIT_FAILURE, "%s", oom_msg);
 	return p;
 }
 
@@ -440,7 +454,7 @@ char *xstrdup(const char *string)
 	char *p = strdup(string);
 
 	if (p == NULL)
-		fatal_with_errno("%s", oom_msg);
+		fatal_with_errno(EXIT_FAILURE, "%s", oom_msg);
 	return p;
 }
 

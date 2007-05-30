@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# an auxiliary script to produce a "stub" newhidups subdriver from
+# an auxiliary script to produce a "stub" usbhid-ups subdriver from
 # the output of
 #
-# drivers/newhidups -DD -u root -x generic -x vendorid=XXXX auto
+# drivers/usbhid-ups -DD -u root -x generic -x vendorid=XXXX auto
 #
 # Usage: cat debuginfo | path-to-subdriver.sh
 # 
@@ -150,7 +150,7 @@ cat > "$HFILE" <<EOF
 #ifndef ${UDRIVER}_HID_H
 #define ${UDRIVER}_HID_H
 
-#include "newhidups.h"
+#include "usbhid-ups.h"
 
 #define ${UDRIVER}_HID_VERSION	"${DRIVER} HID 0.1"
 
@@ -187,7 +187,7 @@ cat > "$CFILE" <<EOF
  *
  */
 
-#include "newhidups.h"
+#include "usbhid-ups.h"
 #include "${HFILE}"
 #include "extstate.h" /* for ST_FLAG_STRING */
 #include "dstate.h"   /* for STAT_INSTCMD_HANDLED */
@@ -245,11 +245,11 @@ static int ${LDRIVER}_shutdown(int ondelay, int offdelay) {
 	
 	/* Default method */
 	upsdebugx(2, "Trying load.off.");
-        if (instcmd("load.off", NULL) == STAT_INSTCMD_HANDLED) {
-                return 1;
-        }
+	if (instcmd("load.off", NULL) == STAT_INSTCMD_HANDLED) {
+		return 1;
+	}
 	upsdebugx(2, "Shutdown failed.");
-        return 0;
+	return 0;
 }
 
 static char *${LDRIVER}_format_model(HIDDevice *hd) {
@@ -282,9 +282,11 @@ static int ${LDRIVER}_claim(HIDDevice *hd) {
 			return 1;
 		} else {
 			upsdebugx(1,
-"This particular ${LDRIVER} device (%04x/%04x) is not (or perhaps not yet)\n"
-"supported by newhidups. Try running the driver with the '-x productid=%04x'\n"
-"option. Please report your results to the NUT developer's mailing list.\n",
+"This ${DRIVER} device (%04x/%04x) is not (or perhaps not yet) supported\n"
+"by usbhid-ups. Please make sure you have an up-to-date version of NUT. If\n"
+"this does not fix the problem, try running the driver with the\n"
+"'-x productid=%04x' option. Please report your results to the NUT user's\n"
+"mailing list <nut-upsuser@lists.alioth.debian.org>.\n",
 						 hd->VendorID, hd->ProductID, hd->ProductID);
 			return 0;
 		}
@@ -307,10 +309,10 @@ cat <<EOF
 Done. 
 
 Do not forget to:
-* add #include "${HFILE}" to newhidups.c, 
-* add &${LDRIVER}_subdriver to newhidups.c:subdriver_list,
-* add ${LDRIVER}-hid.o to NEWHIDUPS_SUBDRIVERS in drivers/Makefile
-  and drivers/Makefile.in
+* add #include "${HFILE}" to usbhid-ups.c, 
+* add &${LDRIVER}_subdriver to usbhid-ups.c:subdriver_list,
+* add ${LDRIVER}-hid.o to USBHID_UPS_SUBDRIVERS in drivers/Makefile.am
+* "autoreconf" from the top level directory
 * "make depend" in drivers/
 EOF
 

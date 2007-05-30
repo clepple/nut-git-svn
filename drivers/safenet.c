@@ -42,6 +42,9 @@
  *   - wait for three consecutive failed polls before declaring
  *     data stale in order not to bother clients with temporary
  *     problems
+ *  20070304/Revision 1.3 - Arjen de Korte <arjen@de-korte.org>
+ *   - in battery test mode (CAL state) stop the test when the
+ *     the low battery state is reached
  *
  * Copyright (C) 2003-2006  Arjen de Korte <arjen@de-korte.org>
  *
@@ -68,12 +71,15 @@
 #include "serial.h"
 #include "safenet.h"
 
-#define DRV_VERSION	"1.2"
+#define DRV_VERSION	"1.3"
 
 /*
  * Here we keep the last known status of the UPS
  */
-static safenet_u	ups;
+static union	{
+	char			reply[10];
+	struct safenet		status;
+} ups;
 
 static int safenet_command(const char *command)
 {
@@ -111,6 +117,11 @@ static int safenet_command(const char *command)
 		ups.reply[i] = ((reply[i+1] == 'B') ? 1 : 0);
 	}
 
+	return(0);
+}
+
+static void safenet_update()
+{
 	status_init();
 
 	if (ups.status.onbattery) {
@@ -155,8 +166,6 @@ static int safenet_command(const char *command)
 	status_commit();
 
 	dstate_dataok();
-
-	return(0);
 }
 
 static int instcmd(const char *cmdname, const char *extra)
@@ -173,7 +182,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	 * Stop the UPS selftest
 	 */
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
-		safenet_command(COM_ABORT_TEST);
+		safenet_command(COM_STOP_TEST);
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -189,7 +198,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	 * Stop simulated mains failure
 	 */
 	if (!strcasecmp (cmdname, "test.failure.stop")) {
-		safenet_command(COM_ABORT_TEST);
+		safenet_command(COM_STOP_TEST);
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -258,7 +267,7 @@ void upsdrv_initinfo(void)
 	 */
 	ioctl(upsfd, TIOCMGET, &i);
 	if ((i & TIOCM_DSR) == 0) {
-		fatalx("Serial cable problem or nothing attached to %s", device_path);
+		fatalx(EXIT_FAILURE, "Serial cable problem or nothing attached to %s", device_path);
 	}
 
 	/*
@@ -271,7 +280,7 @@ void upsdrv_initinfo(void)
 			continue;
 		}
 
-		fatalx("SafeNet protocol compatible UPS not found on %s", device_path);
+		fatalx(EXIT_FAILURE, "SafeNet protocol compatible UPS not found on %s", device_path);
 	}
 
 	/*
@@ -339,11 +348,18 @@ void upsdrv_updateinfo(void)
 		} else {
 			dstate_datastale();
 		}
-	} else {
-		ser_comm_good();
 
-		retry = 0;
+		return;
 	}
+
+	ser_comm_good();
+	retry = 0;
+
+	if (ups.status.systemtest && ups.status.batterylow) {
+		safenet_command(COM_STOP_TEST);
+	}
+
+	safenet_update();
 }
 
 void upsdrv_shutdown(void)
@@ -363,7 +379,7 @@ void upsdrv_shutdown(void)
 			continue;
 		}
 
-		fatalx("SafeNet protocol compatible UPS not found on %s", device_path);
+		fatalx(EXIT_FAILURE, "SafeNet protocol compatible UPS not found on %s", device_path);
 	}
 
 	/*

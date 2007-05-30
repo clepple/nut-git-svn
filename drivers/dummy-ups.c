@@ -69,7 +69,7 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	fatalx("shutdown not supported");
+	fatalx(EXIT_FAILURE, "shutdown not supported");
 }
 
 /*
@@ -118,7 +118,6 @@ void upsdrv_cleanup(void)
 
 static int setvar(const char *varname, const char *val)
 {
-	int ret = STAT_SET_UNKNOWN;
 	dummy_info_t *item;
 
 	upsdebugx(2, "entering setvar(%s, %s)", varname, val);
@@ -129,39 +128,34 @@ static int setvar(const char *varname, const char *val)
 		status_set(val);
 		status_commit();
 
-		ret = STAT_SET_HANDLED;
-	}
-	else {
-		/* Check variable validity */
-		if (is_valid_data(varname)) {
-			/* Check value validity */
-			if (is_valid_value(varname, val)) {
-				dstate_setinfo(varname, "%s", val);
-
-				if ( (item = find_info(varname)) != NULL) {
-					dstate_setflags(item->info_type, item->info_flags);
-
-					/* Set max length for strings, if needed */
-					if (item->info_flags & ST_FLAG_STRING)
-						dstate_setaux(item->info_type, item->info_len);
-				}
-				else
-					
-						
-				ret = STAT_SET_HANDLED;
-			}
-			else {
-				upsdebugx(2, "setvar: invalid value (%s) for variable (%s)", val, varname);
-				ret = STAT_SET_UNKNOWN;
-			}
-		}
-		else {
-			upsdebugx(2, "setvar: invalid variable name (%s)", varname);
-			ret = STAT_SET_UNKNOWN;
-		}
+		return STAT_SET_HANDLED;
 	}
 
-	return ret;
+	/* Check variable validity */
+	if (!is_valid_data(varname)) {
+		upsdebugx(2, "setvar: invalid variable name (%s)", varname);
+
+		return STAT_SET_UNKNOWN;
+	}
+
+	/* Check value validity */
+	if (!is_valid_value(varname, val)) {
+		upsdebugx(2, "setvar: invalid value (%s) for variable (%s)", val, varname);
+
+		return STAT_SET_UNKNOWN;
+	}
+
+	dstate_setinfo(varname, "%s", val);
+
+	if ( (item = find_info(varname)) != NULL) {
+		dstate_setflags(item->info_type, item->info_flags);
+
+		/* Set max length for strings, if needed */
+		if (item->info_flags & ST_FLAG_STRING)
+			dstate_setaux(item->info_type, item->info_len);
+	}
+
+	return STAT_SET_HANDLED;
 }
 
 /*************************************************/
@@ -218,14 +212,17 @@ static int parse_data_file(int upsfd)
 {
 	char	fn[SMALLBUF];
 	char	*ptr;
-	PCONF_CTX	ctx;
+	PCONF_CTX_t	ctx;
 
-	snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
+	if (device_path[0] == '/')
+		snprintf(fn, sizeof(fn), "%s", device_path);
+	else
+		snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
 
 	pconf_init(&ctx, upsconf_err);
 
 	if (!pconf_file_begin(&ctx, fn))
-		fatalx("Can't open dummy-ups definition file %s: %s",
+		fatalx(EXIT_FAILURE, "Can't open dummy-ups definition file %s: %s",
 			fn, ctx.errmsg);
 
 	while (pconf_file_next(&ctx)) {
@@ -262,9 +259,10 @@ static int parse_data_file(int upsfd)
 		if (setvar(ctx.arglist[0], ctx.arglist[1]) == STAT_SET_UNKNOWN)
 			upsdebugx(2, "parse_data_file: can't add \"%s\" with value \"%s\"",
 				ctx.arglist[0], ctx.arglist[1]);
+		else
+			upsdebugx(2, "parse_data_file: added \"%s\" with value \"%s\"",
+				ctx.arglist[0], ctx.arglist[1]);
 	}
-
-
 
 	return 1;
 }

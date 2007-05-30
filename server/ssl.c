@@ -38,19 +38,19 @@ static	int	ssl_initialized = 0;
 #ifndef HAVE_SSL
 
 /* stubs for non-ssl compiles */
-void net_starttls(ctype *client, int numarg, const char **arg)
+void net_starttls(ctype_t *client, int numarg, const char **arg)
 {
 	send_err(client, NUT_ERR_FEATURE_NOT_SUPPORTED);
 	return;
 }
 
-int ssl_write(ctype *client, const char *buf, size_t buflen)
+int ssl_write(ctype_t *client, const char *buf, size_t buflen)
 {
 	upslogx(LOG_ERR, "ssl_write called but SSL wasn't compiled in");
 	return -1;
 }
 
-int ssl_read(ctype *client, char *buf, size_t buflen)
+int ssl_read(ctype_t *client, char *buf, size_t buflen)
 {
 	upslogx(LOG_ERR, "ssl_read called but SSL wasn't compiled in");
 	return -1;
@@ -83,7 +83,7 @@ static void ssl_debug(void)
 	}
 }
 
-void net_starttls(ctype *client, int numarg, const char **arg)
+void net_starttls(ctype_t *client, int numarg, const char **arg)
 {
 	if (client->ssl) {
 		send_err(client, NUT_ERR_ALREADY_SSL_MODE);
@@ -124,7 +124,7 @@ void ssl_init(void)
 	OpenSSL_add_ssl_algorithms();
 
 	if ((ssl_ctx = SSL_CTX_new(TLSv1_server_method())) == NULL)
-		fatal_with_errno("SSL_CTX_new");
+		fatal_with_errno(EXIT_FAILURE, "SSL_CTX_new");
 
 	if (SSL_CTX_use_RSAPrivateKey_file(ssl_ctx, certfile, SSL_FILETYPE_PEM) != 1) {
 		ssl_debug();
@@ -145,7 +145,7 @@ void ssl_init(void)
 	SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
 
 	if (SSL_CTX_set_cipher_list(ssl_ctx, "HIGH:@STRENGTH") != 1)
-		fatalx("SSL_CTX_set_cipher_list");
+		fatalx(EXIT_FAILURE, "SSL_CTX_set_cipher_list");
 
 	ssl_initialized = 1;
 }
@@ -183,7 +183,7 @@ static int ssl_error(SSL *ssl, int ret)
 	return -1;
 }
 	
-static int ssl_accept(ctype *client)
+static int ssl_accept(ctype_t *client)
 {
 	int	ret;
 
@@ -207,7 +207,7 @@ static int ssl_accept(ctype *client)
 	return -1;
 }
 
-int ssl_read(ctype *client, char *buf, size_t buflen)
+int ssl_read(ctype_t *client, char *buf, size_t buflen)
 {
 	int	ret;
 
@@ -226,7 +226,7 @@ int ssl_read(ctype *client, char *buf, size_t buflen)
 	return ret;
 }
 
-int ssl_write(ctype *client, const char *buf, size_t buflen)
+int ssl_write(ctype_t *client, const char *buf, size_t buflen)
 {
 	int	ret;
 

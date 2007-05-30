@@ -22,7 +22,7 @@
  *
  */
 
-#include "newhidups.h"
+#include "usbhid-ups.h"
 #include "mge-hid.h"
 #include "extstate.h" /* for ST_FLAG_STRING */
 #include "dstate.h"   /* for STAT_INSTCMD_HANDLED */
@@ -496,7 +496,7 @@ static char *get_model_name(const char *iProduct, char *iModel)
   return model->finalname;
 }
 
-static char *mge_format_model(HIDDevice *hd) {
+static char *mge_format_model(HIDDevice_t *hd) {
 	char *product;
 	char *model;
         char *string;
@@ -523,17 +523,17 @@ static char *mge_format_model(HIDDevice *hd) {
 	return model;
 }
 
-static char *mge_format_mfr(HIDDevice *hd) {
+static char *mge_format_mfr(HIDDevice_t *hd) {
 	return hd->Vendor ? hd->Vendor : "MGE UPS SYSTEMS";
 }
 
-static char *mge_format_serial(HIDDevice *hd) {
+static char *mge_format_serial(HIDDevice_t *hd) {
 	return hd->Serial;
 }
 
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
-static int mge_claim(HIDDevice *hd) {
+static int mge_claim(HIDDevice_t *hd) {
 	if (hd->VendorID != MGE_VENDORID) {
 		return 0;
 	}
@@ -548,9 +548,11 @@ static int mge_claim(HIDDevice *hd) {
 			return 1;
 		} else {
 			upsdebugx(1,
-"This particular MGE device (%04x/%04x) is not (or perhaps not yet)\n"
-"supported by newhidups. Try running the driver with the '-x productid=%04x'\n"
-"option. Please report your results to the NUT developer's mailing list.\n",
+"This MGE device (%04x/%04x) is not (or perhaps not yet) supported\n"
+"by usbhid-ups. Please make sure you have an up-to-date version of NUT. If\n"
+"this does not fix the problem, try running the driver with the\n"
+"'-x productid=%04x' option. Please report your results to the NUT user's\n"
+"mailing list <nut-upsuser@lists.alioth.debian.org>.\n",
 						 hd->VendorID, hd->ProductID, hd->ProductID);
 			return 0;
 		}

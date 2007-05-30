@@ -33,7 +33,7 @@
 #endif
 
 static	char	*shutdowncmd = NULL, *notifycmd = NULL;
-static	char	*powerdownflag = NULL;
+static	char	*powerdownflag = NULL, *configfile = NULL;
 
 static	int	minsupplies = 1, sleepval = 5, deadtime = 15;
 
@@ -71,7 +71,11 @@ static	int	forcessl = 0;		/* don't require ssl by default */
 
 static	int	debuglevel = 0, userfsd = 0, use_pipe = 1, pipefd[2];
 
-static	utype	*firstups = NULL;
+static	utype_t	*firstups = NULL;
+
+#ifdef	HAVE_IPV6
+static int 	opt_af = AF_UNSPEC;
+#endif
 
 	/* signal handling things */
 static	struct sigaction sa;
@@ -174,7 +178,7 @@ static void notify(const char *notice, int flags, const char *ntype,
 	exit(EXIT_SUCCESS);
 }
 
-static void do_notify(const utype *ups, int ntype)
+static void do_notify(const utype_t *ups, int ntype)
 {
 	int	i;
 	char	msg[SMALLBUF], *upsname = NULL;
@@ -199,7 +203,7 @@ static void do_notify(const utype *ups, int ntype)
 }
 
 /* check for master permissions on the server for this ups */
-static int checkmaster(utype *ups)
+static int checkmaster(utype_t *ups)
 {
 	char	buf[SMALLBUF];
 
@@ -242,7 +246,7 @@ static int checkmaster(utype *ups)
 }
 
 /* authenticate to upsd, plus do LOGIN and MASTER if applicable */
-static int do_upsd_auth(utype *ups)
+static int do_upsd_auth(utype_t *ups)
 {
 	char	buf[SMALLBUF];
 
@@ -327,7 +331,7 @@ static int do_upsd_auth(utype *ups)
 }
 
 /* set flags and make announcements when a UPS has been checked successfully */
-static void ups_is_alive(utype *ups)
+static void ups_is_alive(utype_t *ups)
 {
 	time_t	now;
 
@@ -345,7 +349,7 @@ static void ups_is_alive(utype *ups)
 }
 
 /* handle all the notifications for a missing UPS in one place */
-static void ups_is_gone(utype *ups)
+static void ups_is_gone(utype_t *ups)
 {
 	time_t	now;
 
@@ -373,7 +377,7 @@ static void ups_is_gone(utype *ups)
 	}
 }
 
-static void ups_on_batt(utype *ups)
+static void ups_on_batt(utype_t *ups)
 {
 	sleepval = pollfreqalert;	/* bump up polling frequency */
 
@@ -393,7 +397,7 @@ static void ups_on_batt(utype *ups)
 	clearflag(&ups->status, ST_ONLINE);
 }
 
-static void ups_on_line(utype *ups)
+static void ups_on_line(utype_t *ups)
 {
 	if (flag_isset(ups->status, ST_ONLINE)) { 	/* no change */
 		debug("ups_on_line(%s) (no change)\n", ups->sys);
@@ -468,7 +472,7 @@ static void doshutdown(void)
 }
 
 /* set forced shutdown flag so other upsmons know what's going on here */
-static void setfsd(utype *ups)
+static void setfsd(utype_t *ups)
 {
 	char	buf[SMALLBUF];
 	int	ret;
@@ -518,7 +522,7 @@ static void clear_alarm(void)
 	alarm(0);
 }
 
-static int get_var(utype *ups, const char *var, char *buf, size_t bufsize)
+static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
 {
 	int	ret;
 	unsigned int	numq, numa;
@@ -583,7 +587,7 @@ static int get_var(utype *ups, const char *var, char *buf, size_t bufsize)
 
 static void slavesync(void)
 {
-	utype	*ups;
+	utype_t	*ups;
 	char	temp[SMALLBUF];
 	time_t	start, now;
 	int	maxlogins, logins;
@@ -629,7 +633,7 @@ static void slavesync(void)
 
 static void forceshutdown(void)
 {
-	utype	*ups;
+	utype_t	*ups;
 	int	isamaster = 0;
 
 	debug("Shutting down any UPSes in MASTER mode...\n");
@@ -655,7 +659,7 @@ static void forceshutdown(void)
 	doshutdown();
 }
 
-static int is_ups_critical(utype *ups)
+static int is_ups_critical(utype_t *ups)
 {
 	time_t	now;
 
@@ -694,7 +698,7 @@ static int is_ups_critical(utype *ups)
 /* recalculate the online power value and see if things are still OK */
 static void recalc(void)
 {
-	utype	*ups;
+	utype_t	*ups;
 	int	val_ol = 0;
 	time_t	now;
 
@@ -729,7 +733,7 @@ static void recalc(void)
 		forceshutdown();
 }		
 
-static void ups_low_batt(utype *ups)
+static void ups_low_batt(utype_t *ups)
 {
 	if (flag_isset(ups->status, ST_LOWBATT)) { 	/* no change */
 		debug("ups_low_batt(%s) (no change)\n", ups->sys);
@@ -744,7 +748,7 @@ static void ups_low_batt(utype *ups)
 	setflag(&ups->status, ST_LOWBATT);
 }
 
-static void upsreplbatt(utype *ups)
+static void upsreplbatt(utype_t *ups)
 {
 	time_t	now;
 
@@ -756,7 +760,7 @@ static void upsreplbatt(utype *ups)
 	}
 }
 
-static void ups_fsd(utype *ups)
+static void ups_fsd(utype_t *ups)
 {
 	if (flag_isset(ups->status, ST_FSD)) {		/* no change */
 		debug("ups_fsd(%s) (no change)\n", ups->sys);
@@ -772,7 +776,7 @@ static void ups_fsd(utype *ups)
 }
 
 /* cleanly close the connection to a given UPS */
-static void drop_connection(utype *ups)
+static void drop_connection(utype_t *ups)
 {
 	debug("Dropping connection to UPS [%s]\n", ups->sys);
 
@@ -785,7 +789,7 @@ static void drop_connection(utype *ups)
 }
 
 /* change some UPS parameters during reloading */
-static void redefine_ups(utype *ups, int pv, const char *un, 
+static void redefine_ups(utype_t *ups, int pv, const char *un, 
 		const char *pw, const char *master)
 {
 	ups->retain = 1;
@@ -854,9 +858,7 @@ static void redefine_ups(utype *ups, int pv, const char *un,
 	if (strcmp(ups->pw, pw) != 0) {
 		upslogx(LOG_INFO, "UPS [%s]: redefined password", ups->sys);
 
-		if (ups->pw)
-			free(ups->pw);
-
+		free(ups->pw);
 		ups->pw = xstrdup(pw);
 
 		/* possibly force reconnection - see above */
@@ -891,22 +893,13 @@ static void addups(int reloading, const char *sys, const char *pvs,
 		const char *un, const char *pw, const char *master)
 {
 	int	pv;
-	utype	*tmp, *last;
+	utype_t	*tmp, *last;
 
 	/* the username is now required - no more host-based auth */
 
 	if ((!sys) || (!pvs) || (!pw) || (!master) || (!un)) {
-		upslogx(LOG_WARNING, "Ignoring invalid MONITOR line in upsmon.conf!");
+		upslogx(LOG_WARNING, "Ignoring invalid MONITOR line in %s!", configfile);
 		upslogx(LOG_WARNING, "MONITOR configuration directives require five arguments.");
-		return;
-	}
-
-	/* deal with sys without a upsname - refuse it */
-	if (!strchr(sys, '@')) {
-		upslogx(LOG_WARNING, "Ignoring invalid MONITOR line in ups.conf (%s)",
-			sys);
-		upslogx(LOG_WARNING, "UPS directives now require a UPS name "
-			"(MONITOR upsname@hostname ...)");
 		return;
 	}
 
@@ -936,7 +929,7 @@ static void addups(int reloading, const char *sys, const char *pvs,
 		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(utype));
+	tmp = xmalloc(sizeof(utype_t));
 	tmp->sys = xstrdup(sys);
 	tmp->pv = pv;
 
@@ -1097,8 +1090,7 @@ static int parse_conf_arg(int numargs, char **arg)
 	if (!strcmp(arg[0], "SHUTDOWNCMD")) {
 		checkmode(arg[0], shutdowncmd, arg[1], reload_flag);
 
-		if (shutdowncmd)
-			free(shutdowncmd);
+		free(shutdowncmd);
 		shutdowncmd = xstrdup(arg[1]);
 		return 1;
 	}
@@ -1107,9 +1099,7 @@ static int parse_conf_arg(int numargs, char **arg)
 	if (!strcmp(arg[0], "POWERDOWNFLAG")) {
 		checkmode(arg[0], powerdownflag, arg[1], reload_flag);
 
-		if (powerdownflag)
-			free(powerdownflag);
-
+		free(powerdownflag);
 		powerdownflag = xstrdup(arg[1]);
 
 		if (!reload_flag)
@@ -1121,9 +1111,7 @@ static int parse_conf_arg(int numargs, char **arg)
 
 	/* NOTIFYCMD <cmd> */
 	if (!strcmp(arg[0], "NOTIFYCMD")) {
-		if (notifycmd)
-			free(notifycmd);
-
+		free(notifycmd);
 		notifycmd = xstrdup(arg[1]);
 		return 1;
 	}
@@ -1178,18 +1166,14 @@ static int parse_conf_arg(int numargs, char **arg)
 
 	/* RUN_AS_USER <userid> */
  	if (!strcmp(arg[0], "RUN_AS_USER")) {
-		if (run_as_user)
-			free(run_as_user);
-
+		free(run_as_user);
 		run_as_user = xstrdup(arg[1]);
 		return 1;
 	}
 
 	/* CERTPATH <path> */
 	if (!strcmp(arg[0], "CERTPATH")) {
-		if (certpath)
-			free(certpath);
-
+		free(certpath);
 		certpath = xstrdup(arg[1]);
 		return 1;
 	}
@@ -1233,7 +1217,7 @@ static int parse_conf_arg(int numargs, char **arg)
 			upslogx(LOG_ERR, "Unable to use old-style MONITOR line without a username");
 			upslogx(LOG_ERR, "Convert it and add a username to upsd.users - see the documentation");
 
-			fatalx("Fatal error: unusable configuration");
+			fatalx(EXIT_FAILURE, "Fatal error: unusable configuration");
 		}
 
 		/* <sys> <pwrval> <user> <pw> ("master" | "slave") */
@@ -1248,19 +1232,16 @@ static int parse_conf_arg(int numargs, char **arg)
 /* called for fatal errors in parseconf like malloc failures */
 static void upsmon_err(const char *errmsg)
 {
-	upslogx(LOG_ERR, "Fatal error in parseconf(upsmon.conf): %s", errmsg);
+	upslogx(LOG_ERR, "Fatal error in parseconf(%s): %s", configfile, errmsg);
 }
 
 static void loadconfig(void)
 {
-	char	fn[SMALLBUF];
-	PCONF_CTX	ctx;
-
-	snprintf(fn, sizeof(fn), "%s/upsmon.conf", confpath());
+	PCONF_CTX_t	ctx;
 
 	pconf_init(&ctx, upsmon_err);
 
-	if (!pconf_file_begin(&ctx, fn)) {
+	if (!pconf_file_begin(&ctx, configfile)) {
 		pconf_finish(&ctx);
 
 		if (reload_flag == 1) {
@@ -1268,13 +1249,13 @@ static void loadconfig(void)
 			return;
 		}
 
-		fatalx("%s", ctx.errmsg);
+		fatalx(EXIT_FAILURE, "%s", ctx.errmsg);
 	}
 
 	while (pconf_file_next(&ctx)) {
 		if (pconf_parse_error(&ctx)) {
 			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
-				fn, ctx.linenum, ctx.errmsg);
+				configfile, ctx.linenum, ctx.errmsg);
 			continue;
 		}
 
@@ -1286,8 +1267,8 @@ static void loadconfig(void)
 			char	errmsg[SMALLBUF];
 
 			snprintf(errmsg, sizeof(errmsg), 
-				"upsmon.conf line %d: invalid directive",
-				ctx.linenum);
+				"%s line %d: invalid directive",
+				configfile, ctx.linenum);
 
 			for (i = 0; i < ctx.numargs; i++)
 				snprintfcat(errmsg, sizeof(errmsg), " %s", 
@@ -1312,25 +1293,20 @@ static void set_exit_flag(int sig)
 	exit_flag = sig;
 }
 
-static void ups_free(utype *ups)
+static void ups_free(utype_t *ups)
 {
-	if (ups->sys)
-		free(ups->sys);
-	if (ups->upsname)
-		free(ups->upsname);
-	if (ups->hostname)
-		free(ups->hostname);
-	if (ups->un)
-		free(ups->un);
-	if (ups->pw)
-		free(ups->pw);
+	free(ups->sys);
+	free(ups->upsname);
+	free(ups->hostname);
+	free(ups->un);
+	free(ups->pw);
 	free(ups);
 }
 
 static void upsmon_cleanup(void)
 {
 	int	i;
-	utype	*utmp, *unext;
+	utype_t	*utmp, *unext;
 
 	/* close all fds */
 	utmp = firstups;
@@ -1344,14 +1320,10 @@ static void upsmon_cleanup(void)
 		utmp = unext;
 	}
 
-	if (run_as_user)
-		free(run_as_user);
-	if (shutdowncmd)
-		free(shutdowncmd);
-	if (notifycmd)
-		free(notifycmd);
-	if (powerdownflag)
-		free(powerdownflag);
+	free(run_as_user);
+	free(shutdowncmd);
+	free(notifycmd);
+	free(powerdownflag);
 
 	for (i = 0; notifylist[i].name != NULL; i++)
 		if (notifylist[i].msg != notifylist[i].stockmsg)
@@ -1405,7 +1377,7 @@ static void setup_signals(void)
 }
 
 /* remember the last time the ups was not critical (OB + LB) */
-static void update_crittimer(utype *ups)
+static void update_crittimer(utype_t *ups)
 {
 	/* if !OB or !LB, then it's not critical, so log the time */
 	if ((!flag_isset(ups->status, ST_ONBATT)) || 
@@ -1418,7 +1390,7 @@ static void update_crittimer(utype *ups)
 	/* fallthrough: let the timer age */
 }
 
-static int try_ssl(utype *ups)
+static int try_ssl(utype_t *ups)
 {
 	int	ret;
 
@@ -1464,9 +1436,9 @@ static int try_ssl(utype *ups)
 }
 
 /* handle connecting to upsd, plus get SSL going too if possible */
-static int try_connect(utype *ups)
+static int try_connect(utype_t *ups)
 {
-	int	flags, ret;
+	int	flags = 0, ret;
 
 	debug("Trying to connect to UPS [%s]\n", ups->sys);
 
@@ -1474,9 +1446,17 @@ static int try_connect(utype *ups)
 
 	/* force it if configured that way, just try it otherwise */
 	if (forcessl == 1) 
-		flags = UPSCLI_CONN_REQSSL;
+		flags |= UPSCLI_CONN_REQSSL;
 	else
-		flags = UPSCLI_CONN_TRYSSL;
+		flags |= UPSCLI_CONN_TRYSSL;
+
+#ifdef	HAVE_IPV6
+	if (opt_af == AF_INET)
+		flags |= UPSCLI_CONN_INET;
+
+	if (opt_af == AF_INET6)
+		flags |= UPSCLI_CONN_INET6;
+#endif
 
 	ret = upscli_connect(&ups->conn, ups->hostname, ups->port, flags);
 
@@ -1511,7 +1491,7 @@ static int try_connect(utype *ups)
 }
 
 /* deal with the contents of STATUS or ups.status for this ups */
-static void parse_status(utype *ups, char *status)
+static void parse_status(utype_t *ups, char *status)
 {
 	char	*statword, *ptr;
 
@@ -1565,7 +1545,7 @@ static void parse_status(utype *ups, char *status)
 }
 
 /* see what the status of the UPS is and handle any changes */
-static void pollups(utype *ups)
+static void pollups(utype_t *ups)
 {
 	char	status[SMALLBUF];
 
@@ -1713,6 +1693,10 @@ static void help(const char *progname)
 	printf("  -K		checks POWERDOWNFLAG, sets exit code to 0 if set\n");
 	printf("  -p		always run privileged (disable privileged parent)\n");
 	printf("  -u <user>	run child as user <user> (ignored when using -p)\n");
+#ifdef	HAVE_IPV6
+	printf("  -4		IPv4 only\n");
+	printf("  -6		IPv6 only\n");
+#endif
 
 	exit(EXIT_SUCCESS);
 }
@@ -1742,13 +1726,13 @@ static void runparent(int fd)
 
 	if (ret < 1) {
 		if (errno == ENOENT)
-			fatalx("upsmon parent: exiting (child exited)");
+			fatalx(EXIT_FAILURE, "upsmon parent: exiting (child exited)");
 
-		fatal_with_errno("upsmon parent: read");
+		fatal_with_errno(EXIT_FAILURE, "upsmon parent: read");
 	}
 
 	if (ch != 1)
-		fatalx("upsmon parent: got bogus pipe command %c", ch);
+		fatalx(EXIT_FAILURE, "upsmon parent: got bogus pipe command %c", ch);
 
 	/* have to do this here - child is unprivileged */
 	set_pdflag();
@@ -1778,12 +1762,12 @@ static void start_pipe(const char *user)
 	ret = pipe(pipefd);
 
 	if (ret)
-		fatal_with_errno("pipe creation failed");
+		fatal_with_errno(EXIT_FAILURE, "pipe creation failed");
 
 	ret = fork();
 
 	if (ret < 0)
-		fatal_with_errno("fork failed");
+		fatal_with_errno(EXIT_FAILURE, "fork failed");
 
 	/* start the privileged parent */
 	if (ret != 0) {
@@ -1801,9 +1785,9 @@ static void start_pipe(const char *user)
 	become_user(new_uid);
 }
 
-static void delete_ups(utype *target)
+static void delete_ups(utype_t *target)
 {
-	utype	*ptr, *last;
+	utype_t	*ptr, *last;
 
 	if (!target)
 		return;
@@ -1842,15 +1826,12 @@ static void delete_ups(utype *target)
 /* see if we can open a file */
 static int check_file(const char *fn)
 {
-	char	chkfn[SMALLBUF];
 	FILE	*f;
 
-	snprintf(chkfn, sizeof(chkfn), "%s/%s", confpath(), fn);
-
-	f = fopen(chkfn, "r");
+	f = fopen(fn, "r");
 
 	if (!f) {
-		upslog_with_errno(LOG_ERR, "Reload failed: can't open %s", chkfn);
+		upslog_with_errno(LOG_ERR, "Reload failed: can't open %s", fn);
 		return 0;	/* failed */
 	}
 
@@ -1860,12 +1841,12 @@ static int check_file(const char *fn)
 
 static void reload_conf(void)
 {
-	utype	*tmp, *next;
+	utype_t	*tmp, *next;
 
 	upslogx(LOG_INFO, "Reloading configuration");
 
 	/* sanity check */
-	if (!check_file("upsmon.conf")) {
+	if (!check_file(configfile)) {
 		reload_flag = 0;
 		return;
 	}
@@ -1884,7 +1865,7 @@ static void reload_conf(void)
 	/* reread upsmon.conf */
 	loadconfig();
 
-	/* go through the utype struct again */
+	/* go through the utype_t struct again */
 	tmp = firstups;
 
 	while (tmp) {
@@ -1902,7 +1883,7 @@ static void reload_conf(void)
 		upslogx(LOG_CRIT, "Fatal error: total power value (%d) less "
 			"than MINSUPPLIES (%d)", totalpv, minsupplies);
 
-		fatalx("Impossible power configuation, unable to continue");
+		fatalx(EXIT_FAILURE, "Impossible power configuation, unable to continue");
 	}
 
 	/* finally clear the flag */
@@ -1952,7 +1933,7 @@ int main(int argc, char *argv[])
 
 	printf("Network UPS Tools upsmon %s\n", UPS_VERSION);
 
-	while ((i = getopt(argc, argv, "+Dhic:pu:VK")) != EOF) {
+	while ((i = getopt(argc, argv, "+Dhic:f:pu:VK46")) != -1) {
 		switch (i) {
 			case 'c':
 				if (!strncmp(optarg, "fsd", strlen(optarg)))
@@ -1969,14 +1950,15 @@ int main(int argc, char *argv[])
 			case 'D':
 				debuglevel++;
 				break;
+			case 'f':
+				configfile = xstrdup(optarg);
+				break;
 			case 'h':
 				help(argv[0]);
 				break;
-
 			case 'K':
 				checking_flag = 1;
 				break;
-
 			case 'p':
 				use_pipe = 0;
 				break;
@@ -1986,6 +1968,14 @@ int main(int argc, char *argv[])
 			case 'V':
 				/* just show the banner */
 				exit(EXIT_SUCCESS);
+#ifdef	HAVE_IPV6
+			case '4':
+				opt_af = AF_INET;
+				break;
+			case '6':
+				opt_af = AF_INET6;
+				break;
+#endif
 			default:
 				help(argv[0]);
 				break;
@@ -2003,6 +1993,14 @@ int main(int argc, char *argv[])
 	openlog("upsmon", LOG_PID, LOG_FACILITY);
 
 	initnotify();
+
+	/* if no configuration file was specified on the command line, use default */
+	if (!configfile) {
+		configfile = xmalloc(SMALLBUF);
+		snprintf(configfile, SMALLBUF, "%s/upsmon.conf", confpath());
+		configfile = xrealloc(configfile, strlen(configfile) + 1);
+	}
+
 	loadconfig();
 
 	if (checking_flag)
@@ -2046,7 +2044,7 @@ int main(int argc, char *argv[])
 	openlog("upsmon", LOG_PID, LOG_FACILITY);
 
 	while (exit_flag == 0) {
-		utype	*ups;
+		utype_t	*ups;
 
 		/* check flags from signal handlers */
 		if (userfsd)

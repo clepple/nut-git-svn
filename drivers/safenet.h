@@ -25,9 +25,9 @@
  * 'random' data (see the comments).
  */
 #define	COM_INITIALIZE	"ZCADLIOPERJD\r"
-#define	COM_BATT_TEST	"ZFSDERBTRFGY\r"
-#define	COM_MAINS_TEST	"ZAVLEJFICOPR\r"
-#define	COM_ABORT_TEST	"ZGWLEJFICOPR\r"
+#define	COM_MAINS_TEST	"ZFSDERBTRFGY\r"
+#define	COM_BATT_TEST	"ZAVLEJFICOPR\r"
+#define	COM_STOP_TEST	"ZGWLEJFICOPR\r"
 #define	COM_TOGGLE_BEEP	"ZELWSABPMBEQ\r"
 #define	COM_POLL_STAT	"ZHDGFGDJELBC\r"
 
@@ -47,7 +47,7 @@
 #define	SHUTDOWN_REBOOT	"ZAFAABRAAABO\r"	/* shutdown in 1 second, return after 1 minute */
 #define	GRACEFUL_REBOOT	"ZAFACARAAABO\r"	/* shutdown in 20 seconds, return after 1 minute */
 
-typedef struct {
+struct safenet {
 	char	onbattery;
 	char	dunno_02;
 	char	batterylow;
@@ -58,9 +58,4 @@ typedef struct {
 	char	systemfail;
 	char	systemtest;
 	char	dunno_10;
-} safenet_s;
-
-typedef union {
-	safenet_s	status;
-	char		reply[10];
-} safenet_u;
+};

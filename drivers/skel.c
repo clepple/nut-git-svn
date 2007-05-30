@@ -14,7 +14,7 @@
 
 void upsdrv_initinfo(void)
 {
-	/* try to detect the UPS here - call fatal_with_errno() if it fails */
+	/* try to detect the UPS here - call fatal_with_errno(EXIT_FAILURE, ) if it fails */
 
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 	/* dstate_setinfo("ups.mfr", "skel driver"); */
@@ -63,6 +63,10 @@ void upsdrv_updateinfo(void)
 	 *
 	 * dstate_dataok();
 	 */
+
+	/*
+	 * poll_interval = 2;
+	 */
 }
 
 void upsdrv_shutdown(void)
@@ -73,7 +77,7 @@ void upsdrv_shutdown(void)
 	   it doesn't respond at first if possible */
 
 	/* replace with a proper shutdown function */
-	fatalx("shutdown not supported");
+	fatalx(EXIT_FAILURE, "shutdown not supported");
 
 	/* you may have to check the line status since the commands
 	   for toggling power are frequently different for OL vs. OB */

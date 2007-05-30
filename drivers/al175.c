@@ -384,7 +384,7 @@ static void comli_prepare(raw_data_t *dest, const comli_head_t *h, const void *b
 	/* it's caller responsibility to allocate enough space.
 	   else it is a bug in the program */
         if ( (out+11+count+2) > (dest->buf + dest->buf_size) )
-            fatalx("too small dest in comli_prepare\n");
+            fatalx(EXIT_FAILURE, "too small dest in comli_prepare\n");
 
 	out[0] = STX;
 	snprintf(out+1, 10+1, "%02X%1i%1i%04X%02X", h->msg.id, h->msg.stamp, h->msg.type, h->io.addr, h->io.len);
@@ -1020,8 +1020,8 @@ static int al175_read(byte_t *dst, unsigned addr, size_t count)
  */
 
 // XXX: ?
-typedef int mm;	/* minutes */
-typedef int VV;	/* voltage */
+typedef int mm_t;	/* minutes */
+typedef int VV_t;	/* voltage */
 
 #define	Z1  , 0
 #define Z2  , 0, 0
@@ -1032,26 +1032,26 @@ typedef int VV;	/* voltage */
 ACT	TOGGLE_PRS_ONOFF	()		{ return al175_do(0x81, 0x80			Z3);	}
 ACT	CANCEL_BOOST		()		{ return al175_do(0x82, 0x80			Z3);	}
 ACT	STOP_BATTERY_TEST	()		{ return al175_do(0x83, 0x80			Z3);	}
-ACT	START_BATTERY_TEST	(VV EndVolt, unsigned Minutes)
+ACT	START_BATTERY_TEST	(VV_t EndVolt, unsigned Minutes)
 						{ return al175_do(0x83, 0x81, EndVolt, Minutes	Z1);	}
 
-ACT	SET_FLOAT_VOLTAGE	(VV v)		{ return al175_do(0x87, 0x80, v			Z2);	}
-ACT	SET_BOOST_VOLTAGE	(VV v)		{ return al175_do(0x87, 0x81, v			Z2);	}
-ACT	SET_HIGH_BATTERY_LIMIT	(VV Vhigh)	{ return al175_do(0x87, 0x82, Vhigh		Z2);	}
-ACT	SET_LOW_BATTERY_LIMIT	(VV Vlow)	{ return al175_do(0x87, 0x83, Vlow		Z2);	}
+ACT	SET_FLOAT_VOLTAGE	(VV_t v)		{ return al175_do(0x87, 0x80, v			Z2);	}
+ACT	SET_BOOST_VOLTAGE	(VV_t v)		{ return al175_do(0x87, 0x81, v			Z2);	}
+ACT	SET_HIGH_BATTERY_LIMIT	(VV_t Vhigh)	{ return al175_do(0x87, 0x82, Vhigh		Z2);	}
+ACT	SET_LOW_BATTERY_LIMIT	(VV_t Vlow)	{ return al175_do(0x87, 0x83, Vlow		Z2);	}
 
 ACT	SET_DISCONNECT_LEVEL_AND_DELAY
-				(VV level, mm delay)
+				(VV_t level, mm_t delay)
 						{ return al175_do(0x87, 0x84, level, delay	Z1);	}
 
 ACT	RESET_ALARMS		()		{ return al175_do(0x88, 0x80			Z3);	}
 ACT	CHANGE_COMM_PROTOCOL	()		{ return al175_do(0x89, 0x80			Z3);	}
-ACT	SET_VOLTAGE_AT_ZERO_T	(VV v)		{ return al175_do(0x8a, 0x80, v			Z2);	}
-ACT	SET_SLOPE_AT_ZERO_T	(VV mv_per_degree)
+ACT	SET_VOLTAGE_AT_ZERO_T	(VV_t v)		{ return al175_do(0x8a, 0x80, v			Z2);	}
+ACT	SET_SLOPE_AT_ZERO_T	(VV_t mv_per_degree)
 						{ return al175_do(0x8a, 0x81, mv_per_degree	Z2);	}
 
-ACT	SET_MAX_TCOMP_VOLTAGE	(VV v)		{ return al175_do(0x8a, 0x82, v			Z2);	}
-ACT	SET_MIN_TCOMP_VOLTAGE	(VV v)		{ return al175_do(0x8a, 0x83, v			Z2);	}
+ACT	SET_MAX_TCOMP_VOLTAGE	(VV_t v)		{ return al175_do(0x8a, 0x82, v			Z2);	}
+ACT	SET_MIN_TCOMP_VOLTAGE	(VV_t v)		{ return al175_do(0x8a, 0x83, v			Z2);	}
 ACT	SWITCH_TEMP_COMP	(int on)	{ return al175_do(0x8b, 0x80, on		Z2);	}
 
 // XXX: ?
@@ -1235,7 +1235,7 @@ void upsdrv_shutdown(void)
 	   it doesn't respond at first if possible */
 
 	/* replace with a proper shutdown function */
-	fatalx("shutdown not supported");	/* TODO: implement... */
+	fatalx(EXIT_FAILURE, "shutdown not supported");	/* TODO: implement... */
 
 	/* you may have to check the line status since the commands
 	   for toggling power are frequently different for OL vs. OB */
@@ -1297,6 +1297,24 @@ void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - Eltek AL175/COMLI support module %s (%s)\n\n", 
 		DRV_VERSION, UPS_VERSION);
+	/*
+	 * This driver does not support upsdrv_shutdown(), which makes
+	 * it not very useful in a real world application. This alone
+	 * warrants 'experimental' status, but for the below mentioned
+	 * reasons (to name a few), it's flagged 'broken' instead.
+	 *
+	 * - ‘return’ with a value, in function returning void (2x)
+	 * - anonymous variadic macros were introduced in C99
+	 * - C++ style comments are not allowed in ISO C90
+	 * - ISO C forbids braced-groups within expressions (5x)
+	 * - ISO C90 forbids specifying subobject to initialize (16x)
+	 * - ISO C99 requires rest arguments to be used (18x)
+	 * - initializer element is not computable at load time (4x)
+	 *
+	 * In short, there is a lot of rewriting to be done. Not the
+	 * whole world is a Linux box with the latest gcc on it.
+	 */
+	broken_driver = 1;
 }
 
 void upsdrv_initups(void)
@@ -1349,7 +1367,7 @@ void upsdrv_cleanup(void)
 
 void upsdrv_initinfo(void)
 {
-	/* try to detect the UPS here - call fatal_with_errno() if it fails */
+	/* try to detect the UPS here - call fatal_with_errno(EXIT_FAILURE, ) if it fails */
 
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 	dstate_setinfo("ups.mfr", "Eltek");

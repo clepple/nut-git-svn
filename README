@@ -1,6 +1,6 @@
 * Network UPS Tools Documentation
 *
-* Arnaud Quette <aquette.dev@gmail.com> and others, see CREDITS file.
+* Arnaud Quette <aquette.dev@gmail.com> and others, see AUTHORS file.
 *
 * Released under the GNU GPL - see COPYING for details.
 *
@@ -185,8 +185,6 @@ that UPS.
                            The SOLA 610 will work with the ID= variable
                            in ups.conf.
 
-	blazer		 - Centralion Blazer models
-
 	cyberpower       - Cyber Power Systems units
 			   700AVR and others (binary protocol)
 
@@ -196,10 +194,6 @@ that UPS.
 
 	energizerups	 - Energizer UPS hardware (experimental - USB/Linux)
 
-	esupssmart	 - Energy Sistem equipment
-
-			   also Infosec iPel 350/500/750/1000
-
 	etapro		 - ETA UPS hardware with the "PRO" smart mode
 
 	everups          - EVER Sp. z o.o models
@@ -207,35 +201,10 @@ that UPS.
                            - NET *-DPC
                            - AP *-PRO 
 
-	fentonups        - Fenton Technologies models:
-
-	                   - PowerPal L series
-	                   - PowerOn
-	                   - PowerPure
-
-                         - Effekta MI/MT/MH models (2502 cable)
-
-                         - PowerGuard PG-600
-
-			 - PowerCom SMK-800A, ULT-1000
-
-			 - Giant Power MT650
-
-			 - UNITEK ALPHA 500 IC
-
-			 - Unitek Alpha 1000is
-
-			 - SuperPower HP360, Hope-550
-
-			   This driver implements the Megatec protocol, so
-			   other Megatec hardware will probably work with it.
-
 	genericups       - Many contact closure models -
                            see "Generic UPS driver" below 
 
 	isbmex		 - SOLA/BASIC Mexico ISBMEX protocol hardware
-
-	ippon            - Ippon UPS devices
 
 	liebert          - Liebert UPStation GXT2 with contact-closure cable
 
@@ -275,14 +244,12 @@ that UPS.
                            - Pulsar / Comet EXtreme,
                            - Comet / Galaxy using Utalk Serial Card (ref 66060)
 
-	mustek		 - Mustek UPS hardware
-
 	megatec		 - Megatec protocol based UPSes (Mustek Powermust,
 			   OnLite 50, Maxxtro units, etc.)
 
 
-	newhidups	 - Meta driver for USB HID UPSes on various platforms
-                           (replaces hidups)
+	usbhid-ups - Meta driver for USB HID UPSes on various platforms
+                           (replaces hidups, formerly named newhidups)
 
                            Some units that have been used with this driver:
 
@@ -302,8 +269,6 @@ that UPS.
 			 - Advice Partner/King PR750
                          - Socomec Sicon Egys 420 VA 
 
-	powermust	 - Mustek Powermust (and OnLite 50) units
-
 	safenet		 - Units typically bundled with Safenet software:
 
                            - Ever-Power UF 010C2EJA
@@ -318,8 +283,6 @@ that UPS.
                            Note: Sweex models which shipped with UPSmart
                            are contact-closure and need to use the
                            genericups driver with upstype=7.
-
-	sms		 - Microlink Manager III
 
 	snmp-ups         - SNMP UPS equipment
                            Experimental driver - not built by default.
@@ -561,10 +524,10 @@ The CGI programs are clients that run through your web server.  They
 allow you to see UPS status and perform certain administrative commands
 from any web browser.  Javascript and cookies are not required.
 
-These programs are not installed or compiled by default.  To compile them,
-first run 'configure --with-cgi', then do 'make cgi'.  To install,
-'make install-cgi'.  If you receive errors about "gd" during configure,
-go get it and install it before continuing.
+These programs are not installed or compiled by default.  To compile
+and install them, first run 'configure --with-cgi', then do 'make' and
+'make install'.  If you receive errors about "gd" during configure, go
+get it and install it before continuing.
 
 You can get the source here:
 
@@ -661,8 +624,10 @@ examples of how to retrieve data using the upsclient functions.  Other
 programs not included in this package may also use this library, as wmnut.
 
 This library file and the associated header files are not installed by
-default.  You must 'make install-lib' before building other programs
-which depend on them.
+default.  You must './configure --with-lib' to enable building and
+installing these files. The libraries can then be build and installed
+with 'make' and 'make install' as usual. This must be done before
+building other (non-NUT) programs which depend on them.
 
 To obtain the right compilation and link flags, two helpers are provided:
 one for platform providing pkg-config, and the other (libupsclient-config)
@@ -765,9 +730,9 @@ MGE UPS SYSTEMS provided extensive technical documents for their UPS product
 line, along with many units for development of NUT-related projects. The
 company also sponsored and later hired Arnaud Quette to further officially
 support these efforts. 
-Several drivers such as mge-utalk, mge-shut, snmp-ups, hidups, and newhidups
-are the result of this collaboration, in addition to the WMNut, HID Parser
-and libhid projects. The features page has improved artwork thanks to Luc
+Several drivers such as mge-utalk, mge-shut, snmp-ups, hidups, and usbhid-ups
+are the result of this collaboration, in addition to the WMNut, MGE HID Parser
+the libhid projects, .... The features page has improved artwork thanks to Luc
 and Arnaud of MGE. Other client projects such as KNutClient and ups-monitor
 have also received assistance. 
 The master NUT site and several related projects are hosted on MGE's equipment

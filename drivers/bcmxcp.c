@@ -6,7 +6,7 @@
  * emes -at- geomer.de *
  * All rights reserved.*
 
- Copyright (C) 2004 Kjell Claesson <kjell.claesson-at-telia.com>
+ Copyright (C) 2004 Kjell Claesson <kjell.claesson-at-epost.tidanet.se>
  and Tore Ørpetveit <tore-at-orpetveit.net>
 
  Thanks to Tore Ørpetveit <tore-at-orpetveit.net> that sent me the
@@ -57,6 +57,7 @@ char *FreqTol[3] = {"+/-2%", "+/-5%", "+/-7"};
 char *ABMStatus[4] = {"Charging", "Discharging", "Floating", "Resting"};
 unsigned char AUTHOR[4] = {0xCF, 0x69, 0xE8, 0xD5};		/* Autorisation	command	*/
 int nphases = 0;
+char *cpu_name[] = {"Cont:", "Inve:", "Rect:", "Netw:", "Disp:"};
 
 /* get_word funktion from nut driver metasys.c */
 int get_word(const unsigned char *buffer)	/* return an integer reading a word in the supplied buffer */
@@ -175,7 +176,7 @@ unsigned char calc_checksum(const unsigned char *buf)
 void init_meter_map()
 {
 	/* Clean entire map */
-	memset(&bcmxcp_meter_map, 0, sizeof(BCMXCP_METER_MAP_ENTRY) * BCMXCP_METER_MAP_MAX);
+	memset(&bcmxcp_meter_map, 0, sizeof(BCMXCP_METER_MAP_ENTRY_t) * BCMXCP_METER_MAP_MAX);
 
 	/* Set all corresponding mappings NUT <-> BCM/XCP */
 	bcmxcp_meter_map[0].nut_entity = "output.L1-L2.voltage";
@@ -218,7 +219,7 @@ if (nphases == 1) {
 void init_alarm_map()
 {
 	/* Clean entire map */
-	memset(&bcmxcp_alarm_map, 0, sizeof(BCMXCP_ALARM_MAP_ENTRY) * BCMXCP_ALARM_MAP_MAX);
+	memset(&bcmxcp_alarm_map, 0, sizeof(BCMXCP_ALARM_MAP_ENTRY_t) * BCMXCP_ALARM_MAP_MAX);
 	
 	/* Set all alarm descriptions	*/
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_AC_OVER_VOLTAGE].alarm_desc = "INVERTER_AC_OVER_VOLTAGE"; 
@@ -551,7 +552,8 @@ void decode_meter_map_entry(const unsigned char *entry, const unsigned char form
 
 void init_ups_alarm_map(const unsigned char *map, unsigned char len)
 {
-	unsigned int iIndex = 0, iOffset = 0, alarm = 0;
+	unsigned int iIndex = 0, iOffset = 0;
+	int alarm = 0;
 	
 	/* In case of debug - make explanation of values */
 	upsdebugx(2, "Index\tAlarm\tSupported\n");
@@ -727,22 +729,10 @@ void upsdrv_initinfo(void)
 	unsigned char answer[256];
 	char *pTmp, sValue[17];
 	int iRating = 0, iIndex = 0, res, len;
-	int voltage = 0;
+	int voltage = 0, ncpu = 0, buf;
 
 	/* Set driver version info */
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
-
-	/* Get information on Phases from UPS */
-	res = command_read_sequence(PW_UPS_TOP_DATA_REQ, answer);
-	if (res <= 0)
-		fatal_with_errno("Could not communicate with the ups");
-
-	nphases = (answer[0] & 0x0F) +1;
-	dstate_setinfo("input.phases", "%d", nphases);
-
-
-	/* Init BCM/XCP <-> NUT meter map */
-	init_meter_map();
 
 	/* Init BCM/XCP alarm descriptions */
 	init_alarm_map();
@@ -756,20 +746,31 @@ void upsdrv_initinfo(void)
 	/* Get information on UPS from UPS */
 	res = command_read_sequence(PW_ID_BLOCK_REQ, answer);
 	if (res <= 0)
-		fatal_with_errno("Could not communicate with the ups");
+		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
 
 	/* Get number of CPU's in ID block */
 	len = answer[iIndex++];
 
+	buf = len * 11;
+	pTmp = xmalloc(buf+1);
+
+	pTmp[0] = 0;
 	/* If there is one or more CPU number, get it */
 	if (len > 0) {
 		do {
-			/* Get the ups firmware. The major number is in the last byte, the minor is in the first */
-			dstate_setinfo("ups.firmware", "%02x.%02x", (unsigned char)answer[iIndex+1],
-				(unsigned char)answer[iIndex]);
+			if ((answer[iIndex] != 0x00) || (answer[iIndex+1] != 0x00)) {
+				/* Get the ups firmware. The major number is in the last byte, the minor is in the first */
+				snprintfcat(pTmp, buf+1, "%s%02x.%02x ", cpu_name[ncpu], answer[iIndex+1], answer[iIndex]);
+			}
 			iIndex += 2;
 			len--;
-		} while ((strcmp("00.00", dstate_getinfo("ups.firmware")) == 0) && len > 0);
+			ncpu++;
+
+		} while ((len > 0) && (ncpu <= 5));
+
+		dstate_setinfo("ups.firmware", "%s", pTmp);
+
+		free(pTmp);
 
 		/* Increment index to point at end of CPU bytes. */
 		iIndex += len * 2;
@@ -786,8 +787,15 @@ void upsdrv_initinfo(void)
 	}
 	dstate_setinfo("ups.power.nominal", "%d", iRating);
 
-	/* Skip	UPS' number of phases and phase angle, as NUT do not care */
-	iIndex += 2;
+	/* Get information on Phases from UPS */
+	nphases = (answer[iIndex++]);
+	dstate_setinfo("output.phases", "%d", nphases);
+
+	/* Init BCM/XCP <-> NUT meter map */
+	init_meter_map();
+
+	/* Skip	UPS' phase angle, as NUT do not care */
+	iIndex += 1;
 	
 	/* Get length of UPS description */
 	len = answer[iIndex++];
@@ -822,7 +830,7 @@ void upsdrv_initinfo(void)
 	/* Get information on UPS configuration */
 	res = command_read_sequence(PW_CONFIG_BLOC_REQ, answer);
 	if (res <= 0)
-		fatal_with_errno("Could not communicate with the ups");
+		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
 
 	/* Get validation mask for status bitmap */
 	bcmxcp_status.topology_mask = answer[BCMXCP_CONFIG_BLOCK_HW_MODULES_INSTALLED_BYTE4];
@@ -851,7 +859,7 @@ void upsdrv_initinfo(void)
 	/* Get information on UPS extended limits */
 	res = command_read_sequence(PW_LIMIT_BLOCK_REQ, answer);
 	if (res <= 0)
-		fatal_with_errno("Could not communicate with the ups");
+		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
 
 	/* Low battery warning */
 	bcmxcp_status.lowbatt = answer[BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING] * 60;
@@ -940,25 +948,25 @@ void upsdrv_updateinfo(void)
 		bcmxcp_status.alarm_low_battery = 0;
 
 		/* Set alarms	*/
-		/* alarm_init(); Alarms are not	supported by NUT */
+		alarm_init();
 
-		/* Check "On Battery"	alarm	*/
-		if (bcmxcp_alarm_map[BCMXCP_ALARM_UPS_ON_BATTERY].alarm_block_index	>= 0 &&
-				answer[bcmxcp_alarm_map[BCMXCP_ALARM_UPS_ON_BATTERY].alarm_block_index]	>	0)
-		{ 
-			bcmxcp_status.alarm_on_battery = 1;
-			/* alarm_set(ONBATTERY); */
+		/* Loop thru alarm map, get all alarms UPS is willing to offer */
+		for (iIndex = 0; iIndex < BCMXCP_ALARM_MAP_MAX; iIndex++){
+			if (bcmxcp_alarm_map[iIndex].alarm_block_index >= 0 && bcmxcp_alarm_map[iIndex].alarm_desc != NULL) {
+				if (answer[bcmxcp_alarm_map[iIndex].alarm_block_index]	> 0) {
+					alarm_set(bcmxcp_alarm_map[iIndex].alarm_desc);
+
+					if (iIndex == BCMXCP_ALARM_UPS_ON_BATTERY) {
+						bcmxcp_status.alarm_on_battery = 1;
+					}
+
+					if (iIndex == BCMXCP_ALARM_BATTERY_LOW) {
+						bcmxcp_status.alarm_low_battery = 1;
+					}
+				}
+			}
 		}
 		
-		if (bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_LOW].alarm_block_index >= 0 &&
-			answer[bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_LOW].alarm_block_index] > 0)
-		{ 
-			bcmxcp_status.alarm_low_battery = 1;
-			/* alarm_set(LOWBATTERY);	*/ 
-		}
-		
-		/* Confirm alarms	*/
-		/* alarm_commit(); */
 	}
 
 	/* Get status info from UPS */
@@ -1024,6 +1032,9 @@ void upsdrv_updateinfo(void)
 
 		status_commit();
 	} 
+	/* Confirm alarms	*/
+	alarm_commit();
+
 	dstate_dataok();
 }
 
@@ -1071,15 +1082,15 @@ void upsdrv_shutdown(void)
 			break;
 			}
 		case 0x33: {
-			fatalx("shutdown disbled by front panel");
+			fatalx(EXIT_FAILURE, "shutdown disbled by front panel");
 			break;
 			}
 		case 0x36: {
-			fatalx("Invalid parameter");
+			fatalx(EXIT_FAILURE, "Invalid parameter");
 			break;
 			}
 		default: {
-			fatalx("shutdown not supported");
+			fatalx(EXIT_FAILURE, "shutdown not supported");
 			break;
 			}
 	}
@@ -1242,4 +1253,6 @@ void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - BCMXCP UPS driver %s (%s)\n\n",
 		DRV_VERSION, UPS_VERSION);
+
+	experimental_driver = 1;	
 }

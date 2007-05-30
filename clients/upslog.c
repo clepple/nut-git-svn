@@ -40,7 +40,7 @@
 
 	static	int	port, reopen_flag = 0, exit_flag = 0;
 	static	char	*upsname, *hostname;
-	static	UPSCONN	ups;
+	static	UPSCONN_t	ups;
 
 	static	FILE	*logfile;
 	static	const	char *logfn, *monhost;
@@ -63,7 +63,7 @@ static void reopen_log(void)
 	fclose(logfile);
 	logfile = fopen(logfn, "a");
 	if (logfile == NULL)
-		fatal_with_errno("could not reopen logfile %s", logfn);
+		fatal_with_errno(EXIT_FAILURE, "could not reopen logfile %s", logfn);
 }
 
 static void set_reopen_flag(int sig)
@@ -87,15 +87,15 @@ static void setup_signals(void)
 	sa.sa_handler = set_reopen_flag;
 	sa.sa_flags = 0;
 	if (sigaction(SIGHUP, &sa, NULL) < 0)
-		fatal_with_errno("Can't install SIGHUP handler");
+		fatal_with_errno(EXIT_FAILURE, "Can't install SIGHUP handler");
 
 	sa.sa_handler = set_exit_flag;
 	if (sigaction(SIGINT, &sa, NULL) < 0)
-		fatal_with_errno("Can't install SIGINT handler");
+		fatal_with_errno(EXIT_FAILURE, "Can't install SIGINT handler");
 	if (sigaction(SIGQUIT, &sa, NULL) < 0)
-		fatal_with_errno("Can't install SIGQUIT handler");
+		fatal_with_errno(EXIT_FAILURE, "Can't install SIGQUIT handler");
 	if (sigaction(SIGTERM, &sa, NULL) < 0)
-		fatal_with_errno("Can't install SIGTERM handler");
+		fatal_with_errno(EXIT_FAILURE, "Can't install SIGTERM handler");
 }
 
 static void help(const char *prog)
@@ -379,7 +379,7 @@ int main(int argc, char **argv)
 
 	prog = argv[0];
 
-	while ((i = getopt(argc, argv, "+hs:l:i:f:u:V")) != EOF) {
+	while ((i = getopt(argc, argv, "+hs:l:i:f:u:V")) != -1) {
 		switch(i) {
 			case 'h':
 				help(prog);
@@ -438,20 +438,21 @@ int main(int argc, char **argv)
 	}
 
 	if (!monhost)
-		fatalx("No UPS defined for monitoring - use -s <system>");
+		fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system>");
 
 	if (!logfn)
-		fatalx("No filename defined for logging - use -l <file>");
+		fatalx(EXIT_FAILURE, "No filename defined for logging - use -l <file>");
 
 	/* shouldn't happen */
 	if (!logformat)
-		fatalx("No format defined - but this should be impossible");
+		fatalx(EXIT_FAILURE, "No format defined - but this should be impossible");
 
 	printf("logging status of %s to %s (%is intervals)\n", 
 		monhost, logfn, interval);
 
-	if (upscli_splitname(monhost, &upsname, &hostname, &port) != 0)
-		fatalx("Fatal error: unusable UPS definition");
+	if (upscli_splitname(monhost, &upsname, &hostname, &port) != 0) {
+		fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
+	}
 
 	if (upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0)
 		fprintf(stderr, "Warning: initial connect failed: %s\n", 
@@ -463,7 +464,7 @@ int main(int argc, char **argv)
 		logfile = fopen(logfn, "a");
 
 	if (logfile == NULL)
-		fatal_with_errno("could not open logfile %s", logfn);
+		fatal_with_errno(EXIT_FAILURE, "could not open logfile %s", logfn);
 
 	/* now drop root if we have it */
 	new_uid = get_user_pwent(user);
