@@ -37,7 +37,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-
 #define ENDCHAR  '\r'
 #define IGNCHARS ""
 
@@ -256,31 +255,31 @@ static int check_ups(void)
 	char buffer[RECV_BUFFER_LEN];
 	int ret;
 
-	upsdebugx(2, "Sending \"Q1\" command...");
+	upsdebugx(2, "Checking for UPS presence [Q1]...");
 	ser_send_pace(upsfd, SEND_PACE, "Q1%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 
 	if (ret < 0) {
-		upsdebugx(2, "Timeout after \"Q1\" command");
+		upsdebugx(2, "Q1 => FAILED [timeout]");
 
 		return -1;
 	}
 
 	if (ret < Q1_CMD_REPLY_LEN) {
-		upsdebugx(2, "Short answer to \"Q1\" command");
-		upsdebug_hex(5, "answer", (unsigned char *)buffer, ret);
+		upsdebugx(2, "Q1 => FAILED [short read]");
+		upsdebug_hex(3, "Q1 detail", (unsigned char *)buffer, ret);
 
 		return -1;
 	}
 
 	if (buffer[0] != '(') {
-		upsdebugx(2, "Wrong answer to \"Q1\" command (invalid start character)");
-		upsdebug_hex(5, "answer", (unsigned char *)buffer, ret);
+		upsdebugx(2, "Q1 => FAILED [invalid start character]");
+		upsdebug_hex(3, "Q1 detail", (unsigned char *)buffer, ret);
 
 		return -1;
 	}
 
-	upsdebugx(2, "\"Q1\" command successful.");
+	upsdebugx(2, "Q1 => OK");
 
 	return 0;
 }
@@ -292,31 +291,31 @@ static int get_ups_info(UPSInfo_t *info)
 	char *anchor;
 	int ret;
 
-	upsdebugx(1, "Asking for UPS information (\"I\" command)...");
+	upsdebugx(2, "Asking for UPS information [I]...");
 	ser_send_pace(upsfd, SEND_PACE, "I%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 
 	if (ret < 0) {
-		upsdebugx(1, "Timeout after \"I\" command");
+		upsdebugx(2, "I => FAILED [timeout]");
 
 		return -1;
 	}
 		
 	if (ret < I_CMD_REPLY_LEN) {
-		upsdebugx(1, "Short answer to \"I\" command");
-		upsdebug_hex(5, "answer", (unsigned char *)buffer, ret);
+		upsdebugx(2, "I => FAILED [short read]");
+		upsdebug_hex(3, "I detail", (unsigned char *)buffer, ret);
 
 		return -1;
 	}
 
 	if (buffer[0] != '#') {
-		upsdebugx(1, "Wrong answer to \"I\" command (invalid start character)");
-		upsdebug_hex(5, "answer", (unsigned char *)buffer, ret);
+		upsdebugx(2, "I => FAILED [invalid start character]");
+		upsdebug_hex(3, "I detail", (unsigned char *)buffer, ret);
 
 		return -1;
 	}
 
-	upsdebugx(3, "UPS information: %s", buffer);
+	upsdebugx(2, "I => OK [%s]", buffer);
 
 	memset(info, 0, sizeof(UPSInfo_t));
 
@@ -338,32 +337,32 @@ static int get_firmware_values(FirmwareValues_t *values)
 	char buffer[RECV_BUFFER_LEN];
 	int ret;
 
-	upsdebugx(1, "Asking for UPS power ratings (\"F\" command)...");
+	upsdebugx(2, "Asking for UPS power ratings [F]...");
 	ser_send_pace(upsfd, SEND_PACE, "F%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 
 	if (ret < 0) {
-		upsdebugx(1, "Timeout after \"F\" command");
+		upsdebugx(2, "F => FAILED [timeout]");
 
 		return -1;
 	}
 
 	if (ret < F_CMD_REPLY_LEN) {
-		upsdebugx(1, "Short answer to \"F\" command");
-		upsdebug_hex(5, "answer", (unsigned char *)buffer, ret);
+		upsdebugx(2, "F => FAILED [short read]");
+		upsdebug_hex(3, "F detail", (unsigned char *)buffer, ret);
 
 		return -1;
 	}
 
 
 	if (buffer[0] != '#') {
-		upsdebugx(1, "Wrong answer to \"F\" command (invalid start character)");
-		upsdebug_hex(5, "answer", (unsigned char *)buffer, ret);
+		upsdebugx(2, "F => FAILED [invalid start character]");
+		upsdebug_hex(3, "F detail", (unsigned char *)buffer, ret);
 
 		return -1;
 	}
 
-	upsdebugx(3, "UPS power ratings: %s", buffer);
+	upsdebugx(2, "F => OK [%s]", buffer);
 
 	sscanf(buffer, "#%f %f %f %f", &values->volt, &values->current,
 	       &values->battvolt, &values->freq);
@@ -378,31 +377,31 @@ static int run_query(QueryValues_t *values)
 	char temperature[8];
 	int ret;
 
-	upsdebugx(1, "Asking for UPS status (\"Q1\" command)...");
+	upsdebugx(2, "Asking for UPS status [Q1]...");
 	ser_send_pace(upsfd, SEND_PACE, "Q1%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 
 	if (ret < 0) {
-		upsdebugx(1, "Timeout after \"Q1\" command");
+		upsdebugx(2, "Q1 => FAILED [timeout]");
 
 		return -1;
 	}
 
 	if (ret < Q1_CMD_REPLY_LEN) {
-		upsdebugx(1, "Short answer to \"Q1\" command");
-		upsdebug_hex(5, "answer", (unsigned char *)buffer, ret);
+		upsdebugx(2, "Q1 => FAILED [short read]");
+		upsdebug_hex(3, "Q1 detail", (unsigned char *)buffer, ret);
 
 		return -1;
 	}
 
 	if (buffer[0] != '(') {
-		upsdebugx(1, "Wrong answer to \"Q1\" command (invalid start character)");
-		upsdebug_hex(5, "answer", (unsigned char *)buffer, ret);
+		upsdebugx(2, "Q1 => FAILED [invalid start character]");
+		upsdebug_hex(3, "Q1 detail", (unsigned char *)buffer, ret);
 
 		return -1;
 	}
 
-	upsdebugx(3, "UPS status: %s", buffer);
+	upsdebugx(2, "Q1 => OK [%s]", buffer);
 
 	sscanf(buffer, "(%f %f %f %f %f %f %s %s", &values->ivolt, &values->fvolt, &values->ovolt,
 	       &values->load, &values->freq, &values->battvolt, temperature, values->flags);
@@ -433,7 +432,6 @@ void upsdrv_initinfo(void)
 	 */
 	upsdebugx(1, "Starting UPS detection process...");
 	for (i = 0; i < IDENT_MAXTRIES; i++) {
-		upsdebugx(2, "Attempting to detect the UPS...");
 		if (check_ups() == 0) {
 			success++;
 		}
@@ -487,7 +485,7 @@ void upsdrv_initinfo(void)
 	}
 
 	if (getval("battvolts")) {
-		upsdebugx(3, getval("battvolts"));
+		upsdebugx(2, "Parameter [battvolts]: [%s]", getval("battvolts"));
 	
 		if (sscanf(getval("battvolts"), "%f:%f", &battvolt_empty, &battvolt_full) != 2) {
 			fatalx(EXIT_FAILURE, "Error in \"battvolts\" parameter.");
@@ -586,7 +584,7 @@ void upsdrv_updateinfo(void)
 	if (charge >= 0) {
 		dstate_setinfo("battery.charge", "%.1f", charge);
 		
-		upsdebugx(3, "Charge: %.1f%%", charge);
+		upsdebugx(2, "Calculated battery charge: %.1f%%", charge);
 	}
 
 	status_init();
@@ -855,11 +853,16 @@ void upsdrv_initups(void)
 {
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
+
+	/* Some UPS models need this. */
+	ser_set_dtr(upsfd, 1);
+	ser_set_rts(upsfd, 0);
 }
 
 
 void upsdrv_cleanup(void)
 {
+	ser_set_dtr(upsfd, 0);
 	ser_close(upsfd, device_path);
 }
 

@@ -26,7 +26,7 @@
 #define MEGATEC_H
 
 
-#define DRV_VERSION "1.5.4"
+#define DRV_VERSION "1.5.7"
 
 
 #ifdef MEGATEC_SUBDRV
@@ -37,5 +37,6 @@
 #	define megatec_subdrv_banner(...)
 #endif
 
+extern int	megatec_modem_control;
 
 #endif /* MEGATEC_H */

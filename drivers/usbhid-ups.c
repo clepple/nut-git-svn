@@ -78,7 +78,7 @@ static void process_status_info(char *nutvalue);
 static void ups_status_set(void);
 static void identify_ups ();
 static bool_t hid_ups_walk(int mode);
-static void reconnect_ups(void);
+static int reconnect_ups(void);
 
 /* ---------------------------------------------------------------------- */
 /* data for ups.status processing */
@@ -547,7 +547,8 @@ void upsdrv_updateinfo(void)
 	if (hd == NULL)
 	  {
 		upsdebugx(1, "\n=>Got to reconnect!\n");
-		reconnect_ups();
+		if (!reconnect_ups())
+			return;
 	  }
 
 	/* Only do a full update (polling) every pollfreq 
@@ -985,8 +986,10 @@ static bool_t hid_ups_walk(int mode)
   return TRUE;
 }
 
-static void reconnect_ups(void)
+static int reconnect_ups(void)
 {
+	int ret = 1;
+
 	if (hd == NULL)
 	{
 		upsdebugx(2, "==================================================");
@@ -1001,9 +1004,12 @@ static void reconnect_ups(void)
 		udev = NULL;
 #endif
 
-	  if ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, MODE_REOPEN)) == NULL)
-		dstate_datastale();
+		if ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, MODE_REOPEN)) == NULL) {
+			dstate_datastale();
+			ret = 0;
+		}
 	}
+	return ret;
 }
 
 /* Convert the local status information to NUT format and set NUT
