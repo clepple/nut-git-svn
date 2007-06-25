@@ -1,7 +1,7 @@
 # Network UPS Tools: server
 
 AM_CFLAGS = -I$(top_srcdir)/include $(LIBSSL_CFLAGS)
-LDADD = ../common/libcommon.a ../common/state.o ../common/upsconf.o	\
+LDADD = ../common/libcommon.a ../common/state.o \
  ../common/parseconf.o $(LIBSSL_LDFLAGS) $(NETLIBS)
 
 sbin_PROGRAMS = upsd
@@ -18,9 +18,6 @@ sockdebug_SOURCES = sockdebug.c
 # rules for cross-directory targets
 ../common/libcommon.a: FORCE
 	(cd ../common/ && $(MAKE) $(AM_MAKEFLAGS) libcommon.a)
-
-../common/upsconf.o:
-	(cd ../common/ && $(MAKE) $(AM_MAKEFLAGS) upsconf.o)
 
 ../common/parseconf.o:
 	(cd ../common/ && $(MAKE) $(AM_MAKEFLAGS) parseconf.o)

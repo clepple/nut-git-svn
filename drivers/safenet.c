@@ -163,8 +163,6 @@ static void safenet_update()
 	}
 
 	status_commit();
-
-	dstate_dataok();
 }
 
 static int instcmd(const char *cmdname, const char *extra)
@@ -253,7 +251,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 void upsdrv_initinfo(void)
 {
-	int	i, retry = 3;
+	int	retry = 3;
 	char	*v;
 
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
@@ -358,6 +356,8 @@ void upsdrv_updateinfo(void)
 	}
 
 	safenet_update();
+
+	dstate_dataok();
 }
 
 void upsdrv_shutdown(void)

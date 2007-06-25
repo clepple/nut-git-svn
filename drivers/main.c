@@ -23,8 +23,7 @@
 	/* data which may be useful to the drivers */	
 	int	upsfd = -1;
 	char	*device_path = NULL;
-	const	char	*progname = NULL, *upsname = NULL, 
-			*device_name = NULL;
+	const	char	*progname = NULL, *upsname = NULL;
 
 	/* may be set by the driver to wake up while in dstate_poll_fds */
 	int	extrafd = -1;
@@ -68,13 +67,12 @@ static void help_msg(void)
 {
 	vartab_t	*tmp;
 
-	printf("\nusage: %s -a <id> [OPTIONS]\n", progname);
-
-	printf("  -a <id>        - autoconfig using ups.conf section <id>\n");
-	printf("                 - note: -x after -a overrides ups.conf settings\n\n");
+	printf("\nusage: %s [OPTIONS]\n", progname);
 
 	printf("  -V             - print version, then exit\n");
 	printf("  -L             - print parseable list of driver variables\n");
+	printf("  -a <id>        - autoconfig using ups.conf section <id>\n");
+	printf("                 - note: -x after -a overrides ups.conf settings\n");
 	printf("  -D             - raise debugging level\n");
 	printf("  -h             - display this help\n");
 	printf("  -k             - force shutdown\n");
@@ -82,7 +80,7 @@ static void help_msg(void)
 	printf("  -r <dir>       - chroot to <dir>\n");
 	printf("  -u <user>      - switch to <user> (if started as root)\n");
 	printf("  -x <var>=<val> - set driver variable <var> to <val>\n");
-	printf("                 - example: -x cable=940-0095B\n\n");
+	printf("                 - example: -x cable=940-0095B\n");
 
 	if (vartab_h) {
 		tmp = vartab_h;
@@ -238,7 +236,6 @@ static int main_arg(char *var, char *val)
 
 	if (!strcmp(var, "port")) {
 		device_path = xstrdup(val);
-		device_name = xbasename(device_path);
 		dstate_setinfo("driver.parameter.port", "%s", val);
 		return 1;	/* handled */
 	}
@@ -367,9 +364,16 @@ static void listxarg(void)
 	while (tmp) {
 
 		switch (tmp->vartype) {
-			case VAR_VALUE: printf("VALUE"); break;
-			case VAR_FLAG: printf("FLAG"); break;
-			default: printf("UNKNOWN"); break;
+
+		case VAR_VALUE:
+			printf("VALUE");
+			break;
+		case VAR_FLAG:
+			printf("FLAG");
+			break;
+		default:
+			printf("UNKNOWN");
+			break;
 		}
 
 		printf(" %s \"%s\"\n", tmp->var, tmp->desc);
@@ -396,6 +400,42 @@ static void vartab_free(void)
 	}
 }
 
+/* handle sending the signal */
+static void reload_server(void)
+{
+	char	pidfn[SMALLBUF];
+	int	ret;
+	struct	stat	fs;
+
+	upsdebugx(1, "Signal server to reload configuration");
+
+	snprintf(pidfn, sizeof(pidfn), "%s/upsd.pid", altpidpath());
+	ret = stat(pidfn, &fs);
+
+	switch (ret) {
+
+	case 0:
+		upsdebugx(2, "Sending signal to [%s]", pidfn);
+		break;
+	case EACCES:
+		upslogx(LOG_INFO, "No access to server PID file [%s]", pidfn);
+		return;
+	case ENOENT:
+		upsdebugx(2, "Server PID [%s] not found", pidfn);
+		return;
+	default:
+		upsdebugx(2, "Can't stat [%s] (result = %d)", pidfn, ret);
+		return;
+	}
+
+	ret = sendsignalfn(pidfn, SIGHUP);
+
+	if (ret < 0) {
+		upsdebugx(2, "Server reload [%s] failed", pidfn);
+		return;
+	}
+}
+
 static void exit_cleanup(void)
 {
 	upsdrv_cleanup();
@@ -411,6 +451,11 @@ static void exit_cleanup(void)
 
 	dstate_free();
 	vartab_free();
+
+	/* let the server know we're no longer here */
+	if (!upsname_found) {
+		reload_server();
+	}
 }
 
 static void set_exit_flag(int sig)
@@ -438,6 +483,7 @@ int main(int argc, char **argv)
 {
 	struct	passwd	*new_uid = NULL;
 	int	i, do_forceshutdown = 0;
+	char	buf[SMALLBUF];
 
 	/* pick up a default from configure --with-user */
 	user = xstrdup(RUN_AS_USER);	/* xstrdup: this gets freed at exit */
@@ -508,20 +554,9 @@ int main(int argc, char **argv)
 			"Error: too many non-option arguments. Try -h for help.");
 	}
 
-	if (!upsname_found) {
-		fatalx(EXIT_FAILURE,
-			"Error: specifying '-a id' is now mandatory. Try -h for help.");
-	}
+	snprintf(buf, sizeof(buf), "%s/%s-%s.pid", altpidpath(), progname, upsname_found ? upsname : "auto");
 
-	/* we need to get the port from somewhere */
-	if (!device_path) {
-		fatalx(EXIT_FAILURE,
-			"Error: you must specify a port name in ups.conf. Try -h for help.");
-	}
-
-	pidfn = xmalloc(SMALLBUF);
-
-	snprintf(pidfn, SMALLBUF, "%s/%s-%s.pid", altpidpath(), progname, upsname);
+	pidfn = xstrdup(buf);
 
 	upsdebugx(1, "debug level is '%d'", nut_debug_level);
 
@@ -559,7 +594,11 @@ int main(int argc, char **argv)
 	upsdrv_updateinfo();
 
 	/* now we can start servicing requests */
-	dstate_init(progname, upsname);
+	if (upsname_found) {
+		dstate_init(progname, upsname);
+	} else {
+		dstate_init(progname, "auto");
+	}
 
 	/* publish the top-level data: version number, driver name */
 	dstate_setinfo("driver.version", "%s", UPS_VERSION);
@@ -567,6 +606,11 @@ int main(int argc, char **argv)
 
 	/* The poll_interval may have been changed from the default */
 	dstate_setinfo("driver.parameter.pollinterval", "%d", poll_interval);
+
+	/* Let the server know we're here */
+	if (!upsname_found) {
+		reload_server();
+	}
 
 	if (nut_debug_level == 0) {
 		background();

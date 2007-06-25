@@ -22,7 +22,6 @@
 #include "conf.h"
 
 #include "netcmds.h"
-#include "upsconf.h"
 
 #include <sys/un.h>
 #include <sys/socket.h>
@@ -980,7 +979,8 @@ int main(int argc, char **argv)
 				break;
 			case 'p':
 			case 'i':
-				fatalx(EXIT_FAILURE, "Specifying a listening addresses with '-i <address>' and '-p <port>'\n"
+				fatalx(EXIT_FAILURE,
+					"Specifying a listening addresses with '-i <address>' and '-p <port>'\n"
 					"is deprecated. Use 'LISTEN <address> [<port>]' in 'upsd.conf' instead.\n"
 					"See 'man 8 upsd.conf' for more information.");
 			case 'r':
@@ -1070,13 +1070,7 @@ int main(int argc, char **argv)
 	/* check statepath perms */
 	check_perms(statepath);
 
-	/* handle ups.conf */
-	read_upsconf();
 	upsconf_add(0);		/* 0 = initial */
-
-	if (num_ups == 0) {
-		fatalx(EXIT_FAILURE, "Fatal error: at least one UPS must be defined in ups.conf");
-	}
 
 	ssl_init();
 

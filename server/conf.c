@@ -17,9 +17,12 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <dirent.h>
+
 #include "upsd.h"
 #include "conf.h"
-#include "upsconf.h"
 #include "sstate.h"
 #include "access.h"
 #include "user.h"
@@ -28,10 +31,8 @@
 	extern	int	maxage;
 	extern	char	*statepath, *datapath, *certfile;
 	extern	upstype_t	*firstups;
-	ups_t	*upstable = NULL;
-	int	num_ups = 0;
 
-/* add another UPS for monitoring from ups.conf */
+/* add another UPS for monitoring */
 static void ups_create(const char *fn, const char *name, const char *desc)
 {
 	upstype_t	*temp, *last;
@@ -41,13 +42,6 @@ static void ups_create(const char *fn, const char *name, const char *desc)
 	/* find end of linked list */
 	while (temp != NULL) {
 		last = temp;
-
-		if (!strcasecmp(temp->name, name)) {
-			upslogx(LOG_ERR, "UPS name [%s] is already in use!", 
-				name);
-			return;
-		}
-
 		temp = temp->next;
 	}
 
@@ -86,8 +80,6 @@ static void ups_create(const char *fn, const char *name, const char *desc)
 		last->next = temp;
 
 	temp->sock_fd = sstate_connect(temp);
-
-	num_ups++;
 }
 
 /* change the configuration of an existing UPS (used during reloads) */
@@ -102,45 +94,9 @@ static void ups_update(const char *fn, const char *name, const char *desc)
 		return;
 	}
 
-	/* paranoia */
-	if (!temp->fn) {
-		upslogx(LOG_ERR, "UPS %s had a NULL filename!", name);
-
-		/* let's give it something quick to use later */
-		temp->fn = xstrdup("");
-	}
-
-	/* when the filename changes, force a reconnect */
-	if (strcmp(temp->fn, fn) != 0) {
-
-		upslogx(LOG_NOTICE, "Redefined UPS [%s]", name);
-
-		/* release all data */
-		sstate_infofree(temp);
-		sstate_cmdfree(temp);
-		pconf_finish(&temp->sock_ctx);
-
-		close(temp->sock_fd);
-		temp->sock_fd = -1;
-		temp->dumpdone = 0;
-
-		/* now redefine the filename and wrap up */
-		free(temp->fn);
-		temp->fn = xstrdup(fn);
-	}
-
-	/* update the description */
-
-	free(temp->desc);
-
-	if (desc)
-		temp->desc = xstrdup(desc);
-	else
-		temp->desc = NULL;
-
 	/* always set this on reload */
 	temp->retain = 1;
-}		
+}
 
 /* return 1 if usable, 0 if not */
 static int parse_upsd_conf_args(int numargs, char **arg)
@@ -277,103 +233,59 @@ void load_upsdconf(int reloading)
 	pconf_finish(&ctx);		
 }
 
-/* callback during parsing of ups.conf */
-void do_upsconf_args(char *upsname, char *var, char *val)
-{
-	ups_t	*tmp, *last;
-
-	/* no "global" stuff for us */
-	if (!upsname)
-		return;
-
-	last = tmp = upstable;
-
-	while (tmp) {
-		last = tmp;
-
-		if (!strcmp(tmp->upsname, upsname)) {
-			if (!strcmp(var, "driver")) 
-				tmp->driver = xstrdup(val);
-			if (!strcmp(var, "port")) 
-				tmp->port = xstrdup(val);
-			if (!strcmp(var, "desc"))
-				tmp->desc = xstrdup(val);
-			return;
-		}
-
-		tmp = tmp->next;
-	}
-
-	tmp = xmalloc(sizeof(ups_t));
-	tmp->upsname = xstrdup(upsname);
-	tmp->driver = NULL;
-	tmp->port = NULL;
-	tmp->desc = NULL;
-	tmp->next = NULL;
-
-	if (!strcmp(var, "driver"))
-		tmp->driver = xstrdup(val);
-	if (!strcmp(var, "port"))
-		tmp->port = xstrdup(val);
-	if (!strcmp(var, "desc"))
-		tmp->desc = xstrdup(val);
-
-	if (last)
-		last->next = tmp;
-	else
-		upstable = tmp;
-}
-
-/* add valid UPSes from ups.conf to the internal structures */
+/* add valid UPSes from statepath to the internal structures */
 void upsconf_add(int reloading)
 {
-	ups_t	*tmp = upstable, *next;
-	char	statefn[SMALLBUF];
+	DIR		*dirp;
+	struct dirent	*dp;
+	struct stat	st;
+	char		*upsconf, *upsname, buf[SMALLBUF];
 
-	if (!tmp) {
-		upslogx(LOG_WARNING, "Warning: no UPS definitions in ups.conf");
-		return;
+	if ((dirp = opendir(".")) == NULL) {
+ 	       fatal_with_errno(EXIT_FAILURE, "couldn't open '.'");
 	}
 
-	while (tmp) {
+	/* Loop through directory entries */
+	while (1) {
+		errno = 0;
 
-		/* save for later, since we delete as we go along */
-		next = tmp->next;
+		if ((dp = readdir(dirp)) == NULL) {
+			break;
+		}
 
-		/* this should always be set, but better safe than sorry */
-		if (!tmp->upsname) {
-			tmp = tmp->next;
+		if (stat(dp->d_name, &st) == -1) {
 			continue;
 		}
 
-		/* don't accept an entry that's missing items */
-		if ((!tmp->driver) || (!tmp->port)) {
-			upslogx(LOG_WARNING, "Warning: ignoring incomplete configuration for UPS [%s]\n", 
-				tmp->upsname);
-		} else {
-			snprintf(statefn, sizeof(statefn), "%s-%s",
-				tmp->driver, tmp->upsname);
-
-			/* if a UPS exists, update it, else add it as new */
-			if ((reloading) && (get_ups_ptr(tmp->upsname) != NULL))
-				ups_update(statefn, tmp->upsname, tmp->desc);
-			else
-				ups_create(statefn, tmp->upsname, tmp->desc);
+		/* If this isn't a socket, go to next entry */
+		if (!S_ISSOCK(st.st_mode)) {
+			upsdebugx(3, "Skipping %s (not a socket)", dp->d_name);
+			continue;
 		}
 
-		/* free tmp's resources */
+		strncpy(buf, dp->d_name, sizeof(buf));
 
-		free(tmp->driver);
-		free(tmp->port);
-		free(tmp->desc);
-		free(tmp->upsname);
-		free(tmp);
+		upsconf = strtok(buf, "-");
+		upsname = strtok(NULL, "-");
 
-		tmp = next;
+		if ((!upsconf) || (!upsname)) {
+			upslogx(LOG_ERR, "failed to parse socket [%s]", dp->d_name);
+			continue;
+		}
+
+		/* if a UPS exists, update it, else add it as new */
+		if ((reloading) && (get_ups_ptr(upsname) != NULL)) {
+			ups_update(dp->d_name, upsname, upsconf);
+		} else {
+			ups_create(dp->d_name, upsname, upsconf);
+		}
 	}
 
-	/* upstable should be completely gone by this point */
-	upstable = NULL;
+	if (errno != 0) {
+        	fatal_with_errno(EXIT_FAILURE, "error reading from statepath");
+	}
+
+	closedir(dirp);
 }
 
 /* remove a UPS from the linked list */
@@ -460,8 +372,6 @@ void conf_reload(void)
 		upstmp = upstmp->next;
 	}
 
-	/* reload from ups.conf */
-	read_upsconf();
 	upsconf_add(1);			/* 1 = reloading */
 
 	/* flush ACL/ACCESS definitions */
