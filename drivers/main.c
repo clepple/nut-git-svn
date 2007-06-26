@@ -23,7 +23,8 @@
 	/* data which may be useful to the drivers */	
 	int	upsfd = -1;
 	char	*device_path = NULL;
-	const	char	*progname = NULL, *upsname = NULL;
+	const	char	*progname = NULL, *upsname = NULL,
+			*device_name = NULL;
 
 	/* may be set by the driver to wake up while in dstate_poll_fds */
 	int	extrafd = -1;
@@ -236,6 +237,7 @@ static int main_arg(char *var, char *val)
 
 	if (!strcmp(var, "port")) {
 		device_path = xstrdup(val);
+		device_name = xbasename(device_path);
 		dstate_setinfo("driver.parameter.port", "%s", val);
 		return 1;	/* handled */
 	}
@@ -453,9 +455,7 @@ static void exit_cleanup(void)
 	vartab_free();
 
 	/* let the server know we're no longer here */
-	if (!upsname_found) {
-		reload_server();
-	}
+	reload_server();
 }
 
 static void set_exit_flag(int sig)
@@ -595,9 +595,9 @@ int main(int argc, char **argv)
 
 	/* now we can start servicing requests */
 	if (upsname_found) {
-		dstate_init(progname, upsname);
+		dstate_init("user", upsname);
 	} else {
-		dstate_init(progname, "auto");
+		dstate_init("auto", progname);
 	}
 
 	/* publish the top-level data: version number, driver name */
@@ -608,9 +608,7 @@ int main(int argc, char **argv)
 	dstate_setinfo("driver.parameter.pollinterval", "%d", poll_interval);
 
 	/* Let the server know we're here */
-	if (!upsname_found) {
-		reload_server();
-	}
+	reload_server();
 
 	if (nut_debug_level == 0) {
 		background();
