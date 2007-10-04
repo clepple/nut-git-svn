@@ -22,9 +22,11 @@
 "Ablerex"	"MS-RT"		""	"megatec"
 "Ablerex"	"625L"		"USB"	"megatec_usb"
 
-"ActivePower" "400VA"	""	"megatec"
+"ActivePower"	"400VA"	""	"megatec"
 "ActivePower"	"1400VA"	""	"megatec"
 "ActivePower"	"2000VA"	""	"megatec"
+
+"Advice"	"TopGuard 2000"	""	"megatec"
 
 "AEC"	"MiniGuard UPS 700"		"Megatec M2501 cable"	"genericups upstype=21"
 
@@ -34,7 +36,7 @@
 
 "APC"	"Back-UPS Pro USB"	"USB"	"usbhid-ups"
 "APC"	"Back-UPS USB"		"USB"	"usbhid-ups"
-"APC"   "Back-UPS RS USB"	"USB"	"usbhid-ups"
+"APC"	"Back-UPS RS USB"	"USB"	"usbhid-ups"
 "APC"	"Back-UPS LS USB"	"USB"	"usbhid-ups"
 "APC"	"Back-UPS ES/CyberFort 350"	"USB"	"usbhid-ups"
 "APC"	"Back-UPS BF500"	"USB"	"usbhid-ups"
@@ -69,7 +71,8 @@
 "Belkin"	"Universal UPS F6C1100-UNV"	"serial port (<= 2005 models)"	"belkinunv"
 "Belkin"	"Universal UPS F6C1100-UNV"	"USB (<= 2005 models, vendor id: 050d)"	"usbhid-ups"
 "Belkin"	"Universal UPS F6C1100-UNV"	"USB (2007 models, vendor id: 0665)"	"megatec_usb"
-"Belkin"	"Universal UPS F6C1200-UNV"	"USB"	"megatec_usb"
+"Belkin"	"Universal UPS F6C1200-UNV"	"USB (<= 2005 models, vendor id: 050d)"	"usbhid-ups"
+"Belkin"	"Universal UPS F6C1200-UNV"	"USB (2007 models, vendor id: 0665)"	"megatec_usb"
 "Belkin"	"Universal UPS F6H350deUNV"	"serial port"	"megatec"
 "Belkin"	"Universal UPS F6H350ukUNV"	"serial port"	"megatec"
 "Belkin"	"Universal UPS F6H500ukUNV"	"serial port"	"megatec"
@@ -122,6 +125,7 @@
 "Dynex"		"DX-800U"		"USB"	"usbhid-ups"
 
 "Effekta"	"MI/MT/MH"	"2502 cable"	"megatec"
+"Effekta"	"RM2000MH"	""	"megatec"
 
 "Eltek"		"any with AL175 alarm module"	""	"al175"
 
@@ -179,11 +183,14 @@
 
 "Ippon"		"(various)"		""	"megatec"
 
+"Jageson Technology"	"Jasuny USPS"	""	"genericups upstype=4"
+
 "Krauler"	"UP-M500VA"	"USB"	"megatec_usb"
 
 "Lestar"	"MD-800E"	""	"megatec"
 
 "Liebert"	"UPStation GXT2"	"contact-closure cable"	"liebert" 
+"Liebert"	"PowerSure Personal XT"		"USB"	"usbhid-ups"
 
 "Masterguard"	"(various)"	""	"masterguard"
 
@@ -233,6 +240,24 @@
 "Meta System"	"Megaline 7500"		""	"metasys"
 "Meta System"	"Megaline 8750"		""	"metasys"
 "Meta System"	"Megaline 10000"	""	"metasys"
+
+"MGE Office Protection Systems"	"Protection Center 500/675 VA"		"USB"	"usbhid-ups"
+"MGE Office Protection Systems"	"Ellipse ASR USBS 600/750/1000/1500 VA"		"USB cable"	"usbhid-ups"
+"MGE Office Protection Systems"	"Ellipse MAX USBS 600/850/1100/1500 VA"		"USB cable"	"usbhid-ups"
+"MGE Office Protection Systems"	"Evolution 650/850/1150/1550/2000 VA"	"USB port"	"usbhid-ups"
+"MGE Office Protection Systems"	"Evolution S 1250/1750/2500/3000 VA"	"USB port"	"usbhid-ups"
+"MGE Office Protection Systems"	"Pulsar 700/1000/1500 VA"	"USB port"	"usbhid-ups"
+"MGE Office Protection Systems"	"Pulsar M 2200/3000 VA"	"USB port"	"usbhid-ups"
+"MGE Office Protection Systems"	"Pulsar MX 5/8/10/15/20 kVA"	"USB port"	"usbhid-ups"
+"MGE Office Protection Systems"	"Ellipse ASR USBS 600/750/1000/1500 VA"		"Serial cable"	"mge-shut or newmge-shut"
+"MGE Office Protection Systems"	"Ellipse MAX USBS 600/850/1100/1500 VA"		"Serial cable"	"mge-shut or newmge-shut"
+"MGE Office Protection Systems"	"Evolution 650/850/1150/1550/2000 VA"	"Serial port"	"mge-shut or newmge-shut"
+"MGE Office Protection Systems"	"Evolution S 1250/1750/2500/3000 VA"	"Serial port"	"mge-shut or newmge-shut"
+"MGE Office Protection Systems"	"Pulsar 700/1000/1500 VA"	"Serial port"	"mge-shut or newmge-shut"
+"MGE Office Protection Systems"	"Pulsar M 2200/3000 VA"	"Serial port"	"mge-shut or newmge-shut"
+"MGE Office Protection Systems"	"Pulsar MX 5/8/10/15/20 kVA"	"Serial port"	"mge-shut or newmge-shut"
+"MGE Office Protection Systems"	"Comet EX RT 1:1 7/11 kVA"	""	"mge-shut or newmge-shut"
+"MGE Office Protection Systems"	"Comet EX RT 3:1 5/7/11 kVA"	""	"mge-shut or newmge-shut"
 
 "MGE UPS SYSTEMS"	"Comet EX RT"			"USB"	"usbhid-ups"
 "MGE UPS SYSTEMS"	"Comet EX RT 3:1"		"USB"	"usbhid-ups"
@@ -358,7 +383,7 @@
 "Nitram"	"Elite 2002"	""	"genericups upstype=16"
 "Nitram"	"Elite 2005"	""	"powerpanel or nitram"
 
-"Oneac" "EG/ON Series"	"advanced interface"	"oneac"
+"Oneac"	"EG/ON Series"	"advanced interface"	"oneac"
 
 "Online"	"P-Series"	""	"genericups upstype=14"
 "Online"	"Zinto D"	""	"optiups"
@@ -470,7 +495,9 @@
 "UNITEK"	"ALPHA 500 IC"		""	"megatec"
 "UNITEK"	"Alpha 1000is"		""	"megatec"
 "UNITEK"	"Alpha 500 ipE"		""	"megatec"
+"UNITEK"	"Alpha 2600"		""	"megatec"
 
+"UPSonic"	"CXR1000"		""	"megatec"
 "UPSonic"	"LAN Saver 600"		""	"genericups upstype=0"
 "UPSonic"	"Power Guardian"	""	"genericups upstype=7"
 

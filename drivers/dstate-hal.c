@@ -36,7 +36,7 @@
 #include <hal/libhal.h>
 
 /* FIXME: export command and RW variables (using the HAL example: addon-cpufreq and macbook addon) */ 
-/* beeper.on, beeper.off => SetBeeper(bool)
+/* beeper.enable, beeper.disable => SetBeeper(bool)
    beeper.toggle => ToggleBeeper(void)
 
 org.freedesktop.Hal.Device.UPS.SetSounder (bool)
@@ -291,6 +291,15 @@ int dstate_setinfo(const char *var, const char *fmt, ...)
 	return ret;
 }
 
+int dstate_delinfo(const char *var)
+{
+	return 0;
+}
+
+int dstate_delcmd(const char *var)
+{
+	return 0;
+}
 
 void dstate_setflags(const char *var, int flags)
 {

@@ -1,3 +1,925 @@
+Wed Oct  3 00:01:09 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - drivers/megatec_usb.c: added ability to do subdriver-specific
+   initialization, and moved some shared code to agiler init function
+   since krauler doesn't need it.
+
+Mon Oct  1 07:49:31 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/snmp-ups.c:
+   - Allow passing a value to an instcmd.
+   - Be less verbose to the syslog when output is needed for debugging
+     purposes only.
+
+Fri Sep 28 18:37:05 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/upshandler.h,dstate.h,dstate-hal.h: The return values for
+   the setvar() and instcmd() handlers are now an enum value, to add
+   return values easily.
+
+Fri Sep 28 17:18:57 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - Added entry for Liebert PowerSure Personal XT in HAL script.
+ - Moved 'include/upshandler.h' to 'drivers/upshandler.h' since this is
+   only used in the drivers.
+
+Wed Sep 26 20:51:20 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+ - Changed the 'ups.voltage.nominal' to 'output.voltage.nominal' in bcmxcp driver.
+
+Tue Sep 25 20:51:47 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/cps-hid.c: Change 'CPS' to 'CyberPower' in some locations.
+ - drivers/libshut.c,libusb.c: Fix compiler warnings.
+ - drivers/usbhid-ups.c: Map ShutdownImminent back to LB.
+
+Tue Sep 25 18:45:10 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/usbhid-ups.c: Clean up after ourselves.
+
+Tue Sep 25 18:33:49 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/ietfmib.h: (Bernd Markgraf)
+   - addition of battery temperature
+   - addition of input.quality via UPS-MIB::upsInputLineBads values
+     >0 showing line failures
+   - correct OID to query number of input phases (now ietf reports
+     3 phases on my bunch correctly)
+   - corrected OID to query output current
+   - corrected multiplier for output.realpower (reported in Watts, so 1)
+
+Mon Sep 24 18:01:56 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - conf/upsmon.conf.sample: List the default values for NOTIFYMSG
+   and NOTIFYFLAG. [Alioth Feature Requests #302016]
+
+Sun Sep 23 18:34:20 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/cps-hid.c: Add server side variables.
+ - scripts/subdriver/path-to-subdriver.sh: Add server side variables,
+   sort the HID paths alphabetically and remove duplicates.
+
+Sat Sep 22 19:22:56 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/cps-hid.[ch]: Created a new subdriver for CyberPower HID
+   UPS systems.
+ - drivers/Makefile.am,usbhid-ups.c: Added new CyberPower subdriver.
+ - drivers/apc-hid.c: Removed CyberPower from this subdriver.
+ - scripts/subdriver/path-to-subdriver.sh: Some minor corrections to
+   make the output compliant to what we expect.
+
+Sat Sep 22 17:59:56 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/megatec_usb.c: Packetizing is already done by the libusb
+   library, so we don't need to duplicate that.
+
+Sat Sep 22 07:14:39 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ * drivers/megatec_usb.c: merged Arjen de Korte's changes in krauler
+   subdriver with slight modifications:
+   - commands are now stored in a table, making it simplier to process
+     them
+   - switched to libusb.c API completely
+
+Mon Sep 17 19:09:47 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - data/cmdvartab, docs/new-names.txt: Removed "shutdown.restart".
+ * drivers/usbhid-ups.c:
+   - Corrected shutdown function (should fallback to 'shutdown.reboot',
+     not 'shutdown.return').
+   - Renamed 'shutdown.restart' to 'shutdown.return', which almost has
+     the same meaning, with the exception that it doesn't shutdown the
+     UPS.
+ * drivers/<usbhid-ups subdrivers>:
+   - Implemented the above.
+
+Mon Sep 17 11:33:17 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - clients/upscmd.c: Allow passing an additional parameter in a command.
+ - drivers/dstate.c: It is now possible to pass a parameter to instcmd(),
+   for instance a delay value.
+ - scripts/subdriver/path-to-subdriver.sh: Implemented the above.
+ * drivers/usbhid-ups.[ch]:
+   - Implemented the above. If no parameter is passed, the default from
+     the HID-to-NUT mapping is used (as was the case previously).
+   - The main driver now takes care of shutting down the UPS through
+     instcmd's that are configurable in the subdrivers. This makes sure
+     that the behaviour is consistent among subdrivers and meets the
+     expectations of the NUT shutdown/restart mechanism.
+   - DEFAULT_ONDELAY and DEFAULT_OFFDELAY are now much shorter. If an
+     application needs a grace period before shutting down the UPS, it
+     this should be put 'ups.conf', rather than to make this the
+     default (even for configurations where this is not needed at all).
+ * drivers/<usbhid-ups subdrivers>:
+   - Implemented the above. Added "shutdown.restart", "shutdown.stayoff"
+     and "shutdown.return" instcmd, which feed the shutdown function in
+     the main driver.
+   - Removed HU_FLAG_OK and cleaned up mapping tables.
+   - Some subdrivers would make 'ups.delay.start/reboot/shutdown'
+     writeable. This is an error, since by doing so, it becomes an
+     instcmd (and should be listed as such). The same goes for
+     'ups.beeper.status'.
+
+Sat Sep 15 19:58:40 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/snmp.c, man/snmp-ups.8: The lack of a shutdown function is
+   not an issue. This won't work, since at the time when we would run
+   'upsdrvctl shutdown' (near the end of the system halt script), in
+   all likelyhood we won't have network capabilities anymore.
+
+Sat Sep 15 18:54:40 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/usbhid-ups.c: Initialize data from UPS in upsdrv_initups().
+   We may be shutting down, so the HID-to-NUT variable mapping needs to
+   be in place.
+
+Wed Sep 12 22:17:01 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - drivers/megatec_usb.c: added debug dumping in both subdrivers.
+
+Wed Sep 12 22:12:53 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ * drivers/megatec.c:
+   - One more entry in the "batteries" array.
+   - Nominal battery value is now a float (some models need this).
+ * data/driver.list:
+   - Two more models supported by megatec.
+
+Tue Sep 11 14:21:17 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - clients/upsclient.h: add a typedef UPSCONN on UPSCONN_t since
+   the renaming of the former broke the external client application
+   compatibility. This is only temporary, and client applications
+   will have to adapt their code, using pkg-config / libupclient-config
+   and some #defines.
+ - UPGRADING: add a (doubled for both 2.2.0 and 2.2.1) message to warn
+   client applications developers of the above change.
+
+Tue Sep 11 12:47:10 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - data/driver.list: Added MGE Office Protection Systems compatibility
+   information.
+
+Mon Sep 10 11:36:16 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/usbhid-ups.c:
+   - The driver will now reconnect when it finds that another program
+     has claimed the USB device it uses.
+   - Cleaned up indentation.
+   - Changed the way how 'input.transfer.reason' is treated.
+ * drivers/mge-hid.c,tripplite-hid.c:
+   - Changed 'input.transfer.reason'.
+
+Sun Sep  9 19:14:46 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/belkin-hid.[ch]: Version should not be defined in .h
+   file to prevent needless rebuilds of the usbhid-ups.o (it was
+   duplicated in both and I removed the wrong instance).
+ - drivers/libhid.[ch]: The hidparser.h file should not be included
+   in the header file.
+ - drivers/libshut.c: Don't allocate space for the report descriptor
+   dynamically. We already know the maximum size and don't need it
+   anymore after leaving the open function.
+ - drivers/libusb.c: Same as above.
+ - drivers/tripplite_usb.c: Fix potential segfault.
+ - drivers/usbhid-ups.c: The 'explore' subdriver should be the first
+   in the list of subdrivers.
+
+Sat Sep  8 20:46:25 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - changed the default installation directory for pkg-config files,
+   following a suggestion of Stanislav Brabec. The new default
+   location is ${libdir}/pkgconfig. This is still configurable via
+   the --with-pkgconfig-dir=PATH option and can be turned off with
+   --without-pkgconfig-dir.
+
+Sat Sep  8 10:53:02 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/libhid.c: Remove the remains of what once was an attempt
+   to split the HIDDumpTree (I can't rembember why I wanted this in
+   the first place).
+
+Sat Sep  8 10:46:32 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/usbhid-ups.[ch],Makefile.am:
+   - Add option 'matching = checksum' that in addition to the
+     'normal' matching, will also compare the SHA-1 checkum of the
+     report descriptor with the one that was read on startup.
+
+Fri Sep  7 11:51:22 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - fixes the NUT versioning on exported SVN trees, due to i18n
+   translation of the "exported" keyword. This resulted in
+   <nut version>- instead of <nut version> only, without the "-"
+
+Wed Sep  5 19:02:51 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/usbhid-ups.c: Timelimitexpired should be mapped to LB
+   as well, as it is also an indication that the battery is low
+   (instead of looking at remaining charge, it looks at remaining
+   runtime left).
+
+Tue Sep  4 19:10:19 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/belkin-hid.c: That was sloppy... :-(
+
+Tue Sep  4 18:11:26 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/belkin-hid.c: Fallback to UPS.PowerSummary.iSerialNumber
+   if (usb_device *)descriptor.iSerialNumber is empty. Together
+   with 'matching = delayed' this allows to match on serial number
+   for these devices as well.
+
+Mon Sep  3 18:46:04 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - data/driver.list: Added Jasuny USPS from Jageson Technology to
+   the list of supported UPS'es (genericups upstype=4).
+
+Mon Sep  3 07:05:33 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/usbhid-ups.[ch]: Changed the 'reconnect' option to
+   'matching'. Behaviour is slightly different.
+
+Mon Sep  3 06:45:59 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libusb.c: Remove unused variable and structure.
+
+Sun Sep  2 18:39:39 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/usbhid-ups.[ch]:
+   - Add 'possibly_supported' helper function that can be called
+     from subdrivers with the vendor name and HIDDevice_t data and
+     displays an informative message that a device might be
+     supported.
+     Doing this in one location guarantees consistent behaviour.
+ * drivers/<hidsubdrivers>:
+   - Implemented above change.
+
+ Added Tripplite 09ae:2007 (OMNI900LCD) to supported devices.
+
+Fri Aug 31 15:48:56 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/hidparser.c:
+   - Fix realloc'ing memory. Resize array to the number of reports
+     we have parsed, rather than the size it already had (duh!)
+ * drivers/libusb.c:
+   - Fix regex_matcher which was broken by r1073.
+   - Fix (harmless) memory leaks if a regular expression can't be
+     compiled (the driver terminates anyway).
+
+Thu Aug 30 19:31:41 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/usbhid-ups.[ch]:
+   - Added new setting 'reconnect' that determines behaviour how
+     the driver will try to reconnect to the UPS. Documentation
+     will be updated as soon as enough developers have given their
+     opinion on this.
+
+Thu Aug 30 18:59:15 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/hidparser.c:
+   - Instead of using malloc() / automatic variables and clearing
+     the contents before use with memset, use calloc right away.
+   - Allocate pDesc->item in one chunk and realloc it when we know
+     how many reports we have once, instead of realloc'ing it one
+     item at a time.
+   - Removed redundant copy of ReportDesc (is not modified, so we
+     can use that).
+ * drivers/belkin-hid.[ch]:
+   - BELKIN_HID_VERSION was defined twice.
+
+Thu Aug 30 06:59:50 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/hidparser.c:
+   - Dirty way of clearing replen (which happens to be an int, not
+     a char) leaves uninitialised values.
+
+Tue Aug 28 20:46:34 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/belkin-hid.c:
+   - Fix memory leak in belkin_format_serial()
+ * drivers/apc-hid.c:
+   - A call to apc_format_model() could change the contents of the
+     hd->Product string. This is undesireable.
+ * drivers/mge-hid.c:
+   - Cleaned up mge_format_model().
+ * drivers/usbhid-ups.c:
+   - The vendor-specific method for calculating human-readable
+     strings for manufacturer, model, and serial are back in
+     upsdrv_initinfo to make sure the above problems don't lead
+     to problems in the future.
+
+Mon Aug 27 18:33:37 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/usbhid.c:
+   - Mental note: "close all source files *before* comitting, to
+     prevent the one character that you modified from missing the
+     commit."
+
+Mon Aug 27 18:23:06 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.[ch],libshut.[ch],libusb.[ch]:
+   - Cut the libshut and libusb objects loose from libhid. If no HID
+     functions are used (megatec_usb, tripplite_usb), you no longer
+     need to include libhid anymore. The USB matcher functions (which
+     were not really HID specific functions) are now within libusb.
+ * drivers/megatec_usb.c,tripplite_usb.c,Makefile.am:
+   - Applied the change above.
+ * drivers/usbhid.[ch]:
+   - The HIDOpenDevice() and HIDCloseDevice() functions no longer
+     exist. These are replaced by direct calls to the communication
+     subdrivers.
+   - The driver now gets a callback from libshut_open() and
+     libusb_open() when a report descriptor has been retrieved from
+     the USB/SHUT device and parses it and then makes a descision
+     on whether this device is acceptable or not. If not, the next
+     device that matches will be tried.
+
+Sun Aug 26 09:20:45 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.[ch],libshut.c,libusb.c:
+   - Added a callback function in the libshut_open and libusb_open
+     that is called after the report descriptor is read, but before
+     the device is accepted.
+ * drivers/megatec.c:
+   - Applied change above.
+
+Fri Aug 24 20:02:35 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/usbhid-ups.c:
+   - The behaviour of reconnect is now depending on the
+     'reloadmatcher' variable. By default, it uses 'exact' matches,
+     but this can be changed to 'regex', which means that it will
+     use MODE_OPEN instead of MODE_REOPEN. Essentially, it will
+     behave exactly like starting again.
+ * drivers/libusb.c,libshut.c:
+   - The decision whether or not it is safe to close the connection
+     to the device before opening a new one is now made in the
+     libusb_open() and libshut_open() functions.
+   - Fixed small memory leak in libusb_open().
+ * drivers/libhid.c:
+   - The 'exact' matcher now also matches the Bus too (this won't
+     change as long as the USB plug is not removed). If you don't
+     like this, use the 'regex' matcher instead.
+ * drivers/megatec_usb.c,tripplite_usb.c:
+   - The 'mode' parameter is now passed by value again, instead of
+     by reference from r1073 (this wasn't a good idea after all).
+
+Thu Aug 23 19:30:28 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.[ch],libshut.c,libusb.c:
+   - The 'mode' variable for HIDOpenDevice is now passed as pointer.
+     If a device can't be re-opened (because we can't get an exact
+     match), this will be modified to MODE_OPEN and treated as such.
+   - Cleaned up matcher functions.
+ * drivers/usbhid-ups.[ch]:
+   - When re-connecting to a device, re-read all variables and
+     commands from it. If it turns out that we couldn't re-open it
+     (for the reasons mentioned above) we will treat it as a new
+     device and will flush everything (except "ups.status") and
+     start all over again.
+ * drivers/dstate-hal.c,megatec_usb.c,tripplite_usb.c:
+   - Align with the above.
+
+Wed Aug 22 18:12:50 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.[ch]:
+   - Allocate storage for report buffer when creating it. Only free
+     it when we're done with it. This makes sure we don't run into
+     memory allocation errors after startup.
+   - Allow passing a timeout value on HIDGetDataValue().
+   - HIDOpenDevice() will now handle closing the device on reload if
+     needed, so that HIDCloseDevice() can now really close it and
+     free the allocated memory for report buffer and parsed report
+     descriptor.
+   - Removed dynamic allocation of HID events, instead we now pass a
+     pointer to an array of HIDData_t pointers.
+ * drivers/usbhid.c:
+   - We now try to get all events in one pass of upsdrv_updateinfo(),
+     instead of just one report.
+ * drivers/libshut.c,libusb.c:
+   - There is no need to sleep for a while, if the communication
+     subdriver doesn't support interrupt transfers.
+
+Tue Aug 21 20:29:25 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/pwmib.h:
+   - Use IETF_OID_BATT_STATUS for battery status (previous change
+     from r1064) didn't work correctly.
+   - Added 'vendor.specific.abmstatus', which violates the NUT
+     standards, but for now this is all I could come up with.
+
+Tue Aug 21 18:59:03 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.c:
+   - The HIDGetEvents() function used a timeout value of 5000ms.
+     Since the underlying libusb function uses synchronous I/O (at
+     least for version 0.1), this means that it blocks on this when
+     no interrupt report is available. Lowered timeout to 250ms, as
+     it is better to retry on the next call, than to hang around
+     waiting for an interrupt report. Improves responsiveness.
+ * drivers/usbhid-ups.[ch]:
+   - Moved 'pollfreq' and HIDDumpTree() from upsdrv_initups() to
+     upsdrv_initinfo(). These are not needed when we run the shutdown
+     command, so they should not be in upsdrv_initups().
+   - Removed checking of the exit_flag. We don't spend a lot of time
+     in these loops, so it's not worth checking it.
+   - Added 'interval' helper function, that returns the time since
+     the last time it was called. Will only be compiled in if DEBUG
+     is defined.
+   - The 'udev' global variable (needed by mge-hid) is a pointer to
+     hid_dev_handle_t.
+ * drivers/tripplite-hid.c:
+   - Updated comment about changing 'udev' and 'hotplug' rules.
+
+Tue Aug 21 18:42:11 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/*-hid.c,libhid.[ch],libshut.c,libusb.c,usbhid-ups.c:
+   - HIDGetItemString() would return a NULL pointer if index value
+     was not found, which was not how it was used. Now clears the
+     buffer and always returns pointer to buffer.
+   - Pass length of buffer in calls to HIDGetItemString() and
+     HIDGetIndexString() to prevent risking buffer overflow. The
+     underlying calls would limit the length to 20 bytes, but this
+     would not prevent overflow if a smaller buffer was allocated.
+   - Use snprintf() instead of sprintf().
+
+Tue Aug 21 06:35:45 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.c, drivers/usbhid-ups.c:
+   - Moved the 'cast' from an Input report to a Feature report to
+     usbhid-ups.c.
+
+Mon Aug 20 19:58:42 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/mge-hid.c:
+   - Added HU_FLAG_SEMI_STATIC for several user changeable variables
+     where applicable.
+
+Mon Aug 20 19:44:04 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.[ch]:
+   - We cache the pointer to the Feature report that corresponds with
+     a NUT variable, but what we receive on the interrupt pipeline is
+     an Input report (apple != pear). So find_hid_info() would never
+     find a match, since it only looks to the Feature reports. Need
+     to find a better way to do this, but it works for now.
+   - Added HIDDataType() helper function, to display the report type.
+ * drivers/usbhid-ups.c:
+   - Added some debugging lines, so that we know where we are.
+
+Mon Aug 20 14:12:47 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.c:
+   - Return from the HIDDumpTree() immediately, if nut_debug_level
+     is too low. Otherwise, even if nothing will be printed, it
+     will proceed to query everything from the report descriptor.
+     This will take a long time on my Evolution 650, since the
+     queries for 'UPS.COPIBridge' timeout, without ever yielding
+     something useful.
+
+Mon Aug 20 12:35:24 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ This update is based on input from Bernd Markgraf.
+
+ * drivers/ietfmib.h:
+   - Added 'test.battery.start.quick' and 'test.battery.start.deep'
+     instcmd.
+ * drivers/pwmib.h:
+   - Added 'shutdown.stop', 'load.on' and 'load.off' instcmd.
+   - Use PW_OID_BATT_STATUS, PW_OID_ALARM_OB and PW_OID_ALARM_LB
+     instead of IETF_OID_BATT_STATUS.
+
+Mon Aug 20 11:32:42 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.[ch], drivers/usbhid-ups.c:
+   - Pass events as pointers to HIDData_t elements, instead of strings.
+     All HID paths that we handle will be cached by these, so we only
+     have to deal with events that we don't know of yet (which won't
+     happen that often) and which we can't use anyway (needs an entry
+     in hid_info_t table).
+   - Values which are received through the interrupt pipeline were
+     passed as logical instead of physical data. Corrected by getting
+     the values from HIDGetDataValue().
+   - Fixed some typo's from earlier patches.
+
+Mon Aug 20 08:14:38 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/usbhid-ups.[ch]:
+   - Only parse the HID pathname to a HIDData_t pointer once, during
+     HU_WALKMODE_INIT, instead of each time we read/write a value
+     from/to the report buffer.
+
+Mon Aug 20 07:48:46 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.[ch]:
+   - New functions HIDGetDataValue() and HIDSetDataValue() that are
+     similar to the existing HIDGetItemValue() and HIDSetItemValue(),
+     but take a pointer to a HIDData_t, instead of a HID pathname
+     (text string).
+   - Don't read back the value after changing it. We can't do anything
+     with that value, even if it is different from what we set (the
+     device may have corrected an out-of-range value). If you need this,
+     call HIDGet(Item|Data)Value function instead afterwards.
+   - Add HIDGetIndexString() function to read string by index.
+   - Use upsdebug_with_errno() instead of upsdebugx() where appropriate.
+   - Show when we get something from the report buffer 'Report[b]' or
+     set a value 'Report[s]' in debug mode.
+
+Mon Aug 20 07:20:02 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/mge-hid.c:
+   - Logical error, 'equal to one' is not the same as 'not equal to
+     zero'. The first indicates HIDGetItemValue read a value, while
+     the latter also includes the cases where no data could be read
+     because the device was disconnected.
+
+Sat Aug 18 18:47:02 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.c:
+   - Fix compilation problem. 
+
+Thu Aug 16 19:03:49 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.[ch]:
+   - Changed 'float' to 'double', to prevent loss of precision when
+     long values are casted to floats and back to long again.
+   - Rewrote some helper functions (string_to_path, path_to_string,
+     hid_lookup_usage, hid_lookup_path).
+   - The path_to_string function can no longer overflow the buffer
+     (we were dangerously close to the 64 character limit already).
+ * drivers/usbhid-ups.c:
+   - Changed 'float' to 'double' (see above).
+ * drivers/belkin-hid.c, drivers/mge-hid.c:
+   - Changed 'float' to 'double' (see above).
+   - HIDGetItemString is passed a (char *) buffer since r1055, not
+     a (unsigned char *).
+ * drivers/*-hid.c:
+   - Usage lookup tables is now terminated with { NULL, 0 } instead
+     of { "\0", 0x0 }.
+
+Wed Aug 15 21:47:12 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/pwmib.h:
+   - Battery runtime is in seconds, not minutes.
+   - The update of the snmp-ups driver is based on input from
+     Bernd Markgraf (forgot to mention that in previous update).
+
+Wed Aug 15 20:21:49 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/snmp-ups.c, drivers/ietfmib.h, drivers/pwmib.h:
+   - Use all "ups.status" lines, not just the first.
+   - Add a lot or parameters for PowerWare and some for IETF.
+
+Wed Aug 15 19:37:41 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.[ch]:
+   - Flush report buffer after writing new values to the UPS. The
+     data in the UPS may change because of this, so we want to be
+     sure that all subsequent reads, return fresh data.
+   - Use calloc() instead of malloc() where useful.
+   - HIDGetItemString returns (char *) but receives a (unsigned
+     char *) as parameter.
+   - physical_to_logical() would always return an integer, since it
+     casts the result of the value conversion to a long, before
+     returning the result as float.
+
+Wed Aug 15 19:11:40 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/upshid-ups.[ch]:
+   - Move the point where we cast the (float) output from what we
+     have received through HIDGetItemValue() to a (long) index
+     value for the lookup tables to the hu_find_infoval() helper
+     function. By doing so, it should be relatively easy to allow
+     conversion functions to use the float value, rather than the
+     long they have now (might be useful for converting small
+     values).
+
+Tue Aug 14 18:47:10 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/snmp-ups.c:
+   - Missing curly brackets.
+
+Tue Aug 14 18:31:12 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/usbhid-ups.c:
+   - Helper function 'find_nut_info_valid' removed. We check for the
+     validity of commands and variables during the initialisation, so
+     this doesn't need to be repeated when we run instcmd() or
+     setvar(), so they can both use 'find_nut_info'.
+
+Mon Aug 13 21:35:13 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/mge-hid.c:
+   - Variables that can be changed need to have 'HU_FLAG_SEMI_STATIC'.
+
+Mon Aug 13 19:53:12 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * data/cmdvartab, docs/new-names.txt, docs/hid-subdrivers.txt:
+   - Rename 'beeper.on' -> 'beeper.enable'
+   - Rename 'beeper.off' -> 'beeper.disable'
+   - Added 'beeper.mute'
+ * drivers/*-hid.c:
+   - Added the 'beeper.disable' command to all subdrivers, this may not
+     work on al UPSes (it is described in the HID Power Devices document).
+ * drivers/<various>:
+   - Updated drivers with new names for 'beeper.{enable,disable,mute}'
+     commands.
+   - Applied a mapping from old to new commands, in order not to break
+     existing installations. Mapped 'beeper.on' to 'beeper.enable' and
+     'beeper.off' to 'beeper.disable' or 'beeper.mute', depending on
+     the comments in the driver.
+ * man/<various>:
+   - Updated the man pages for drivers that described these commands.
+
+Mon Aug 13 13:08:13 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ * drivers/megatec_usb.c: added credits to the banner message.
+
+Mon Aug 13 09:28:42 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * data/cmdvartab, docs/new-names.txt:
+   - Added a couple of variables that are used in MGE devices.
+ * drivers/mge-hid.c:
+   - Added 'input.voltage.extended' and 'input.frequency.extended'
+     variables, that can be used to extend the input voltage and
+     -frequency ranges that can be set.
+
+Sun Aug 12 19:03:55 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/dstate-hal.c:
+   - Added dummy dstate_delinfo() function to keep the buildbot happy.
+
+Sun Aug 12 18:54:22 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/usbhid-ups.c:
+   - Modifying the comment in the header of a function doesn't change the
+     returncodes of it. Too bad I assumed that the comment was correct.
+
+Sun Aug 12 18:37:00 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/*-hid.c, drivers/usbhid-ups.[ch]:
+   - Added HU_FLAG_QUICK_POLL flag on all hid_info_t that deal with the
+     'online', 'chrg', 'dischrg' and 'lowbatt' internal flags so that the
+     HU_WALKMODE_QUICK_UPDATE is actually doing something useful.
+   - Unconditionally do a HU_WALKMODE_QUICK_UPDATE if we're not running a
+     HU_WALKMODE_FULL_UPDATE. With the above, this means that all but the
+     MGE subdriver will do more polls to the UPS, so this needs to be
+     verified.
+   - Changed NUT variable name from "ups.status" to "BOOL" for hid_info_t
+     elements that would only set/clear an internal status flag. This in
+     order to prevent confusion by developers, since these elements can
+     deal with both "ups.alarm" and "ups.status".
+   - Separated setting "ups.status" and "ups.alarm". The first will be
+     done each time upsdrv_updateinfo() runs, while the latter will only
+     be processed when doing a full update. This makes it possible that
+     subdrivers set vendor specific alarms, without having to change
+     usbhid-ups at all.
+   - Don't set CHRG when the internal flag 'fullycharged' is set and don't
+     set DISCHARGE when the internal flag 'depleted' is set.
+ * drivers/apc-hid.c:
+   - Changed "ups.power.nominal" to "ups.realpower.nominal", which is the
+     correct NUT parameter for CyberPower.
+ * drivers/mge-hid.c:
+   - Added an example for a vendor specific alarm (emergency stop).
+ * drivers/dstate.c:
+   - Prepend the ALARM status (if applicable) in status_commit() instead
+     of in status_init().
+
+Sun Aug 12 02:34:19 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ * drivers/tripplite_usb.c: removed an unused variable
+ * drivers/usbhid-ups.c: fixed a potential segfault
+	
+Sat Aug 11 19:03:15 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * docs/new-drivers.txt:
+   - Added the CHRG and DISCHRG status to the list of recognized status
+     words.
+   - Made a note that OL and OB specifically deal with input status.
+ * drivers/usbhid-ups.[ch]:
+   - Changed the 'ups.status' signals not defined in the above document
+     into 'ups.alarm' (where appropriate).
+   - Added 'input.transfer.reason' logic to merge 'voltage out of range'
+     and 'frequency out of range' into one message (through 'vrange_info'
+     and 'frange_info'. It also takes care of removing this when no
+     longer applicable.
+   - 'shutdownimm' and 'timelimitexp' no longer map to the LB status
+     (this was never a good idea, you need OB LB to have an effect).
+   - Added a whole bunch of other status bits, see the ChangeLog.
+ * drivers/apc-hid.c:
+   - Status 'timelimitexp' is now standard (mapped to an alarm).
+   - The 'batterypres' status is now reversed as 'nobattery' (so that
+     systems not supporting this, won't show alarms).
+   - Commented out the 'fullycharged' status. If anyone can explain the
+     use of this, please step forward.
+ * drivers/liebert-hid.c:
+   - The HID Path 'unmapped.ups.powersummary.idevicechemistry' probably
+     needs a stringid_conversion and then maps to the 'battery.type'
+     (added as a comment, volunteers needed).
+ * drivers/mge-hid.c:
+   - 'battery.capacity' and 'input.transfer.reason' added.
+   - Added plenty of status bits, see the ChangeLog.
+ * drivers/tripplite-hid.c:
+   - Commented out the 'fullycharged' status. If anyone can explain the
+     use of this, please step forward.
+   - Voltage out of range is now mapped to the 'input.transfer.reason'.
+
+Fri Aug 10 22:10:01 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * scripts/hal/20-ups-nut-device.fdi: add missing entries
+
+Fri Aug 10 20:05:11 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/usbhid.[ch]:
+   - Moved the struct & data for ups.status processing to usbhid.c, since
+     this is only used in there. Subdrivers report the status through
+     text messages, they don't set the status bits directly.
+   - Rewrote (flattened) the upsdrv_updateinfo() and hid_ups_walk() functions,
+     so that it is easier to follow/understand what is happening. Also limit
+     the amount of status update to once every upsdrv_updateinfo and not for
+     each status report we get. This is enough, since we don't handle requests
+     from clients when we're talking/listening to the UPS.
+   - If the UPS sends reports on the interrupt pipeline, we consider that
+     enough proof that it is still there. At the same time, we assume that it
+     keeps us informed of *all* important status changes, so that doing a
+     HU_WALKMODE_QUICK_UPDATE is redundant then.
+   - Added a ups_infoval_set() function that is doing the actual setting of
+     values we got from the UPS. This is convenient, so that if we change
+     something in the way we deal with those, it is all in one location.
+
+Fri Aug 10 19:02:37 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * data/cmdvartab, drivers/mge-hid.c, drivers/powerpanel.h, man/powerpanel.8:
+   - Renamed variable 'ups.coldstart' to 'ups.start.battery'.
+ * data/cmdvartab, drivers/mge-hid.c: 
+  - Added variables 'battery.protection', 'battery.energysave',
+    'ups.start.auto' and 'ups.start.reboot'.
+  - Added instcmd decription for outlet.{1,2}.load.on and outlet.{1,2}.load.off
+ * drivers/<various>:
+  - Use snprintf instead of sprintf where possible.
+  - Change termination of info_lkp_t items from "NULL" (= string) to NULL
+    (= pointer).
+
+Wed Aug  8 21:35:59 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/dstate.c:
+   - Removed stuff to prepend ALARM to 'ups.status', which wasn't
+     really useful (see below). Now it no longer complains that
+     'ups.status' parameter is not set when calling alarm_commit().
+ * drivers/bcmxcp.c, drivers/gamatronic.c:
+   - Call alarm_commit() when we're done with setting alarms. There
+     is no need to wait for status_commit(). The status_init()
+     function will take care of prepending ALARM, as long as we
+     call it after alarm_commit().
+
+Wed Aug  8 20:15:45 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/upscode2.c: Removed alarm_init() and alarm_commit(). You can
+   only put something useful in the alarm buffer through alarm_set(), so
+   if you don't call that, these are not needed either.
+
+Mon Aug  6 14:15:53 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/mge-hid.c:
+   - add 'input.sensitivity' and 'ups.coldstart' (R/W)
+   - allow to change 'output.voltage.nominal' and 'ups.load.high'
+   - add 'output.powerfactor'
+   - removed decimals from transfer voltages (makes no sense to specify
+     these with that kind of precision)
+   - cleaned up some functions (indentation, use of sprintf iso snprintf,
+     flow, etc)
+
+Fri Aug  3 12:31:20 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+ - Changed Driver version to 0.13 and fixed bug in upsdrv_shutdown. Did not read
+   the shutdown delay from the config file. So the delay become zero.
+
+Wed Aug  1 19:24:25 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/mge-hid.c: fix 'battery.voltage.nominal' for Evolution 650
+   and remove decimals from '*.nominal' values
+
+Wed Aug  1 19:20:33 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/belkin-hid.c, drivers/usbhid-ups.c: workaround for
+   incorrect report over the interrupt pipeline that caused spurious
+   low battery warnings
+
+Tue Jul 31 19:41:24 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/apcsmart.[ch]: add support for old APC SmartUPS 1250 (the
+   changes are small, so I don't see a reason why not to include it)
+
+http://lists.alioth.debian.org/pipermail/nut-upsdev/2007-July/002345.html
+
+Tue Jul 31 18:46:33 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/mge-hid.c: reformatted 'mge_hid2nut[]' table to always break
+   at the same place (which is easier on my eyes)
+
+Tue Jul 31 18:21:56 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/mge-hid.c:
+   - fixed broken 'output.voltage.nominal' which was actually indicating the
+     nominal 'battery.voltage.nominal' (at least on the Evolution 650 and
+     Pulsar M 2200 and most likely others too)
+   - the above parameter is broken on the Evolution 650 (shows twice the
+     nominal value, firmware bug?)
+   - add several parameters which were previously not supported
+   - appended HU_FLAG_STATIC where appropriate
+
+Sat Jul 28 19:58:11 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+ - drivers/megatec.c: battery values for 72V UPS.
+
+Sat Jul 28 16:38:43 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - data/driver.list, drivers/belkin-hid.c, scripts/hotplug/libhid.usermap,
+   scripts/udev/nut-usbups.rules.in: Add Belkin F6C1200-UNV (older model)
+   to supported devices.
+
+Thu Jul 26 19:45:12 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - clients/upsmon.c: only change the polling frequency if the OL/OB state
+   changes (code cleanup, not a functional change)
+
+Sun Jul 22 19:18:08 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - server/upsd.c: likewise we probably shouldn't check for FD_ISSET
+   either if we already know the client was disconnected.
+
+Sun Jul 22 19:11:05 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - server/upsd.c: don't call FD_SET in the mainloop for clients we
+   already know are no longer connected.
+
+Wed Jul 11 03:18:44 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - scripts/misc: Added bash completion script for 'upsc'.
+
+Tue Jul 10 23:57:50 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - data/driver.list: UPSonic CXR1000 supported by megatec
+
+Tue Jul 10 21:10:20 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+ - Changed Driver version to 0.12 and included a small TODO list in the bcmxcp.c
+
+Tue Jul 10 13:47:01 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - lib/libupsclient.pc.in, lib/libupsclient-config.in: fix a typo
+   (missing "LIB" prefix on the SSL_*FLAGS)
+
+Mon Jul  9 19:45:20 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+ - Patch from Oliver Wilcock.
+   bcmxcp.c modified to control individual load segments (outlet.2.shutdown.return) on Powerware PW5125.
+
+Fri Jul  6 14:28:01 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - data/drivers.list: fix some separators
+
+Thu Jul  5 12:48:39 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ Final 2.2.0 polishing (synchronisation with the Testing branch):
+ - NEWS: remove the reference to docs/packaging.txt
+ - INSTALL: add a note about binary packages installation preference
+   over source installation
+
+Wed Jul  4 13:32:39 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/liebert-hid.c/h: Mapped some of the values to NUT variables.
+ - scripts/{udev,hotplug}:  Added Liebert USB VID/PIDs
+
+Wed Jul  4 04:25:14 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/Makefile.am: Added liebert-hid.h to headers variable; should fix
+   build failures of previous commit.
+ - scripts/subdriver/path-to-subdriver.sh: Added instructions to
+   update above variable.
+
+Tue Jul  3 23:26:55 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/liebert-hid.*: first cut at Liebert HID subdriver
+
+Tue Jul  3 23:15:54 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - scripts/subdriver/path-to-subdriver.sh: remove old instructions to
+   run 'make depend', and change to "HIDDevice_t"
+
+Mon Jul  2 14:47:14 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - mge-hid.c: fix battery.type (static data)
+ - configure.in, libupsclient.pc: add some missing variables useful
+   for external NUT applications (sysconfdir, statepath, nutuser)
+ - hal/20-ups-nut-device.fdi: update unknow manufacturer name
+
+Fri Jun 29 07:19:42 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - libhid.c: fix Notification handling. It previously caused
+   false online / on battery fluctuation with newhidups / usbhid-ups
+   when no notification was received.
+
 Tue Jun 26  9:16:12 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  - configure.in: set HAL support default value to "no". Enabling
@@ -87,7 +1009,7 @@ Thu Jun 21 07:07:25 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
    communication lost status. Previously, these were not reported
    anymore.
 
-Web Jun 20 22:14:43 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+Wed Jun 20 22:14:43 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - drivers/megatec.c, drivers/megatec_usb.c: reverted changes to
    megatec_usb from previous revision. Modified megatec to exclude

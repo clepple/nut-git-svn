@@ -2,7 +2,7 @@
 		command set.  This includes PowerWare, Fiskars, 
 		Compaq (PowerWare OEM?), some IBM (PowerWare OEM?)
 
-   Copyright (C) 2002 Håvard Lygre <hklygre@online.no>
+   Copyright (C) 2002 Hï¿½vard Lygre <hklygre@online.no>
    Copyright (C) 2004-2006 Niels Baggesen <niels@baggesen.net>
    Copyright (C) 2006 Niklas Edmundsson <nikke@acc.umu.se>
 
@@ -32,7 +32,7 @@
  * Powerware 9305
  *
  * Also tested against
- * Compaq T1500h (Per Jönsson <per.jonsson@bth.se>)
+ * Compaq T1500h (Per Jï¿½nsson <per.jonsson@bth.se>)
  * Powerware 9120 (Gorm J. Siiger <gjs@sonnit.dk>)
  * Fiskars PowerServer 10 (Per Larsson <tucker@algonet.se>)
  */
@@ -409,6 +409,8 @@ static cmd_t commands[] = {
 	{ "bypass.stop",		NULL, NULL },
 	{ "reset.input.minmax",		NULL, NULL },
 	{ "reset.watchdog",		NULL, NULL },
+	{ "beeper.enable",		NULL, NULL },
+	{ "beeper.disable",		NULL, NULL },
 	{ "beeper.on",			NULL, NULL },
 	{ "beeper.off",			NULL, NULL },
 	{ NULL }
@@ -710,7 +712,6 @@ void upsdrv_updateinfo(void)
 		return;
 	}
 
-	alarm_init();
 	status = 0;
 
 	ok = upsc_getparams("UPDS", simple);
@@ -859,7 +860,6 @@ void upsdrv_updateinfo(void)
 		status |= UPSC_STAT_ONLINE;
 	
 	upsc_setstatus(status);
-	alarm_commit();
 	
 	dstate_dataok();
 	ser_comm_good();
@@ -886,6 +886,20 @@ void upsdrv_shutdown(void)
 static int instcmd (const char *auxcmd, const char *data)
 {
 	cmd_t *cp = commands;
+
+	if (!strcasecmp(auxcmd, "beeper.off")) {
+		/* compatibility mode for old command */
+		upslogx(LOG_WARNING,
+			"The 'beeper.off' command has been renamed to 'beeper.disable'");
+		return instcmd("beeper.disable", NULL);
+	}
+
+	if (!strcasecmp(auxcmd, "beeper.on")) {
+		/* compatibility mode for old command */
+		upslogx(LOG_WARNING,
+			"The 'beeper.on' command has been renamed to 'beeper.enable'");
+		return instcmd("beeper.enable", NULL);
+	}
 
 	upsdebugx(1, "Instcmd: %s %s", auxcmd, data ? data : "\"\"");
 	while (cp->cmd) {

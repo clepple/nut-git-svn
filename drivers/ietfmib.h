@@ -23,7 +23,7 @@
  *
  */
 
-#define IETF_MIB_VERSION	"1.2"
+#define IETF_MIB_VERSION	"1.3"
 
 /* SNMP OIDs set */
 #define IETF_OID_UPS_MIB          "1.3.6.1.2.1.33"
@@ -38,8 +38,10 @@
 #define IETF_OID_BATT_CHARGE      "1.3.6.1.2.1.33.1.2.4.0"	/* UPS-MIB::upsEstimatedChargeRemaining.0 */
 #define IETF_OID_BATT_VOLTAGE     "1.3.6.1.2.1.33.1.2.5.0"	/* UPS-MIB::upsBatteryVoltage.0 */
 #define IETF_OID_BATT_CURRENT     "1.3.6.1.2.1.33.1.2.6.0"	/* UPS-MIB::upsBatteryCurrent.0 */
+#define IETF_OID_BATT_TEMP        "1.3.6.1.2.1.33.1.2.7.0"	/* UPS-MIB::upsBatteryTemperature.0 */
 
-#define IETF_OID_IN_LINES         "1.3.6.1.2.1.33.1.4.3.0"	/* UPS-MIB::upsInputNumLines.0 */
+#define IETF_OID_IN_LINEBADS      "1.3.6.1.2.1.33.1.3.1.0"	/* UPS-MIB::upsInputLineBads.0 */
+#define IETF_OID_IN_LINES         "1.3.6.1.2.1.33.1.3.2.0"	/* UPS-MIB::upsInputNumLines.0 */
 
 #define IETF_OID_IN_FREQ          "1.3.6.1.2.1.33.1.3.3.1.2"	/* UPS-MIB::upsInputFrequency */
 #define IETF_OID_IN_VOLTAGE       "1.3.6.1.2.1.33.1.3.3.1.3"	/* UPS-MIB::upsInputVoltage */
@@ -55,7 +57,17 @@
 #define IETF_OID_OUT_POWER        "1.3.6.1.2.1.33.1.4.4.1.4"	/* UPS-MIB::upsOutputPower */
 #define IETF_OID_LOAD_LEVEL       "1.3.6.1.2.1.33.1.4.4.1.5"	/* UPS-MIB::upsOutputPercentLoad */
 
-#define IETF_OID_CONF_VOLTAGE     "1.3.6.1.2.1.33.1.9.3.0"	/* UPS-MIB::upsConfigOutputVoltage.0 */
+#define IETF_OID_UPS_TEST_ID      "1.3.6.1.2.1.33.1.7.1"        /* UPS-MIB::upsTestID */
+#define IETF_OID_UPS_TEST_RES     "1.3.6.1.2.1.33.1.7.3"        /* UPS-MIB::upsTestResultsSummary */
+#define IETF_OID_UPS_TEST_RESDET  "1.3.6.1.2.1.33.1.7.4"        /* UPS-MIB::upsTestResultsDetail */
+#define IETF_OID_UPS_TEST_NOTEST  "1.3.6.1.2.1.33.1.7.7.1"      /* UPS-MIB::upsTestNoTestInitiated */
+#define IETF_OID_UPS_TEST_ABORT   "1.3.6.1.2.1.33.1.7.7.2"      /* UPS-MIB::upsTestAbortTestInProgress */
+#define IETF_OID_UPS_TEST_GSTEST  "1.3.6.1.2.1.33.1.7.7.3"      /* UPS-MIB::upsTestGeneralSystemsTest */
+#define IETF_OID_UPS_TEST_QBATT   "1.3.6.1.2.1.33.1.7.7.4"      /* UPS-MIB::upsTestQuickBatteryTest */
+#define IETF_OID_UPS_TEST_DBATT   "1.3.6.1.2.1.33.1.7.7.5"      /* UPS-MIB::upsTestDeepBatteryCalibration */
+
+#define IETF_OID_CONF_VOLTAGE     "1.3.6.1.2.1.33.1.9.3.0"      /* UPS-MIB::upsConfigOutputVoltage.0 */
+#define IETF_OID_CONF_OUT_VA      "1.3.6.1.2.1.33.1.9.5.0"      /* UPS-MIB::upsConfigOutputVA.0 */
 #define IETF_OID_CONF_RUNTIME_LOW "1.3.6.1.2.1.33.1.9.7.0"	/* UPS-MIB::upsConfigLowBattTime.0 */
 
 /* Defines for IETF_OID_POWER_STATUS (1) */
@@ -76,6 +88,17 @@ info_lkp_t ietf_batt_info[] = {
 	{ 2, ""   /* batteryNormal */},
 	{ 3, "LB" /* batteryLow */ },
 	{ 4, "LB" /* batteryDepleted */ },
+	{ 0, "NULL" }
+} ;
+
+/* Defines for IETF_OID_TEST_RES */
+info_lkp_t ietf_test_res_info[] = {
+	{ 1, "Done and passed" },
+	{ 2, "Done and warning" },
+	{ 3, "Done and error" },
+	{ 4, "Aborted" },
+	{ 5, "In progress" },
+	{ 6, "No test initiated" },
 	{ 0, "NULL" }
 } ;
 
@@ -126,6 +149,8 @@ snmp_info_t ietf_mib[] = {
 		SU_STATUS_PWR, &ietf_pwr_info[0] },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_BATT_STATUS, "",
 		SU_STATUS_BATT, &ietf_batt_info[0] },
+	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_TEST_RESDET, "",
+		0, NULL },
 
 	/* Battery page */
 	{ "battery.charge", 0, 1.0, IETF_OID_BATT_CHARGE, "",
@@ -138,6 +163,8 @@ snmp_info_t ietf_mib[] = {
 		0, NULL },
 	{ "battery.current", 0, 0.1, IETF_OID_BATT_CURRENT, "",
 		0, NULL },
+	{ "battery.temperature", 0, 1.0, IETF_OID_BATT_TEMP, "",
+		0, NULL },
 
 	/* Output page */
 	{ "output.phases", 0, 1.0, IETF_OID_OUT_LINES, "",
@@ -146,9 +173,9 @@ snmp_info_t ietf_mib[] = {
 		0, NULL },
 	{ "output.voltage", 0, 1.0, IETF_OID_OUT_VOLTAGE ".0", "",
 		SU_OUTPUT_1, NULL },
-	{ "output.current", 0, 0.1, IETF_OID_OUT_CURRENT, "",
+	{ "output.current", 0, 0.1, IETF_OID_OUT_CURRENT ".0", "",
 		SU_OUTPUT_1, NULL },
-	{ "output.realpower", 0, 0.1, IETF_OID_OUT_POWER ".1", "",
+	{ "output.realpower", 0, 1.0, IETF_OID_OUT_POWER ".0", "",
 		SU_OUTPUT_1, NULL },
 	{ "output.L1-N.voltage", 0, 1.0, IETF_OID_OUT_VOLTAGE ".1", "",
 		SU_OUTPUT_3, NULL },
@@ -178,7 +205,7 @@ snmp_info_t ietf_mib[] = {
 	/* Input page */
 	{ "input.phases", 0, 1.0, IETF_OID_IN_LINES, "",
 		SU_FLAG_SETINT, NULL, &input_phases },
-	{ "input.frequency", 0, 0.1, IETF_OID_IN_FREQ ".1", "",
+	{ "input.frequency", 0, 0.1, IETF_OID_IN_FREQ ".0", "",
 		SU_INPUT_1, NULL },
 	{ "input.voltage", 0, 1.0, IETF_OID_IN_VOLTAGE ".0", "",
 		SU_INPUT_1, NULL },
@@ -202,12 +229,20 @@ snmp_info_t ietf_mib[] = {
 		SU_INPUT_3, NULL },
 	{ "input.L3.realpower", 0, 0.1, IETF_OID_IN_POWER ".3", "",
 		SU_INPUT_3, NULL },
+        { "input.quality", 0, 1.0, IETF_OID_IN_LINEBADS, "",
+               0, NULL },
 
 	/* instant commands. */
 	{ "load.off", 0, IETF_OFF_DO, IETF_OID_SD_AFTER_DELAY, "",
 		SU_TYPE_CMD, NULL },
+	/* write the OID of the battery test into the test initiator OID */
+	{ "test.battery.start.quick", 0, SU_INFOSIZE, IETF_OID_UPS_TEST_ID, IETF_OID_UPS_TEST_QBATT,
+		SU_TYPE_CMD, NULL },
+	 /* write the OID of the battery test into the test initiator OID */
+	{ "test.battery.start.deep", 0, SU_INFOSIZE, IETF_OID_UPS_TEST_ID, IETF_OID_UPS_TEST_DBATT,
+		SU_TYPE_CMD, NULL },
 /*	{ CMD_SHUTDOWN, 0, IETF_OFF_GRACEFUL, IETF_OID_OFF, "", 0, NULL }, */
-	
+
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
