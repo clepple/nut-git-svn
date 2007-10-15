@@ -299,7 +299,7 @@ static int apc_claim(HIDDevice_t *hd) {
 	}
 }
 
-subdriver_t apc_subdriver = {
+subdriver_t hid_subdriver = {
 	APC_HID_VERSION,
 	apc_claim,
 	apc_utab,

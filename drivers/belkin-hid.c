@@ -416,7 +416,7 @@ static int belkin_claim(HIDDevice_t *hd) {
 	}
 }
 
-subdriver_t belkin_subdriver = {
+subdriver_t hid_subdriver = {
 	BELKIN_HID_VERSION,
 	belkin_claim,
 	belkin_utab,

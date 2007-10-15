@@ -27,8 +27,10 @@
 #ifndef APC_HID_H
 #define APC_HID_H
 
-#include "usbhid-ups.h"
+#ifndef hid_subdriver
+#define hid_subdriver	apc_hid_LTX_subdriver
+#endif
 
-extern subdriver_t apc_subdriver;
+extern subdriver_t	hid_subdriver;
 
 #endif /* APC_HID_H */

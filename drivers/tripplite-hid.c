@@ -239,7 +239,7 @@ static int tripplite_claim(HIDDevice_t *hd) {
 	}
 }
 
-subdriver_t tripplite_subdriver = {
+subdriver_t hid_subdriver = {
 	TRIPPLITE_HID_VERSION,
 	tripplite_claim,
 	tripplite_utab,

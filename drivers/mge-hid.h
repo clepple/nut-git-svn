@@ -25,8 +25,10 @@
 #ifndef MGE_HID_H
 #define MGE_HID_H
 
-#include "usbhid-ups.h"
+#ifndef hid_subdriver
+#define hid_subdriver	mge_hid_LTX_subdriver
+#endif
 
-extern subdriver_t mge_subdriver;
+extern subdriver_t	hid_subdriver;
 
 #endif /* MGE_HID_H */

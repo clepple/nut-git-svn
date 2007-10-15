@@ -116,7 +116,7 @@ static int liebert_claim(HIDDevice_t *hd) {
 	}
 }
 
-subdriver_t liebert_subdriver = {
+subdriver_t hid_subdriver = {
 	LIEBERT_HID_VERSION,
 	liebert_claim,
 	liebert_utab,

@@ -26,8 +26,10 @@
 #ifndef BELKIN_HID_H
 #define BELKIN_HID_H
 
-#include "usbhid-ups.h"
+#ifndef hid_subdriver
+#define hid_subdriver	belkin_hid_LTX_subdriver
+#endif
 
-extern subdriver_t belkin_subdriver;
+extern subdriver_t	hid_subdriver;
 
 #endif /* BELKIN_HID_H */

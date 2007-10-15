@@ -23,8 +23,10 @@
 #ifndef LIEBERT_HID_H
 #define LIEBERT_HID_H
 
-#include "usbhid-ups.h"
+#ifndef hid_subdriver
+#define hid_subdriver	liebert_hid_LTX_subdriver
+#endif
 
-extern subdriver_t liebert_subdriver;
+extern subdriver_t	hid_subdriver;
 
 #endif /* LIEBERT_HID_H */

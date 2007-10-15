@@ -158,7 +158,7 @@ static int cps_claim(HIDDevice_t *hd) {
 	}
 }
 
-subdriver_t cps_subdriver = {
+subdriver_t hid_subdriver = {
 	CPS_HID_VERSION,
 	cps_claim,
 	cps_utab,

@@ -24,7 +24,6 @@
 #include "usbhid-ups.h"
 #include "explore-hid.h"
 #include "extstate.h" /* for ST_FLAG_STRING */
-#include "dstate.h"   /* for STAT_INSTCMD_HANDLED */
 #include "common.h"
 #include "main.h"
 
@@ -73,7 +72,7 @@ static int explore_claim(HIDDevice_t *hd) {
         }
 }
 
-subdriver_t explore_subdriver = {
+subdriver_t hid_subdriver = {
 	EXPLORE_HID_VERSION,
 	explore_claim,
 	explore_utab,

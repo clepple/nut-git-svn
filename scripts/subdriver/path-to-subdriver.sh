@@ -129,7 +129,7 @@ cat > "$HFILE" <<EOF
  *
  *  Copyright (C)
  *  2003 - 2005 Arnaud Quette <arnaud.quette@free.fr>
- *  2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>         
+ *  2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -152,9 +152,11 @@ cat > "$HFILE" <<EOF
 
 #include "usbhid-ups.h"
 
-#define ${UDRIVER}_HID_VERSION	"${DRIVER} HID 0.1"
+#ifndef hid_subdriver
+#define hid_subdriver	${LDRIVER}_LTX_subdriver
+#endif
 
-extern subdriver_t ${LDRIVER}_subdriver;
+extern subdriver_t	hid_subdriver;
 
 #endif /* ${UDRIVER}_HID_H */
 EOF
@@ -190,7 +192,6 @@ cat > "$CFILE" <<EOF
 #include "usbhid-ups.h"
 #include "${HFILE}"
 #include "extstate.h" /* for ST_FLAG_STRING */
-#include "dstate.h"   /* for STAT_INSTCMD_HANDLED */
 #include "main.h"     /* for getval() */
 #include "common.h"
 
@@ -209,7 +210,7 @@ EOF
 cat "$SUBST" | sed 's/\(.*\) \(.*\)/\t{ "\2",\t0x\1 },/' >> "$CFILE"
 
 cat >> "$CFILE" <<EOF
-	{  "\0", 0x0 }
+	{  NULL, 0x0 }
 };
 
 static usage_tables_t ${LDRIVER}_utab[] = {
@@ -223,13 +224,16 @@ static usage_tables_t ${LDRIVER}_utab[] = {
 /* --------------------------------------------------------------- */
 
 static hid_info_t ${LDRIVER}_hid2nut[] = {
+  /* Server side variables */
+  { "driver.version.internal", ST_FLAG_STRING, sizeof(DRIVER_VERSION), NULL, NULL, DRIVER_VERSION, HU_FLAG_ABSENT, NULL },
+  { "driver.version.data", ST_FLAG_STRING, sizeof(${UDRIVER}_HID_VERSION), NULL, NULL, ${UDRIVER}_HID_VERSION, HU_FLAG_ABSENT, NULL },
 
 EOF
 
-cat "$NEWUTABLE" | while read U; do
+cat "$NEWUTABLE" | sort -u | while read U; do
     UL=`echo $U | tr A-Z a-z`
     cat >> "$CFILE" <<EOF
-  { "unmapped.${UL}", 0, 0, "${U}", NULL, "%.0f", HU_FLAG_OK, NULL },
+  { "unmapped.${UL}", 0, 0, "${U}", NULL, "%.0f", 0, NULL },
 EOF
 done
 
@@ -239,66 +243,45 @@ cat >> "$CFILE" <<EOF
   { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
 
-/* shutdown method for ${DRIVER} */
-static int ${LDRIVER}_shutdown(int ondelay, int offdelay) {
-	/* FIXME: ondelay, offdelay currently not used */
-	
-	/* Default method */
-	upsdebugx(2, "Trying load.off.");
-	if (instcmd("load.off", NULL) == STAT_INSTCMD_HANDLED) {
-		return 1;
-	}
-	upsdebugx(2, "Shutdown failed.");
-	return 0;
-}
-
-static char *${LDRIVER}_format_model(HIDDevice *hd) {
+static char *${LDRIVER}_format_model(HIDDevice_t *hd) {
 	return hd->Product;
 }
 
-static char *${LDRIVER}_format_mfr(HIDDevice *hd) {
+static char *${LDRIVER}_format_mfr(HIDDevice_t *hd) {
 	return hd->Vendor ? hd->Vendor : "${DRIVER}";
 }
 
-static char *${LDRIVER}_format_serial(HIDDevice *hd) {
+static char *${LDRIVER}_format_serial(HIDDevice_t *hd) {
 	return hd->Serial;
 }
 
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
-static int ${LDRIVER}_claim(HIDDevice *hd) {
+static int ${LDRIVER}_claim(HIDDevice_t *hd) {
 	if (hd->VendorID != ${UDRIVER}_VENDORID) {
 		return 0;
 	}
 	switch (hd->ProductID) {
 
 	/* accept any known UPS - add devices here as needed */
-	case ${PRODUCTID}:
+	case 0x${PRODUCTID}:
 		return 1;
 
 	/* by default, reject, unless the productid option is given */
 	default:
 		if (getval("productid")) {
 			return 1;
-		} else {
-			upsdebugx(1,
-"This ${DRIVER} device (%04x/%04x) is not (or perhaps not yet) supported\n"
-"by usbhid-ups. Please make sure you have an up-to-date version of NUT. If\n"
-"this does not fix the problem, try running the driver with the\n"
-"'-x productid=%04x' option. Please report your results to the NUT user's\n"
-"mailing list <nut-upsuser@lists.alioth.debian.org>.\n",
-						 hd->VendorID, hd->ProductID, hd->ProductID);
-			return 0;
 		}
+		possibly_supported("${DRIVER}", hd);
+		return 0;
 	}
 }
 
-subdriver_t ${LDRIVER}_subdriver = {
+subdriver_t hid_subdriver = {
 	${UDRIVER}_HID_VERSION,
 	${LDRIVER}_claim,
 	${LDRIVER}_utab,
 	${LDRIVER}_hid2nut,
-	${LDRIVER}_shutdown,
 	${LDRIVER}_format_model,
 	${LDRIVER}_format_mfr,
 	${LDRIVER}_format_serial,
@@ -311,9 +294,9 @@ Done.
 Do not forget to:
 * add #include "${HFILE}" to usbhid-ups.c, 
 * add &${LDRIVER}_subdriver to usbhid-ups.c:subdriver_list,
-* add ${LDRIVER}-hid.o to USBHID_UPS_SUBDRIVERS in drivers/Makefile.am
+* add ${LDRIVER}-hid.c to USBHID_UPS_SUBDRIVERS in drivers/Makefile.am
+* add ${LDRIVER}-hid.h to dist_noinst_HEADERS in drivers/Makefile.am
 * "autoreconf" from the top level directory
-* "make depend" in drivers/
 EOF
 
 

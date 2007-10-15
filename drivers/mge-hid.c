@@ -553,7 +553,7 @@ static int mge_claim(HIDDevice_t *hd) {
 	}
 }
 
-subdriver_t mge_subdriver = {
+subdriver_t hid_subdriver = {
 	MGE_HID_VERSION,
 	mge_claim,
 	mge_utab,

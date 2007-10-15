@@ -26,8 +26,10 @@
 #ifndef TRIPPLITE_HID_H
 #define TRIPPLITE_HID_H
 
-#include "usbhid-ups.h"
+#ifndef hid_subdriver
+#define hid_subdriver	tripplite_hid_LTX_subdriver
+#endif
 
-extern subdriver_t tripplite_subdriver;
+extern subdriver_t	hid_subdriver;
 
 #endif /* TRIPPLITE_HID_H */

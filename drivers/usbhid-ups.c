@@ -23,42 +23,37 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include <ltdl.h>
+
 #include "main.h"
 #include "libhid.h"
 #include "usbhid-ups.h"
 #include "hidparser.h"
 #include "hidtypes.h"
 
-/* include all known subdrivers */
-#include "mge-hid.h"
-#ifndef SHUT_MODE
-	#include "explore-hid.h"
-	#include "apc-hid.h"
-	#include "belkin-hid.h"
-	#include "cps-hid.h"
-	#include "liebert-hid.h"
-	#include "tripplite-hid.h"
-#endif
-
 #ifdef HAVE_SSL
 #include <openssl/sha.h>
 #endif
 
+#ifdef	SHUT_MODE
+#include "mge-hid.h"
+/* there is currently only one SHUT subdriver */
+static subdriver_t	*subdriver = &mge_hid_LTX_subdriver;
+#else
 /* master list of avaiable subdrivers */
-static subdriver_t *subdriver_list[] = {
-#ifndef SHUT_MODE
-	&explore_subdriver,
-#endif
-	&mge_subdriver,
-#ifndef SHUT_MODE
-	&apc_subdriver,
-	&belkin_subdriver,
-	&cps_subdriver,
-	&liebert_subdriver,
-	&tripplite_subdriver,
-#endif
+static char *subdriver_list[] = {
+	"explore-hid",
+	"apc-hid",
+	"belkin-hid",
+	"cps-hid",
+	"liebert-hid",
+	"mge-hid",
+	"tripplite-hid",
 	NULL
 };
+
+static subdriver_t	*subdriver = NULL;
+#endif
 
 /* Data walk modes */
 typedef enum {
@@ -68,8 +63,6 @@ typedef enum {
 	HU_WALKMODE_RELOAD
 } walkmode_t;
 
-/* pointer to the active subdriver object (changed in callback() function) */
-static subdriver_t *subdriver = NULL;
 
 /* Global vars */
 static HIDDevice_t *hd = NULL;
@@ -470,16 +463,38 @@ info_lkp_t kelvin_celsius_conversion[] = {
  * subdriver matcher: only useful for USB mode
  * as SHUT is only supported by MGE UPS SYSTEMS units
  */
-
 #ifndef SHUT_MODE
-static int match_function_subdriver(HIDDevice_t *d, void *privdata) {
-	int i;
+static int match_function_subdriver(HIDDevice_t *d, void *privdata)
+{
+	int	i;
 
 	for (i=0; subdriver_list[i] != NULL; i++) {
-		if (subdriver_list[i]->claim(d)) {
+
+		static lt_dlhandle	handle = NULL;
+
+		if (handle) {
+			lt_dlclose(handle);
+		}
+
+		handle = lt_dlopenext(subdriver_list[i]);
+		if (!handle) {
+			upsdebugx(2, "%s", lt_dlerror());
+			continue;
+		}
+
+		subdriver = (subdriver_t *)lt_dlsym(handle, "subdriver");
+		if (!subdriver) {
+			upsdebugx(2, "%s", lt_dlerror());
+			continue;
+		}
+
+		if (subdriver->claim(d)) {
+			upsdebugx(4, "subdriver match: %s", subdriver_list[i]);
 			return 1;
 		}
 	}
+
+	upsdebugx(4, "no subdriver match");
 	return 0;
 }
 
@@ -840,6 +855,10 @@ void upsdrv_initups(void)
 
 	upsdebugx(1, "upsdrv_initups...");
 
+	/* initialize dynamic loader */
+	lt_dlinit();
+	lt_dlsetsearchpath(DRVPATH);
+
 	subdriver_matcher = &subdriver_matcher_struct;
 
 	/* enforce use of the "vendorid" option if "explore" is given */
@@ -910,6 +929,9 @@ void upsdrv_cleanup(void)
 	Free_ReportDesc(pDesc);
 	free_report_buffer(reportbuf);
 #ifndef SHUT_MODE
+	/* close dynamic loader */
+	lt_dlexit();
+
 	USBFreeExactMatcher(exact_matcher);
 	USBFreeRegexMatcher(regex_matcher);
 
@@ -968,7 +990,6 @@ static void process_boolean_info(char *nutvalue)
 
 static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf, int rdlen)
 {
-	int i;
 	char *mfr = NULL, *model = NULL, *serial = NULL;
 #ifndef	SHUT_MODE
 	int ret;
@@ -1024,21 +1045,6 @@ static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf
 		Free_ReportDesc(pDesc);
 		return 0;
 	}
-
-	/* select the subdriver for this device */
-	for (i=0; subdriver_list[i] != NULL; i++) {
-		if (subdriver_list[i]->claim(hd)) {
-			break;
-		}
-	}
-
-	subdriver = subdriver_list[i];
-	if (!subdriver) {
-		upsdebugx(1, "Manufacturer not supported!");
-		return 0;
-	}
-
-	upslogx(2, "Using subdriver: %s", subdriver->name);
 
 	HIDDumpTree(udev, subdriver->utab);
 

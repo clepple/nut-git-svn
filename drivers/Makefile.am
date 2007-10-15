@@ -102,6 +102,33 @@ upscode2_SOURCES = upscode2.c
 upscode2_LDADD = $(LDADD) -lm
 victronups_SOURCES = victronups.c
 
+# shared objects that are loaded at runtime by the usbhid-ups
+# driver.
+
+pkglib_LTLIBRARIES = apc-hid.la belkin-hid.la cps-hid.la explore-hid.la \
+	liebert-hid.la mge-hid.la tripplite-hid.la
+
+apc_hid_la_SOURCES = apc-hid.c
+apc_hid_la_LDFLAGS = -module -avoid-version
+
+belkin_hid_la_SOURCES = belkin-hid.c
+belkin_hid_la_LDFLAGS = -module -avoid-version
+
+cps_hid_la_SOURCES = cps-hid.c
+cps_hid_la_LDFLAGS = -module -avoid-version
+
+explore_hid_la_SOURCES = explore-hid.c
+explore_hid_la_LDFLAGS = -module -avoid-version
+
+liebert_hid_la_SOURCES = liebert-hid.c
+liebert_hid_la_LDFLAGS = -module -avoid-version
+
+mge_hid_la_SOURCES = mge-hid.c
+mge_hid_la_LDFLAGS = -module -avoid-version
+
+tripplite_hid_la_SOURCES = tripplite-hid.c
+tripplite_hid_la_LDFLAGS = -module -avoid-version
+
 # non-serial drivers: these use custom LDADD and/or CFLAGS
 
 # dummy
@@ -112,11 +139,17 @@ skel_SOURCES = skel.c
 skel_LDADD = $(LDADD_DRIVERS)
 
 # USB
-USBHID_UPS_SUBDRIVERS = apc-hid.c belkin-hid.c cps-hid.c explore-hid.c \
- liebert-hid.c mge-hid.c tripplite-hid.c
-usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
- $(USBHID_UPS_SUBDRIVERS)
-usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBSSL_LDFLAGS)
+usbhid_ups_SOURCES = usbhid-ups.c libusb.c libhid.c hidparser.c
+usbhid_ups_CFLAGS = $(AM_CFLAGS)
+usbhid_ups_LDFLAGS = -export-dynamic
+usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBSSL_LDFLAGS) -lltdl \
+	-dlopen apc-hid.la \
+	-dlopen belkin-hid.la \
+	-dlopen cps-hid.la \
+	-dlopen explore-hid.la \
+	-dlopen liebert-hid.la \
+	-dlopen mge-hid.la \
+	-dlopen tripplite-hid.la
 
 energizerups_SOURCES = energizerups.c
 energizerups_LDADD = $(LDADD_DRIVERS)
@@ -135,16 +168,24 @@ megatec_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 newmge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c
 # per-target CFLAGS are necessary here
 newmge_shut_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE
-newmge_shut_LDADD = $(LDADD)
+newmge_shut_LDFLAGS = -static
 
 # SNMP
 snmp_ups_SOURCES = snmp-ups.c
 snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LDFLAGS)
 
 # HAL
-hald_addon_usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
- $(USBHID_UPS_SUBDRIVERS)
-hald_addon_usbhid_ups_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS) $(LIBSSL_LDFLAGS)
+hald_addon_usbhid_ups_SOURCES = usbhid-ups.c libusb.c libhid.c hidparser.c
+hald_addon_usbhid_ups_CFLAGS = $(AM_CFLAGS)
+hald_addon_usbhid_ups_LDFLAGS = -export-dynamic
+hald_addon_usbhid_ups_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS) $(LIBSSL_LDFLAGS) -lltdl \
+	-dlopen apc-hid.la \
+	-dlopen belkin-hid.la \
+	-dlopen cps-hid.la \
+	-dlopen explore-hid.la \
+	-dlopen liebert-hid.la \
+	-dlopen mge-hid.la \
+	-dlopen tripplite-hid.la
 
 hald_addon_tripplite_usb_SOURCES = tripplite_usb.c libusb.c
 hald_addon_tripplite_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS) -lm
@@ -165,16 +206,13 @@ hald_addon_megatec_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_L
 dist_noinst_HEADERS = al175.h apccmib.h apc-hid.h apcsmart.h bcmxcp.h	\
  bcmxcp_io.h belkin.h belkin-hid.h belkinunv.h bestfcom.h		\
  bestuferrups.h bestups.h cps-hid.h cpsups.h cyberpower.h dstate.h	\
- dstate-hal.h								\
- dummy-ups.h etapro.h everups.h gamatronic.h				\
- explore-hid.h genericups.h hidparser.h hidtypes.h ietfmib.h		\
- isbmex.h libhid.h libshut.h libusb.h liebert.h liebert-hid.h main.h	\
- main-hal.h								\
+ dstate-hal.h dummy-ups.h etapro.h everups.h gamatronic.h explore-hid.h	\
+ genericups.h hidparser.h hidtypes.h ietfmib.h isbmex.h libhid.h	\
+ libshut.h libusb.h liebert.h liebert-hid.h main.h main-hal.h		\
  masterguard.h megatec.h metasys.h mge-hid.h mgemib.h mge-shut.h	\
- mge-utalk.h netvisionmib.h usbhid-ups.h nitram.h nut_usb.h		\
- oneac.h optiups.h powercom.h pwmib.h safenet.h serial.h		\
- snmp-ups.h solis.h tripplite.h tripplite-hid.h tripplitesu.h		\
- upscode2.h victronups.h powerpanel.h upshandler.h
+ mge-utalk.h netvisionmib.h usbhid-ups.h nitram.h nut_usb.h oneac.h	\
+ optiups.h powercom.h pwmib.h safenet.h serial.h snmp-ups.h solis.h	\
+ tripplite.h tripplite-hid.h tripplitesu.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,

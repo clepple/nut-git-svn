@@ -21,8 +21,10 @@
 #ifndef EXPLORE_HID_H
 #define EXPLORE_HID_H
 
-#include "usbhid-ups.h"
+#ifndef hid_subdriver
+#define hid_subdriver	explore_hid_LTX_subdriver
+#endif
 
-extern subdriver_t explore_subdriver;
+extern subdriver_t	hid_subdriver;
 
 #endif /* EXPLORE_HID_H */
