@@ -19,12 +19,23 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define APC_DRIVER_VERSION	"1.99.8"
-
 #include "main.h"
 #include "serial.h"
-
 #include "apcsmart.h"
+
+#define APC_DRIVER_VERSION	"2.00"
+#define DRIVER_NAME		"APC Smart protocol driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	APC_DRIVER_VERSION,
+	"Russell Kroll <rkroll@exploits.org>" \
+	"Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>",
+	DRV_STABLE,
+	{ NULL }
+};
+/* FIXME: miss "command table %s" APC_TABLE_VERSION */
 
 #define ALT_CABLE_1 "940-0095B"
 
@@ -533,6 +544,13 @@ static int firmware_table_lookup(void)
 		ret = ser_get_line(upsfd, buf, sizeof(buf), ENDCHAR, IGNCHARS,
 			SER_WAIT_SEC, SER_WAIT_USEC);
 
+		if (ret < 1) {
+			upslog_with_errno(LOG_ERR, "firmware_table_lookup: ser_get_line failed");
+			return 0;
+		}
+
+		upsdebugx(2, "Firmware: [%s]", buf);
+
 		/* found one, force the model information */
 		if (!strcmp(buf, "6QD") || /* (APC600.) */
 				!strcmp(buf, "8QD") || /* (SmartUPS 1250, vintage 07/94.) */
@@ -543,8 +561,6 @@ static int firmware_table_lookup(void)
 		}
 		else return 0;
 	}
-
-	upsdebugx(2, "Firmware: [%s]", buf);
 
 	/* this will be reworked if we get a lot of these things */
 	if (!strcmp(buf, "451.2.I")) {
@@ -1191,15 +1207,6 @@ static void setuphandlers(void)
 }
 
 /* functions that interface with main.c */
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools (version %s) - APC Smart protocol driver\n",
-		UPS_VERSION);
-	printf("\tDriver version %s, command table %s\n",
-		APC_DRIVER_VERSION,
-		APC_TABLE_VERSION);
-}
 
 void upsdrv_makevartable(void)
 {
