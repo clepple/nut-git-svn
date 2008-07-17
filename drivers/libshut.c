@@ -911,6 +911,10 @@ int shut_control_msg(int upsfd, int requesttype, int request,
 				break;
 			case -3:
 				/* FIXME: notification caught => to be processed */
+
+				/* Send a NACK for the moment, to get a resend from the UPS */
+				ser_send_char(upsfd, SHUT_NOK);
+				Retry++;
 			default:
 				;
 		}

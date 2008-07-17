@@ -26,6 +26,10 @@ DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
 distcheck-light:
 	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_FLAGS)" distcheck
 
+package:
+	@echo "Creating package(s) for $(OS_NAME)"
+	cd packaging; $(MAKE) $(AM_MAKEFLAGS) $(OS_NAME)
+
 # ----------------------------------------------------------------------
 # targets from old build system (pre-automake).
 # supported for a period of time for backward "compatibility".

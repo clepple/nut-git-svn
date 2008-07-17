@@ -2,6 +2,7 @@ Desc: NUT-specific autoconf macros
 File: macros.txt
 Date: 27 December 2006
 Auth: Peter Selinger <selinger@users.sourceforge.net>
+      Arnaud Quette <aquette.dev@gmail.com>
 
 The following NUT-specific autoconf macros are defined in the m4/
 directory.
@@ -42,6 +43,11 @@ directory.
    HAVE_AI_ADDRCONFIG). Also set the shell variable nut_have_ipv6=yes
    if all the required features are present. Set nut_have_ipv6=no
    otherwise.
+
+ - Macro: NUT_CHECK_OS
+   Check for the exact system name and type. This is only used at the
+   moment to determine the packaging rule to be used through the
+   OS_NAME variable.
 
  - Macro: NUT_REPORT_FEATURE(FEATURE, VALUE) 
    Schedule a line for the end-of-configuration feature summary.  The

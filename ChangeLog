@@ -1,3 +1,30 @@
+Thu Jul 17 14:24:24 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * preliminary support for "make package"
+   - m4/nut_check_os.m4: NUT_CHECK_OS m4 macro to determine the system name
+   - Makefile.am, packaging/Makefile.am, debian.Makefile.am: add some rules
+     to manage the "package" build target
+
+Mon Jul  7 19:00:00 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - m4/nut_check_libhal.m4, drivers/main-hal.c: test for g_timeout_add_seconds
+   availability (need Glib 2.14) (reported by Jordi Mallach, from Debian)
+
+Fri Jul  4 14:15:24 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/apcsmart.c: print the firmware identifier for older Smart-UPS
+   models, if it is successfully retrieved. (driver v1.99.9)
+
+Fri Jul  4 12:04:55 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - clients/upsclient.c: fix a compilation error due to the missing include
+   of timehead.h (reported by Thomas Jarosch)
+
+Thu Jul  3 12:49:01 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - data/driver: add Cyber Power Systems Value range (400E, 600E and 800E)
+   (reported by Thomas Backman)
+   
 Tue Jul  1 12:33:43 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - man/al175.8: fix a manpage error

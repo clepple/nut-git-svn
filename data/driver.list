@@ -123,6 +123,9 @@
 "Cyber Power Systems"	"685AVR"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"800AVR"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"AE550"		"USB"	"usbhid-ups"
+"Cyber Power Systems"	"Value 400E"		"USB"	"usbhid-ups"
+"Cyber Power Systems"	"Value 600E"		"USB"	"usbhid-ups"
+"Cyber Power Systems"	"Value 800E"		"USB"	"usbhid-ups"
 
 "Deltec"	"PowerRite Pro II"	""	"genericups upstype=15"
 
@@ -177,6 +180,7 @@
 
 "Gemini"	"UPS625/UPS1000"	""	"safenet"
 
+"HP"		"PowerTrust 2997A"	"HP 5061-2575 cable"	"apcsmart"
 "HP"		"R3000 XR"	""	"bcmxcp"
 "HP"		"R5500 XR"	""	"bcmxcp"
 
