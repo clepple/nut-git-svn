@@ -1,3 +1,12 @@
+Thu Jul 31 12:30:01 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * configure.in, m4/nut_check_os.m4:
+   - also generate the target directory name (like debian for ubuntu, opensuse
+     for *suse, ...)
+   - add support for Gentoo
+ * packaging/gentoo/*: add files and rules for Gentoo packaging
+ * packaging/debian/Makefile.am: adjust the debuild call
+
 Thu Jul 17 14:24:24 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  * preliminary support for "make package"

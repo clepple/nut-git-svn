@@ -1,6 +1,6 @@
 # FIXME: meet the build prereq (build-essential devscripts) + orig.tgz (dist + ln -sf)!
 package:
-	cd $(top_srcdir); ln -sf packaging/debian && debuild -us -uc
+	cd $(top_srcdir); ln -sf packaging/debian && debuild --no-lintian -i -us -uc -b
 
 # Please keep this file sorted, with one file entry per line. This makes it
 # easier to track changes.

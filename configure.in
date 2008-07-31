@@ -766,6 +766,7 @@ AC_DEFINE_UNQUOTED(DATADIR, "${conftemp}",
 			[Default path for data files])
 
 AC_SUBST(OS_NAME)
+AC_SUBST(PKG_TARGET)
 AC_SUBST(LIBSSL_CFLAGS)
 AC_SUBST(LIBSSL_LDFLAGS)
 AC_SUBST(LIBGD_CFLAGS)
@@ -823,6 +824,7 @@ AC_OUTPUT([
  packaging/mandriva/nut.spec
  packaging/generic-rpm/Makefile
  packaging/generic-rpm/nut.spec
+ packaging/gentoo/Makefile
  packaging/redhat/Makefile
  packaging/redhat/nut.spec
  packaging/opensuse/Makefile

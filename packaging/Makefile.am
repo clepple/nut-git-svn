@@ -1,8 +1,5 @@
-ubuntu:
-	cd debian; $(MAKE) $(AM_MAKEFLAGS) package
+package:
+	cd $(PKG_TARGET); $(MAKE) $(AM_MAKEFLAGS) package
 
-debian:
-	cd debian; $(MAKE) $(AM_MAKEFLAGS) package
-
-SUBDIRS = debian mandriva redhat opensuse generic-rpm
+SUBDIRS = debian mandriva redhat opensuse generic-rpm gentoo
 EXTRA_DIST = README

@@ -28,7 +28,7 @@ distcheck-light:
 
 package:
 	@echo "Creating package(s) for $(OS_NAME)"
-	cd packaging; $(MAKE) $(AM_MAKEFLAGS) $(OS_NAME)
+	cd packaging/$(PKG_TARGET); $(MAKE) $(AM_MAKEFLAGS) package
 
 # ----------------------------------------------------------------------
 # targets from old build system (pre-automake).
