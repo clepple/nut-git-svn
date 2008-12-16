@@ -154,12 +154,7 @@ static const struct {
 	{ "test.failure.start", "T\230\r", 3 },		/* 20 seconds test */
 	{ "test.failure.stop", "CT\r", 3 },
 	{ "beeper.toggle", "B\r", 2 },
-	{ "shutdown.reboot", "S\0\0R\0\1W\r", 8},
-	{ "shutdown.return", "S\0\0W\r", 5 },
 	{ "shutdown.stop", "C\r", 2 },
-/*
-	{ "shutdown.stayoff", "S\0\0\W\r", 5 },
- */
 	{ NULL, NULL, 0 }
 };
 
@@ -239,9 +234,18 @@ static int powpan_command(const char *buf, size_t bufsize)
 	return ret;
 }
 
+static void powpan_binsert(int val, char *buf, size_t len)
+{
+	while (len--) {
+		buf[len] = (val & 0x00FF);
+		val >>= 8;
+	}
+}
+
 static int powpan_instcmd(const char *cmdname, const char *extra)
 {
 	int	i;
+	char	command[SMALLBUF];
 
 	for (i = 0; cmdtab[i].cmd != NULL; i++) {
 
@@ -255,11 +259,38 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 			return STAT_INSTCMD_HANDLED;
 		}
 
-		upslogx(LOG_ERR, "powpan_instcmd: command [%s] failed", cmdname);
-		return STAT_INSTCMD_UNKNOWN;
+		upslogx(LOG_ERR, "%s: command [%s] failed", __func__, cmdname);
+		return STAT_INSTCMD_FAILED;
 	}
 
-	upslogx(LOG_NOTICE, "powpan_instcmd: command [%s] unknown", cmdname);
+	if (!strcasecmp(cmdname, "shutdown.reboot")) {
+		i = snprintf(command, sizeof(command), "SxxRyyW\r");
+
+		powpan_binsert(offdelay, command+1, 2);
+		powpan_binsert(ondelay, command+4, 2);
+
+		if ((powpan_command(command, i) == i-1) && (!memcmp(powpan_answer, command, i-1))) {
+			return STAT_INSTCMD_HANDLED;
+		}
+
+		upslogx(LOG_ERR, "%s: command [%s] failed", __func__, cmdname);
+		return STAT_INSTCMD_FAILED;
+	}
+
+	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		i = snprintf(command, sizeof(command), "SxxW\r");
+
+		powpan_binsert(offdelay, command+1, 2);
+
+		if ((powpan_command(command, i) == i-1) && (!memcmp(powpan_answer, command, i-1))) {
+			return STAT_INSTCMD_HANDLED;
+		}
+
+		upslogx(LOG_ERR, "%s: command [%s] failed", __func__, cmdname);
+		return STAT_INSTCMD_FAILED;
+	}
+
+	upslogx(LOG_ERR, "%s: command [%s] not found", __func__, cmdname);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -309,6 +340,9 @@ static void powpan_initinfo()
 {
 	int	i, j;
 	char	*s;
+
+	dstate_setinfo("ups.delay.start", "%d", (30 * ondelay) + 15);
+	dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
 
 	/*
 	 * NOTE: The reply is already in the buffer, since the F\r command
@@ -360,8 +394,8 @@ static void powpan_initinfo()
 		}
 	}
 
-	upsh.instcmd = powpan_instcmd;
-	upsh.setvar = powpan_setvar;
+	dstate_addcmd("shutdown.stayoff");
+	dstate_addcmd("shutdown.reboot");
 }
 
 static int powpan_status(status_t *status)
@@ -493,48 +527,7 @@ static int powpan_updateinfo()
 
 	status_commit();
 
-	return 0;
-}
-
-static void powpan_shutdown()
-{
-	status_t	status;
-	int		i;
-
-	for (i = 0; i < MAXTRIES; i++) {
-
-		if (powpan_status(&status)) {
-			continue;
-		}
-
-		/*
-		 * We're still on battery...
-		 */
-		if (status.flags[0] & 0x80) {
-			break;
-		}
- 
-		/*
-		 * Apparently, the power came back already, so just reboot.
-		 */
-		if (powpan_instcmd("shutdown.reboot", NULL) == STAT_INSTCMD_HANDLED) {
-			upslogx(LOG_INFO, "Rebooting now...");
-			return;
-		}
-	}
-
-	for (i = 0; i < MAXTRIES; i++) {
-
-		/*
-		 * ...send wait for return.
-		 */
-		if (powpan_instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
-			upslogx(LOG_INFO, "Waiting for power to return...");
-			return;
-		}
-	}
-
-	upslogx(LOG_ERR, "Shutdown command failed!");
+	return (status.flags[0] & 0x80) ? 1 : 0;
 }
 
 static int powpan_initups()
@@ -549,6 +542,8 @@ static int powpan_initups()
 	ser_send_pace(upsfd, UPSDELAY, "\r\r");
 
 	for (i = 0; i < MAXTRIES; i++) {
+
+		const char	*val;
 
 		ser_flush_io(upsfd);
 
@@ -605,6 +600,31 @@ static int powpan_initups()
 			type = OP;
 		}
 
+		val = getval("ondelay");
+		if (val) {
+			ondelay = strtol(val, NULL, 10);
+		}
+
+		if ((ondelay < 0) || (ondelay > 9999)) {
+			fatalx(EXIT_FAILURE, "Start delay '%d' out of range [0..9999]", ondelay);
+		}
+
+		val = getval("offdelay");
+		if (val) {
+			offdelay = strtol(val, NULL, 10);
+		}
+
+		if ((offdelay < 6) || (offdelay > 600)) {
+			fatalx(EXIT_FAILURE, "Shutdown delay '%d' out of range [6..600]", offdelay);
+		}
+
+		/* Truncate to nearest setable value */
+		if (offdelay < 60) {
+			offdelay -= (offdelay % 6);
+		} else {
+			offdelay -= (offdelay % 60);
+		}
+
 		return ret;
 	}
 
@@ -613,8 +633,9 @@ static int powpan_initups()
 
 subdriver_t powpan_binary = {
 	"binary",
+	powpan_instcmd,
+	powpan_setvar,
 	powpan_initups,
 	powpan_initinfo,
-	powpan_updateinfo,
-	powpan_shutdown
+	powpan_updateinfo
 };

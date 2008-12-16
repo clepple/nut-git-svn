@@ -46,6 +46,9 @@ static subdriver_t *subdriver[] = {
 	NULL
 };
 
+int	ondelay = 1;	/* minutes */
+int	offdelay = 60;	/* seconds */
+
 void upsdrv_initinfo(void)
 {
 	char	*s;
@@ -70,32 +73,79 @@ void upsdrv_initinfo(void)
 	if ((s = getval("serial")) != NULL) {
 		dstate_setinfo("ups.serial", "%s", s);
 	}
+
+	upsh.instcmd = subdriver[mode]->instcmd;
+	upsh.setvar = subdriver[mode]->setvar;
 }
 
 void upsdrv_updateinfo(void)
 {
 	static int	retry = 0;
 
-	if (subdriver[mode]->updateinfo() == 0) {
-		ser_comm_good();
-		dstate_dataok();
-		retry = 0;
+	if (subdriver[mode]->updateinfo() < 0) {
+		ser_comm_fail("Status read failed!");
+
+		if (retry < 3) {
+			retry++;
+		} else {
+			dstate_datastale();
+		}
+
 		return;
 	}
 
-	ser_comm_fail("Status read failed!");
+	retry = 0;
 
-	if (retry < 3) {
-		retry++;
-		return;
-	}
+	ser_comm_good();
 
-	dstate_datastale();
+	dstate_dataok();
 }
 
 void upsdrv_shutdown(void)
 {
-	subdriver[mode]->shutdown();
+	int	i, ret;
+
+	/*
+	 * Try to shutdown with delay and automatic reboot if the power
+	 * returned in the mean time (newer models support this).
+	 */
+	if (subdriver[mode]->instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
+		/* Shutdown successful */
+		return;
+	}
+
+	/*
+	 * Looks like an older type. Assume we're still on battery if
+	 * we can't read status or it is telling us we're on battery.
+	 */
+	for (i = 0; i < MAXTRIES; i++) {
+
+		ret = subdriver[mode]->updateinfo();
+		if (ret >= 0) {
+			break;
+		}
+	}
+
+	if (ret) {
+		/*
+		 * When on battery, the 'shutdown.stayoff' command will make
+		 * the UPS switch back on when the power returns.
+		 */
+		if (subdriver[mode]->instcmd("shutdown.stayoff", NULL) == STAT_INSTCMD_HANDLED) {
+			upslogx(LOG_INFO, "Waiting for power to return...");
+			return;
+		}
+	} else {
+		/*
+		 * Apparently, the power came back already, so we just need to reboot.
+		 */
+		if (subdriver[mode]->instcmd("shutdown.reboot", NULL) == STAT_INSTCMD_HANDLED) {
+			upslogx(LOG_INFO, "Rebooting now...");
+			return;
+		}
+	}
+
+	upslogx(LOG_ERR, "Shutdown command failed!");
 }
 
 void upsdrv_initups(void)
@@ -137,6 +187,9 @@ void upsdrv_help(void)
 
 void upsdrv_makevartable(void)
 {
+	addvar(VAR_VALUE, "ondelay", "Delay before UPS startup");
+	addvar(VAR_VALUE, "offdelay", "Delay before UPS shutdown");
+
 	addvar(VAR_VALUE, "manufacturer", "manufacturer");
 	addvar(VAR_VALUE, "model", "modelname");
 	addvar(VAR_VALUE, "serial", "serialnumber");

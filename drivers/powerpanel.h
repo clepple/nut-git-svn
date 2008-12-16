@@ -32,8 +32,12 @@
 
 typedef struct {
 	char	*version;
+	int	(*instcmd)(const char *cmdname, const char *extra);
+	int	(*setvar)(const char *varname, const char *val);
 	int	(*initups)(void);
 	void	(*initinfo)(void);
 	int	(*updateinfo)(void);
-	void	(*shutdown)(void);
 } subdriver_t;
+
+extern int	ondelay;
+extern int	offdelay;
