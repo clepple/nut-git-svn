@@ -34,14 +34,14 @@ static usb_device_id_t lakeview_usb_id[] = {
 	{-1, -1, NULL}
 };
 
-static usb_dev_handle	*upsdev = NULL;
+static usb_dev_handle	*udev = NULL;
 static unsigned int	comm_failures = 0;
 
 static int execute_and_retrieve_query(char *query, char *reply)
 {
 	int	ret;
 
-	ret = usb_control_msg(upsdev, STATUS_REQUESTTYPE, REQUEST_VALUE,
+	ret = usb_control_msg(udev, STATUS_REQUESTTYPE, REQUEST_VALUE,
 		MESSAGE_VALUE, INDEX_VALUE, query, QUERY_PACKETSIZE, 1000);
 
 	if (ret < 0) {
@@ -56,7 +56,7 @@ static int execute_and_retrieve_query(char *query, char *reply)
 
 	upsdebug_hex(3, "send", query, ret);
 
-	ret = usb_interrupt_read(upsdev, REPLY_REQUESTTYPE, reply, REPLY_PACKETSIZE, 1000);
+	ret = usb_interrupt_read(udev, REPLY_REQUESTTYPE, reply, REPLY_PACKETSIZE, 1000);
 
 	if (ret < 0) {
 		upsdebug_with_errno(3, "read");
@@ -72,31 +72,14 @@ static int execute_and_retrieve_query(char *query, char *reply)
 	return ret;
 }
 
-static int query_ups (char *reply)
+static int query_ups(char *reply)
 {
-	char	query[QUERY_PACKETSIZE];
-
 	/*
 	 * This packet is a status request to the UPS
 	 */
-	query[0] = 0x01;
-	query[1] = 0x00;
-	query[2] = 0x00;
-	query[3] = 0x30;
+	char	query[QUERY_PACKETSIZE] = { 0x01, 0x00, 0x00, 0x30 };
 
 	return execute_and_retrieve_query(query, reply);
-}
-
-static void usb_open_error()
-{
-	printf("Unable to find Lakeview UPS device on USB bus \n\n");
-	
-	printf("Things to try:\n\n");
-	printf(" - Connect UPS device to USB bus\n\n");
-	printf(" - Run this driver as another user (upsdrvctl -u or 'user=...' in ups.conf).\n");
-	printf("   See upsdrvctl(8) and ups.conf(5).\n\n");
-					
-	fatalx(EXIT_FAILURE, "Fatal error: unusable configuration");
 }
 
 static void usb_comm_fail(const char *fmt, ...)
@@ -148,7 +131,7 @@ static void usb_comm_good()
 	comm_failures = 0;
 }
 
-static usb_dev_handle *open_lakeview_usb()
+static usb_dev_handle *open_lakeview_usb(void)
 {
 	struct usb_bus	*busses = usb_get_busses();
 	struct usb_bus	*bus;
@@ -176,11 +159,10 @@ static usb_dev_handle *open_lakeview_usb()
 /*
  * Connect to the UPS
  */
-static usb_dev_handle *open_ups(const char *port)
+static int open_ups(void)
 {
 	static int	libusb_init = 0;
 	int		dev_claimed = 0;
-	usb_dev_handle	*dev_h = NULL;
 	int		retry;
 
 	if (!libusb_init) {
@@ -189,25 +171,12 @@ static usb_dev_handle *open_ups(const char *port)
 		libusb_init = 1;
 	}
 
-	for (retry = 0; dev_h == NULL && retry < 32; retry++) {
+	usb_find_busses();
+	usb_find_devices();
 
-		struct timespec t = {5, 0};
+	udev = open_lakeview_usb();
 
-		usb_find_busses();
-		usb_find_devices();
-
-		dev_h = open_lakeview_usb();
-
-		if (!dev_h) {
-			upslogx(LOG_WARNING, "Can't open Lakeview USB device, retrying ...");
-
-			if (nanosleep(&t, NULL) < 0 && errno == EINTR) {
-				break;
-			}
-		}
-	}
-
-	if (!dev_h) {
+	if (!udev) {
 		upslogx(LOG_ERR, "Can't open Lakeview USB device");
 		goto errout;
 	}
@@ -218,66 +187,66 @@ static usb_dev_handle *open_ups(const char *port)
 	 * it force device claiming by unbinding
 	 * attached driver... From libhid
 	 */
-	retry = 3;
-	while (usb_set_configuration(dev_h, 1) != 0 && retry-- > 0) {
+	for (retry = 3; usb_set_configuration(udev, 1); retry--) {
+
+		if (retry == 0) {
+			upslogx(LOG_ERR, "Can't set Lakeview USB configuration");
+			goto errout;
+		}
 
 		upsdebugx(2, "Can't set Lakeview USB configuration, trying %d more time(s)...", retry);
 
-		upsdebugx(2, "detaching kernel driver from USB device...");
-
-		if (usb_detach_kernel_driver_np(dev_h, 0) < 0) {
+		if (usb_detach_kernel_driver_np(udev, 0) < 0) {
 			upsdebugx(2, "failed to detach kernel driver from USB device...");
+		} else {
+			upsdebugx(2, "detached kernel driver from USB device...");
 		}
-
-		upsdebugx(2, "trying again to set USB configuration...");
-	}
-
-	if (retry < 3) {
-		upsdebugx(2, "USB configuration successfully set");
 	}
 #else
-	if (usb_set_configuration(dev_h, 1) < 0) {
+	if (usb_set_configuration(udev, 1) < 0) {
 		upslogx(LOG_ERR, "Can't set Lakeview USB configuration");
 		goto errout;
 	}
 #endif
 
-	if (usb_claim_interface(dev_h, 0) < 0) {
+	if (usb_claim_interface(udev, 0) < 0) {
 		upslogx(LOG_ERR, "Can't claim Lakeview USB interface");
 		goto errout;
 	}
 
 	dev_claimed = 1;
 
-	if (usb_set_altinterface(dev_h, 0) < 0) {
+	if (usb_set_altinterface(udev, 0) < 0) {
 		upslogx(LOG_ERR, "Can't set Lakeview USB alternate interface");
 		goto errout;
 	}
 
-	if (usb_clear_halt(dev_h, 0x81) < 0) {
+	if (usb_clear_halt(udev, 0x81) < 0) {
 		upslogx(LOG_ERR, "Can't reset Lakeview USB endpoint");
 		goto errout;
 	}
 
-	return dev_h;
+	return 1;
 
 errout:
-	if (dev_h && dev_claimed) {
-		usb_release_interface(dev_h, 0);
+	if (udev && dev_claimed) {
+		usb_release_interface(udev, 0);
 	}
 
-	if (dev_h) {
-		usb_close(dev_h);
+	if (udev) {
+		usb_close(udev);
+		udev = NULL;
 	}
 
-	return NULL;
+	return 0;
 }
 
-static int close_ups(usb_dev_handle *dev_h)
+static int close_ups(void)
 {
-	if (dev_h) {
-		usb_release_interface(dev_h, 0);
-		return usb_close(dev_h);
+	if (udev) {
+		usb_release_interface(udev, 0);
+		usb_close(udev);
+		udev = NULL;
 	}
 
 	return 0;
@@ -291,11 +260,22 @@ void upsdrv_initups(void)
 	char	reply[REPLY_PACKETSIZE];
 	int	i;
 
-	/* open the USB connection to the UPS */
-	upsdev = open_ups("USB");
+	for (i = 0; !open_ups(); i++) {
 
-	if (!upsdev) {
-		usb_open_error();
+		if ((i < 32) && (sleep(5) == 0)) {
+			usb_comm_fail("Can't open Lakeview USB device, retrying ...");
+			continue;
+		}
+
+		fatalx(EXIT_FAILURE,
+			"Unable to find Lakeview UPS device on USB bus \n\n"
+
+			"Things to try:\n"
+			" - Connect UPS device to USB bus\n"
+			" - Run this driver as another user (upsdrvctl -u or 'user=...' in ups.conf).\n"
+			"   See upsdrvctl(8) and ups.conf(5).\n\n"
+
+			"Fatal error: unusable configuration");
 	}
 
 	/*
@@ -310,18 +290,7 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
-	upslogx(LOG_ERR, "CLOSING\n");
-	close_ups(upsdev);
-}
-
-static void usb_reconnect(void)
-{
-	upslogx(LOG_WARNING, "RECONNECT USB DEVICE\n");
-	close_ups(upsdev);
-
-	upsdev = NULL;
-	sleep(3);
-	upsdrv_initups();
+	close_ups();
 }
 
 void upsdrv_initinfo(void)
@@ -337,15 +306,18 @@ void upsdrv_updateinfo(void)
 	char	reply[REPLY_PACKETSIZE];
 	int	ret, online, battery_normal;
 
+	if (!udev && !open_ups()) {
+		usb_comm_fail("Reconnect to UPS failed");
+		return;
+	}
+
 	ret = query_ups(reply);
 
 	if (ret < 4) {
 		usb_comm_fail("Query to UPS failed");
 		dstate_datastale();
 
-		/* reconnect the UPS */
-		usb_reconnect();
-
+		close_ups();
 		return;
 	}
 
@@ -395,19 +367,20 @@ void upsdrv_updateinfo(void)
  */
 void upsdrv_shutdown(void)
 {
-	char	reply[REPLY_PACKETSIZE];
-	char	query[QUERY_PACKETSIZE];
+	/*
+	 * This packet shuts down the UPS, that is,
+	 * if it is not currently on line power
+	 */
+	char	prepare[QUERY_PACKETSIZE] = { 0x02, 0x00, 0x00, 0x00 };
 
 	/*
-	 * This packet shuts down the UPS, that is, if it is
-	 * not currently on line power
+	 * This should make the UPS turn itself back on once the
+	 * power comes back on; which is probably what we want
 	 */
-	query[0] = 0x02;
-	query[1] = 0x00;
-	query[2] = 0x00;
-	query[3] = 0x00;
+	char	restart[QUERY_PACKETSIZE] = { 0x02, 0x01, 0x00, 0x00 };
+	char	reply[REPLY_PACKETSIZE];
 
-	execute_and_retrieve_query(query, reply);
+	execute_and_retrieve_query(prepare, reply);
 
 	/*
 	 * have to, the previous command seems to be
@@ -416,16 +389,8 @@ void upsdrv_shutdown(void)
 	 */
 	sleep(1);
 
-	/*
-	 * This should make the UPS turn itself back on once the
-	 * power comes back on; which is probably what we want
-	 */
-	query[0] = 0x02;
-	query[1] = 0x01;
-	query[2] = 0x00;
-	query[3] = 0x00;
 
-	execute_and_retrieve_query(query, reply);
+	execute_and_retrieve_query(restart, reply);
 }
 
 void upsdrv_help(void)
@@ -443,4 +408,3 @@ void upsdrv_banner(void)
 
 	experimental_driver = 1;	
 }
-
