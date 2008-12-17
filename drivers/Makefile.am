@@ -171,7 +171,7 @@ megatec_usb_SOURCES = megatec.c megatec_usb.c libusb.c usb-common.c
 megatec_usb_CFLAGS = $(AM_CFLAGS) -DMEGATEC_SUBDRV
 megatec_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
-lakeview_usb_SOURCES = lakeview_usb.c
+lakeview_usb_SOURCES = lakeview_usb.c usb-common.c
 lakeview_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
 richcomm_usb_SOURCES = richcomm_usb.c libusb.c  usb-common.c
