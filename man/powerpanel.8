@@ -32,8 +32,9 @@ Time to wait before switching on the UPS (1 - 9999 minutes, 0 indefinite).
 Not available with the binary protocol.
 
 .IP "offdelay=\fIvalue\fR"
-Time to wait before shutting down the UPS (0 - 99 minutes). Some units only
-support delay value up to 10 minutes. Not available with the binary protocol.
+Time to wait before shutting down the UPS (6 - 600 seconds). Values below 60
+seconds will be truncated to 6 seconds intervals, values above 60 seconds to
+60 seconds intervals. Not available with the binary protocol.
 
 .SH VARIABLES
 Depending on the type of your UPS unit, some of the following variables may
