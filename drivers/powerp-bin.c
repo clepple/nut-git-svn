@@ -68,34 +68,34 @@ static unsigned char	powpan_answer[SMALLBUF];
 static const valtab_t	tran_high[] = {
 	{ "138", -9 }, { "139", -8 }, { "140", -7 }, { "141", -6 }, { "142", -5 },
 	{ "143", -4 }, { "144", -3 }, { "145", -2 }, { "146", -1 }, { "147",  0 },
-	{ NULL, 0 }
+	{ NULL }
 };
 
 /* OP series */
 static const valtab_t	tran_high_op[] = {
 	{ "140", -5 }, { "141", -4 }, { "142", -3 }, { "143", -2 }, { "144", -1 },
 	{ "145",  0 }, { "146", +1 }, { "147", +2 }, { "148", +3 }, { "149", +4 },
-	{ "150", +5 }, { NULL, 0 }
+	{ "150", +5 }, { NULL }
 };
 
 /* default */
 static const valtab_t	tran_low[] = {
 	{ "88",  0 }, { "89", +1 }, { "90", +2 }, { "91", +3 }, { "92", +4 },
 	{ "93", +5 }, { "94", +6 }, { "95", +7 }, { "96", +8 }, { "97", +9 },
-	{ NULL, 0 }
+	{ NULL }
 };
 
 /* OP series */
 static const valtab_t	tran_low_op[] = {
 	{ "85", -5 }, { "86", -4 }, { "87", -3 }, { "88", -2 }, { "89", -1 },
 	{ "90",  0 }, { "91", +1 }, { "92", +2 }, { "93", +3 }, { "94", +4 },
-	{ "95", +5 }, { NULL, 0 }
+	{ "95", +5 }, { NULL }
 };
 
 /* default */
 static const valtab_t	batt_low[] = {
 	{ "25", -6 }, { "30", -5 }, { "35", -3 }, { "40", -1 }, { "45",  0 },
-	{ "50", +2 }, { "55", +4 }, { "60", +6 }, { NULL, 0 }
+	{ "50", +2 }, { "55", +4 }, { "60", +6 }, { NULL }
 };
 
 /* OP series */
@@ -103,23 +103,23 @@ static const valtab_t	batt_low_op[] = {
 	{ "15", -8 }, { "18", -7 }, { "19", -6 }, { "20", -5 }, { "22", -4 },
 	{ "24", -3 }, { "25", -2 }, { "26", -1 }, { "28",  0 }, { "30", +1 },
 	{ "32", +2 }, { "34", +3 }, { "35", +4 }, { "36", +5 }, { "38", +6 },
-	{ "40", +7 }, { NULL, 0 }
+	{ "40", +7 }, { NULL }
 };
 
 /* default */
 static const valtab_t	out_volt[] = {
-	{ "110", -10 }, { "120",  0 }, { "130", +10 }, { NULL, 0 }
+	{ "110", -10 }, { "120",  0 }, { "130", +10 }, { NULL }
 };
 
 /* OP series */
 static const valtab_t	out_volt_op[] = {
 	{ "110", -10 }, { "115", -5 }, { "120",  0 }, { "124", +4 }, { "128", +8 },
-	{ "130", +10 }, { NULL, 0 }
+	{ "130", +10 }, { NULL }
 };
 
 static const valtab_t 	yes_no_info[] = {
 	{ "yes", 2 }, { "no", 0 },
-	{ NULL, 0 }
+	{ NULL }
 };
 
 static const struct {
@@ -135,14 +135,14 @@ static const struct {
 		{ "battery.charge.low", "R\010\r", "Q\010%c\r", batt_low },
 		{ "output.voltage.nominal", "R\030\r", "Q\030%c\r", out_volt },
 		{ "ups.start.battery", "R\017\r", "Q\017%c\r", yes_no_info },
-		{ NULL, NULL, NULL, NULL }
+		{ NULL }
 	}, {
 		/* OP series */
 		{ "input.transfer.high", "R\002\r", "Q\002%c\r", tran_high_op },
 		{ "input.transfer.low", "R\004\r", "Q\004%c\r", tran_low_op },
 		{ "battery.charge.low", "R\010\r", "Q\010%c\r", batt_low_op },
 		{ "output.voltage.nominal", "R\030\r", "Q\030%c\r", out_volt_op },
-		{ NULL, NULL, NULL, NULL }
+		{ NULL }
 	}	
 };
 
@@ -151,11 +151,11 @@ static const struct {
 	char	*command;
 	int	len;
 } cmdtab[] = {
-	{ "test.failure.start", "T\230\r", 3 },		/* 20 seconds test */
-	{ "test.failure.stop", "CT\r", 3 },
+	{ "test.battery.start.quick", "T\230\r", 3 },		/* 20 seconds test */
+	{ "test.battery.stop", "CT\r", 3 },
 	{ "beeper.toggle", "B\r", 2 },
 	{ "shutdown.stop", "C\r", 2 },
-	{ NULL, NULL, 0 }
+	{ NULL }
 };
 
 /* map UPS data to (approximated) input/output voltage */
