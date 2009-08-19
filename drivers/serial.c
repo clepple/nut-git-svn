@@ -29,6 +29,9 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <netinet/in.h>
 
 #ifdef HAVE_UU_LOCK
 #include <libutil.h>
@@ -130,8 +133,37 @@ static void lock_set(int fd, const char *port)
 int ser_open(const char *port)
 {
 	int	fd;
+	char	*path =0;
+	char	*p =0;
 
-	fd = open(port, O_RDWR | O_NOCTTY | O_EXCL | O_NONBLOCK);
+	path = alloca(strlen(port) + 1);
+	if (path != 0) {
+		strcpy(path,port);
+		p = strchr(path,':');
+	}
+	if (p != 0 && p != path) {	/* open network port */
+		int netport = 0;
+		struct sockaddr_in saddr;
+		struct hostent *blob = 0;
+		*p++ = 0;
+		netport = atoi(p);
+		fd = socket(AF_INET, SOCK_STREAM, 0);
+		if (fd < 0)
+			ser_open_error("socket");
+		blob = gethostbyname(path);
+		if (blob == 0)
+			ser_open_error(path);
+		memcpy(&saddr.sin_addr,blob->h_addr,sizeof saddr.sin_addr);
+		saddr.sin_port = htons(netport);
+		saddr.sin_family = AF_INET;
+		if (connect(fd,(struct sockaddr *)&saddr,sizeof saddr)
+			|| fcntl(fd,F_SETFL,O_NONBLOCK)) {
+			close(fd);
+			fd = -1;
+		}
+        }
+        else
+		fd = open(port, O_RDWR | O_NOCTTY | O_EXCL | O_NONBLOCK);
 
 	if (fd < 0)
 		ser_open_error(port);
@@ -145,6 +177,7 @@ int ser_set_speed(int fd, const char *port, speed_t speed)
 {
 	struct	termios	tio;
 
+	if (!isatty(fd)) return 0;
 	if (tcgetattr(fd, &tio) != 0)
 		fatal_with_errno(EXIT_FAILURE, "tcgetattr(%s)", port);
 
