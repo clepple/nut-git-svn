@@ -136,11 +136,9 @@ int ser_open(const char *port)
 	char	*path =0;
 	char	*p =0;
 
-	path = alloca(strlen(port) + 1);
-	if (path != 0) {
-		strcpy(path,port);
-		p = strchr(path,':');
-	}
+	path = xstrdup(port);
+	p = strchr(path,':');
+
 	if (p != 0 && p != path) {	/* open network port */
 		int netport = 0;
 		struct sockaddr_in saddr;
