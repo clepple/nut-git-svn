@@ -588,7 +588,7 @@ void decode_v(const unsigned char *value)
 	}
 
 	battery_voltage_nominal = bv * 6;
-	upsdebugx(1, "Detected nominal battery voltage: %d (0x%x)", battery_voltage_nominal);
+	upsdebugx(1, "Detected nominal battery voltage: %d", battery_voltage_nominal);
 		
 	if( lb <= 9 ) {
 		switchable_load_banks = lb;
