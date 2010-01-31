@@ -998,7 +998,7 @@ void upsdrv_initinfo(void)
 	proto_number = ((unsigned)(proto_value[1]) << 8) 
 			          | (unsigned)(proto_value[2]);
 	tl_model = decode_protocol(proto_number);
-	upsdebugx(3, "Protocol %x -> enum %d", proto, tl_model);
+	upsdebugx(3, "Protocol %x -> enum %d", proto_number, tl_model);
 
 	if(tl_model == TRIPP_LITE_UNKNOWN)
 		dstate_setinfo("ups.debug.0", "%s", hexascdump(proto_value+1, 7));
