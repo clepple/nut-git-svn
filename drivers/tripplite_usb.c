@@ -374,8 +374,8 @@ static enum tl_model_t {
 	TRIPP_LITE_UNKNOWN = 0,
 	TRIPP_LITE_OMNIVS,
 	TRIPP_LITE_OMNIVS_2001,
-	TRIPP_LITE_SMARTPRO,
-	TRIPP_LITE_SMART_BIN,
+	TRIPP_LITE_SMARTPRO,  /* 3003 */
+	TRIPP_LITE_SMART_BIN, /* 3004 */
 	TRIPP_LITE_SMART_0004
 } tl_model = TRIPP_LITE_UNKNOWN;
 
@@ -556,20 +556,22 @@ enum tl_model_t decode_protocol(unsigned int proto)
 void decode_v(const unsigned char *value)
 {
 	unsigned char ivn, lb;
-	int bv = hex2d(value+2, 2);
+
+	if(tl_model != TRIPP_LITE_SMART_BIN) {
+		battery_voltage_nominal = hex2d(value+2, 2) * 6;
+	} else {
+		battery_voltage_nominal = (value[2] << 8) | value[3];
+	}
 
  	ivn = value[1];
 	lb = value[4];
-
-	if((ivn <= '0') && (tl_model == TRIPP_LITE_SMART_BIN)) {
-		ivn += '0';
-	}
 
 	switch(ivn) {
 		case '0': input_voltage_nominal = 
 			  input_voltage_scaled  = 100;
 			  break;
 
+		case 2: /* protocol 0x3004 */
 		case '1': input_voltage_nominal = 
 			  input_voltage_scaled  = 120;
 			  break;
@@ -587,7 +589,6 @@ void decode_v(const unsigned char *value)
 			  break;
 	}
 
-	battery_voltage_nominal = bv * 6;
 	upsdebugx(1, "Detected nominal battery voltage: %d", battery_voltage_nominal);
 		
 	if( lb <= 9 ) {
@@ -997,6 +998,7 @@ void upsdrv_initinfo(void)
 	proto_number = ((unsigned)(proto_value[1]) << 8) 
 			          | (unsigned)(proto_value[2]);
 	tl_model = decode_protocol(proto_number);
+	upsdebugx(3, "Protocol %x -> enum %d", proto, tl_model);
 
 	if(tl_model == TRIPP_LITE_UNKNOWN)
 		dstate_setinfo("ups.debug.0", "%s", hexascdump(proto_value+1, 7));
@@ -1434,6 +1436,10 @@ void upsdrv_updateinfo(void)
 			break;
 		case TRIPP_LITE_SMART_0004:
 			dstate_setinfo("ups.load", "%d", hex2d(l_value+1, 2));
+			dstate_setinfo("ups.debug.L","%s", hexascdump(l_value+1, 7));
+			break;
+		case TRIPP_LITE_SMART_BIN:
+			dstate_setinfo("ups.load", "%d", l_value[1]); /* might be [4] instead? */
 			dstate_setinfo("ups.debug.L","%s", hexascdump(l_value+1, 7));
 			break;
 		default:
