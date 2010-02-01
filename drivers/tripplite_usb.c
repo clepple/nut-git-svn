@@ -531,22 +531,22 @@ enum tl_model_t decode_protocol(unsigned int proto)
 {
 	switch(proto) {
 		case 0x0004:
-			upslogx(3, "Using older SMART protocol (%x)", proto);
+			upsdebugx(1, "Using older SMART protocol (%x)", proto);
 			return TRIPP_LITE_SMART_0004;
 		case 0x1001:
-			upslogx(3, "Using OMNIVS protocol (%x)", proto);
+			upsdebugx(1, "Using OMNIVS protocol (%x)", proto);
 			return TRIPP_LITE_OMNIVS;
 		case 0x2001:
-			upslogx(3, "Using OMNIVS 2001 protocol (%x)", proto);
+			upsdebugx(1, "Using OMNIVS 2001 protocol (%x)", proto);
 			return TRIPP_LITE_OMNIVS_2001;
 		case 0x3003:
-			upslogx(3, "Using SMARTPRO protocol (%x)", proto);
+			upsdebugx(1, "Using SMARTPRO protocol (%x)", proto);
 			return TRIPP_LITE_SMARTPRO;
 		case 0x3004:
-			upslogx(3, "Using binary SMART protocol (%x)", proto);
+			upsdebugx(1, "Using binary SMART protocol (%x)", proto);
 			return TRIPP_LITE_SMART_BIN;
 		default:
-			printf("Unknown protocol (%x)", proto);
+			upslogx(LOG_NOTICE, "Unknown protocol (%x)", proto);
 			break;
 	}
 
@@ -585,7 +585,7 @@ void decode_v(const unsigned char *value)
 			  break;
 
 		default:
-			  upslogx(2, "Unknown input voltage range: 0x%02x", (unsigned int)ivn);
+			  upslogx(LOG_NOTICE, "Unknown input voltage range: 0x%02x", (unsigned int)ivn);
 			  break;
 	}
 
@@ -598,7 +598,7 @@ void decode_v(const unsigned char *value)
 			switchable_load_banks = lb - '0';
 		} else {
 			if( lb != 'X' ) {
-				upslogx(2, "Unknown number of switchable load banks: 0x%02x",
+				upslogx(LOG_NOTICE, "Unknown number of switchable load banks: 0x%02x",
 						(unsigned int)lb);
 			}
 		}
@@ -688,7 +688,7 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
 		ret = comm_driver->set_report(udev, 0, buffer_out, sizeof(buffer_out));
 
 		if(ret != sizeof(buffer_out)) {
-			upslogx(1, "libusb_set_report() returned %d instead of %u",
+			upsdebugx(2, "libusb_set_report() returned %d instead of %u",
 				ret, (unsigned)(sizeof(buffer_out)));
 			return ret;
 		}
@@ -701,7 +701,7 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
 			upsdebugx(7, "send_cmd recv_try %d", recv_try+1);
 			ret = comm_driver->get_interrupt(udev, reply, sizeof(buffer_out), RECV_WAIT_MSEC);
 			if(ret != sizeof(buffer_out)) {
-				upslogx(1, "libusb_get_interrupt() returned %d instead of %u while sending %s",
+				upsdebugx(2, "libusb_get_interrupt() returned %d instead of %u while sending %s",
 					ret, (unsigned)(sizeof(buffer_out)),
 					hexascdump(buffer_out, sizeof(buffer_out)));
 			}
@@ -1016,7 +1016,7 @@ void upsdrv_initinfo(void)
 				fatalx(EXIT_FAILURE, "Could not reset watchdog. Please check and"
 						"see if usbhid-ups(8) works with this UPS.");
 			} else {
-				upslogx(3, "Could not reset watchdog. Please send model "
+				upslogx(LOG_WARNING, "Could not reset watchdog. Please send model "
 						"information to nut-upsdev mailing list");
 			}
 		}
@@ -1138,7 +1138,7 @@ void upsdrv_initinfo(void)
 		dstate_setinfo("ups.id", "%d", unit_id);
 		dstate_setflags("ups.id", ST_FLAG_RW | ST_FLAG_STRING);
 		dstate_setaux("ups.id", 5);
-		upslogx(LOG_DEBUG,"Unit ID: %d", unit_id);
+		upsdebugx(1,"Unit ID: %d", unit_id);
 	}
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
@@ -1252,7 +1252,14 @@ void upsdrv_updateinfo(void)
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
-	if(tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_OMNIVS_2001 || tl_model == TRIPP_LITE_SMART_0004) {
+	/* TODO: verify that this works for all values below: */
+	if(tl_model == TRIPP_LITE_SMART_BIN) {
+		s_value[1] += '0';
+		s_value[2] += '0';
+	}
+
+	if(tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_OMNIVS_2001 || tl_model == TRIPP_LITE_SMART_0004
+			|| tl_model == TRIPP_LITE_SMART_BIN) {
 		switch(s_value[2]) {
 			case '0':
 				dstate_setinfo("battery.test.status", "Battery OK");
