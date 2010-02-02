@@ -854,7 +854,7 @@ static int instcmd(const char *cmdname, const char *extra)
 {
 	unsigned char buf[10];
 
-	if(tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004) {
+	if(tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004 || tl_model == TRIPP_LITE_SMART_BIN) {
 		if (!strcasecmp(cmdname, "test.battery.start")) {
 			send_cmd((unsigned char *)"A", 2, buf, sizeof buf);
 			return STAT_INSTCMD_HANDLED;
@@ -1330,7 +1330,9 @@ void upsdrv_updateinfo(void)
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
-	if( tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004 ) {
+	if( tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004 || tl_model == TRIPP_LITE_SMART_BIN) {
+		int input_voltage, temperature;
+
 		ret = send_cmd(d_msg, sizeof(d_msg), d_value, sizeof(d_value));
 		if(ret <= 0) {
 			dstate_datastale();
@@ -1338,10 +1340,20 @@ void upsdrv_updateinfo(void)
 			return;
 		}
 
-		dstate_setinfo("input.voltage", "%d",
-				hex2d(d_value+1, 2) * input_voltage_scaled / 120);
+		if(tl_model == TRIPP_LITE_SMART_BIN) {
+			input_voltage = (d_value[1] << 8) | d_value[2];
+		} else {
+			input_voltage = hex2d(d_value+1, 2);
+		}
 
-		bv = hex2d(d_value+3, 2) * battery_voltage_nominal / 120.0 ;
+		dstate_setinfo("input.voltage", "%d",
+				input_voltage * input_voltage_scaled / 120);
+
+		if(tl_model == TRIPP_LITE_SMART_BIN) {
+			bv = hex2d(d_value+3, 2) * battery_voltage_nominal / 120.0 ;
+		} else {
+			bv = ((d_value[3] << 8) | d_value[4]) * battery_voltage_nominal / 120.0;
+		}
 
 		dstate_setinfo("battery.voltage", "%.2f", bv);
 
@@ -1359,8 +1371,13 @@ void upsdrv_updateinfo(void)
 			return;
 		}
 
-		dstate_setinfo("input.voltage.minimum", "%3d", hex2d(m_value+1, 2));
-		dstate_setinfo("input.voltage.maximum", "%3d", hex2d(m_value+3, 2));
+		if(tl_model == TRIPP_LITE_SMART_BIN) {
+			dstate_setinfo("input.voltage.minimum", "%3d", (m_value[1] << 8) | m_value[2]);
+			dstate_setinfo("input.voltage.maximum", "%3d", (m_value[3] << 8) | m_value[4]);
+		} else {
+			dstate_setinfo("input.voltage.minimum", "%3d", hex2d(m_value+1, 2));
+			dstate_setinfo("input.voltage.maximum", "%3d", hex2d(m_value+3, 2));
+		}
 
 		/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
@@ -1392,7 +1409,13 @@ void upsdrv_updateinfo(void)
 		}
 
 		/* I'm guessing this is a calibration constant of some sort. */
-		dstate_setinfo("ups.temperature", "%.1f", (unsigned)(hex2d(t_value+1, 2)) * 0.3636 - 21);
+
+		if( tl_model == TRIPP_LITE_SMART_BIN ) {
+			temperature = t_value[1];
+		} else {
+			temperature = hex2d(t_value+1, 2);
+		}
+		dstate_setinfo("ups.temperature", "%.1f", (unsigned)(temperature) * 0.3636 - 21);
 	}
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
