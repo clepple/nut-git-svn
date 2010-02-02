@@ -1147,9 +1147,6 @@ void upsdrv_initinfo(void)
 
 	dstate_addcmd("test.battery.start"); /* Turns off automatically */
 
-	dstate_addcmd("load.off");
-	dstate_addcmd("load.on");
-
 	dstate_addcmd("shutdown.reboot");
 	dstate_addcmd("shutdown.reboot.graceful");
 #endif
@@ -1435,7 +1432,6 @@ void upsdrv_updateinfo(void)
 
 		/* We already grabbed these above: */
 		if(tl_model != TRIPP_LITE_SMARTPRO) {
-			debug_message("V", 2); /* Probably not necessary - seems to be static */
 			debug_message("M", 2);
 			debug_message("T", 2);
 			debug_message("P", 2);
