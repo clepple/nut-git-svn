@@ -238,11 +238,6 @@ For more information on regular expressions, see regex(7)
 
 =over
 
-=item ups.delay.shutdown
-
-This variable is the same as the C<offdelay> setting, but it can be changed at
-runtime by upsrw(8).
-
 =item ups.id
 
 Some SMARTPRO models feature an ID that can be set and retrieved. If your UPS
@@ -902,12 +897,6 @@ static int instcmd(const char *cmdname, const char *extra)
 
 static int setvar(const char *varname, const char *val)
 {
-	if (!strcasecmp(varname, "ups.delay.shutdown")) {
-		offdelay = atoi(val);
-		dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
-		return STAT_SET_HANDLED;
-	}
-
 	if (unit_id >= 0 && !strcasecmp(varname, "ups.id")) {
                 int new_unit_id, ret;
 		unsigned char J_msg[] = "J__", buf[9];
@@ -1145,20 +1134,6 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("input.voltage.nominal", "%d", input_voltage_nominal);
 	dstate_setinfo("battery.voltage.nominal", "%d", battery_voltage_nominal);
 	dstate_setinfo("ups.debug.load_banks", "%d", switchable_load_banks);
-
-	dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
-	dstate_setflags("ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING);
-	dstate_setaux("ups.delay.shutdown", 3);
-
-#if 0
-	dstate_setinfo("ups.delay.start", "%d", startdelay);
-	dstate_setflags("ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING);
-	dstate_setaux("ups.delay.start", 8);
-
-	dstate_setinfo("ups.delay.reboot", "%d", bootdelay);
-	dstate_setflags("ups.delay.reboot", ST_FLAG_RW | ST_FLAG_STRING);
-	dstate_setaux("ups.delay.reboot", 3);
-#endif
 
 	if(tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004) {
 		dstate_addcmd("test.battery.start");
