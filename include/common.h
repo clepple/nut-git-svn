@@ -39,6 +39,7 @@
 #include <syslog.h>
 #include <unistd.h>
 #include <assert.h>
+#include <poll.h>
 
 #include "timehead.h"
 #include "attribute.h"
@@ -58,7 +59,7 @@ struct passwd *get_user_pwent(const char *name);
 /* change to the user defined in the struct */
 void become_user(struct passwd *pw);
 
-/* drop down into a directory and throw away pointers to the old path */
+/* drop down into a directory and throw away pointers to the old path */ 
 void chroot_start(const char *path);
 
 /* write a pid file - <name> is a full pathname *or* just the program name */
@@ -97,7 +98,7 @@ void upsdebug_with_errno(int level, const char *fmt, ...)
 void upsdebugx(int level, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 void upsdebug_hex(int level, const char *msg, const void *buf, int len);
-
+		
 void fatal_with_errno(int status, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3))) __attribute__((noreturn));
 void fatalx(int status, const char *fmt, ...)
@@ -115,6 +116,18 @@ char *rtrim(char *in, const char sep);
 int select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec);
 int select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec);
 
+typedef struct {
+	struct pollfd	*fds;
+	int	nfds;
+	int	size;
+	void	(**handler)(void *);
+	void	**data;
+} io_handler_t;
+
+int io_handler_poll(io_handler_t *list, int timeout);
+int io_handler_add(io_handler_t *list, int fd, short events, void (*handler)(void *), void *data);
+int io_handler_remove(io_handler_t *list, int fd, short events);
+
 /* Buffer sizes used for various functions */
 #define SMALLBUF	512
 #define LARGEBUF	1024
@@ -126,7 +139,7 @@ int select_write(const int fd, const void *buf, const size_t buflen, const long 
 #else
 #ifdef NEED_GETOPT_DECLS
 extern char *optarg;
-extern int optind;
+extern int optind; 
 #endif /* NEED_GETOPT_DECLS */
 #endif /* HAVE_GETOPT_H */
 

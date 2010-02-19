@@ -34,6 +34,9 @@
 #include "upstype.h"
 #include "sstate.h"
 #include "state.h"
+#include "upsd.h"
+
+static void sstate_readline(void *data);
 
 static int parse_args(upstype_t *ups, int numargs, char **arg)
 {
@@ -204,10 +207,12 @@ int sstate_connect(upstype_t *ups)
 		return -1;
 	}
 
-	pconf_init(&ups->sock_ctx, NULL);
-
 	ups->dumpdone = 0;
 	ups->stale = 0;
+	ups->sock_fd = fd;
+
+	pconf_init(&ups->sock_ctx, NULL);
+	io_handler_add(io_list, ups->sock_fd, POLLIN | POLLERR | POLLHUP | POLLNVAL, sstate_readline, ups);
 
 	/* now is the last time we heard something from the driver */
 	time(&ups->last_heard);
@@ -229,14 +234,16 @@ void sstate_disconnect(upstype_t *ups)
 	sstate_infofree(ups);
 	sstate_cmdfree(ups);
 
+	io_handler_remove(io_list, ups->sock_fd, POLLIN | POLLERR | POLLHUP | POLLNVAL);
 	pconf_finish(&ups->sock_ctx);
 
 	close(ups->sock_fd);
 	ups->sock_fd = -1;
 }
 
-void sstate_readline(upstype_t *ups)
+static void sstate_readline(void *data)
 {
+	upstype_t	*ups = data;
 	int	i, ret;
 	char	buf[SMALLBUF];
 

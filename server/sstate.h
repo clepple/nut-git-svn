@@ -26,7 +26,6 @@
 
 int sstate_connect(upstype_t *ups);
 void sstate_disconnect(upstype_t *ups);
-void sstate_readline(upstype_t *ups);
 const char *sstate_getinfo(const upstype_t *ups, const char *var);
 int sstate_getflags(const upstype_t *ups, const char *var);
 int sstate_getaux(const upstype_t *ups, const char *var);

@@ -40,6 +40,7 @@
 #include <sys/file.h>
 
 #include "parseconf.h"
+#include "stype.h"
 #include "ctype.h"
 #include "upstype.h"
 
@@ -67,6 +68,7 @@ void check_perms(const char *fn);
 extern int		maxage, maxconn;
 extern char		*statepath, *datapath;
 extern upstype_t	*firstups;
+extern io_handler_t	*io_list;
 
 /* map commands onto signals */
 

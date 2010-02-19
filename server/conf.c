@@ -81,7 +81,7 @@ static void ups_create(const char *fn, const char *name, const char *desc)
 	else
 		last->next = temp;
 
-	temp->sock_fd = sstate_connect(temp);
+	sstate_connect(temp);
 
 	num_ups++;
 }

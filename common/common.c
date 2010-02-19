@@ -23,6 +23,7 @@
 #include <syslog.h>
 #include <pwd.h>
 #include <grp.h>
+#include <poll.h>
 
 /* the reason we define UPS_VERSION as a static string, rather than a
 	macro, is to make dependency tracking easier (only common.o depends
@@ -537,4 +538,106 @@ int select_write(const int fd, const void *buf, const size_t buflen, const long 
 	}
 
 	return write(fd, buf, buflen);
+}
+
+int io_handler_poll(io_handler_t *list, int timeout)
+{
+	int	ret, i;
+
+	if ((list == NULL) || (list->nfds == 0)) {
+		upsdebugx(5, "%s: list empty", __func__);
+		return 0;
+	}
+
+	/* discard all handlers that have been flagged for removal */
+	for (i = 0; i < list->nfds; i++) {
+		if (list->handler[i] != NULL) {
+			continue;
+		}
+
+		/* find the last active handler in the list */
+		while (1) {
+			list->nfds--;
+
+			if (list->nfds == 0) {
+				upsdebugx(5, "%s: no more handlers", __func__);
+				return 0;
+			}
+
+			if (list->nfds == i) {
+				upsdebugx(5, "%s: reached the end of handler list", __func__);
+				break;
+			}
+
+			if (list->handler[list->nfds] == NULL) {
+				continue;
+			}
+
+			list->fds[i].fd = list->fds[list->nfds].fd;
+			list->fds[i].events = list->fds[list->nfds].events;
+			list->handler[i] = list->handler[list->nfds];
+			list->data[i] = list->data[list->nfds];
+			break;
+		}
+	}
+
+	/* check if there is data available */
+	ret = poll(list->fds, list->nfds, timeout);
+	if (ret < 1) {
+		return ret;
+	}
+
+	for (i = 0; i < list->nfds; i++) {
+		if (list->fds[i].events & list->fds[i].revents) {
+			list->handler[i](list->data[i]);
+		}
+	}
+
+	/* return number of filedescriptors handled */
+	return ret;
+}
+
+int io_handler_add(io_handler_t *list, int fd, short events, void (*handler)(void *), void *data)
+{
+	if ((fd < 0) || (events == 0) || (handler == NULL)) {
+		return 0;
+	}
+
+	/* increase size of list list if no more space left */
+	if (list->nfds == list->size) {
+		list->size += 16;
+		list->fds = xrealloc(list->fds, sizeof(*list->fds) * list->size);
+		list->handler = xrealloc(list->handler, sizeof(*list->handler) * list->size);
+		list->data = xrealloc(list->data, sizeof(*list->data) * list->size);
+	}
+
+	list->fds[list->nfds].fd = fd;
+	list->fds[list->nfds].events = events;
+	list->handler[list->nfds] = handler;
+	list->data[list->nfds] = data;  
+	list->nfds++;
+
+	upsdebugx(5, "%s: event handler %p for fd %d added", __func__, handler, fd);
+	return 1;
+}
+
+int io_handler_remove(io_handler_t *list, int fd, short events)
+{
+	int	i;
+
+	for (i = 0; i < list->nfds; i++) {
+		if (list->fds[i].fd != fd) {
+			continue;
+		}
+
+		if (list->fds[i].events & events) {
+			/* mark for deletion */
+			list->handler[i] = NULL;
+			upsdebugx(5, "%s: event handler %p for fd %d flagged for removal", __func__, list->handler[i], list->fds[i].fd);
+			return 1;
+		}
+	}
+
+	upsdebugx(5, "%s: event handler for fd %d not found", __func__, fd);
+	return 0;
 }
