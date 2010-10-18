@@ -42,16 +42,10 @@
 #include "common.h"
 
 #include <sys/types.h>
-#ifndef WIN32
 #include <sys/wait.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <netinet/in.h>
-#else
-#undef DATADIR
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#endif
 
 #include "upssched.h"
 #include "timehead.h"
@@ -89,7 +83,6 @@ static void exec_cmd(const char *cmd)
 	snprintf(buf, sizeof(buf), "%s %s", cmdscript, cmd);
 
 	err = system(buf);
-#ifndef WIN32
 	if (WIFEXITED(err)) {
 		if (WEXITSTATUS(err)) {
 			upslogx(LOG_INFO, "exec_cmd(%s) returned %d", buf, WEXITSTATUS(err));
@@ -101,14 +94,6 @@ static void exec_cmd(const char *cmd)
 			upslogx(LOG_ERR, "Execute command failure: %s", buf);
 		}
 	}
-#else
-	if(err != -1) {
-		upslogx(LOG_INFO, "Execute command \"%s\" OK", buf);
-	}
-	else {
-		upslogx(LOG_ERR, "Execute command failure : %s", buf);
-	}
-#endif
 
 	return;
 }
@@ -254,7 +239,6 @@ static void cancel_timer(const char *name, const char *cname)
 
 static void us_serialize(int op)
 {
-#ifndef WIN32
 	static	int	pipefd[2];
 	int	ret;
 	char	ch;
@@ -279,12 +263,10 @@ static void us_serialize(int op)
 			close(pipefd[0]);
 			break;
 	}
-#endif
 }
 
 static int open_sock(void)
 {
-#ifndef WIN32
 	int	ret, fd;
 	struct	sockaddr_un	ssaddr;
 
@@ -316,9 +298,6 @@ static int open_sock(void)
 		fatal_with_errno(EXIT_FAILURE, "listen(%d, %d) failed", fd, US_LISTEN_BACKLOG);
 
 	return fd;
-#else
-	return 0;
-#endif
 }
 
 static void conn_del(conn_t *target)
@@ -374,7 +353,6 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 
 static void conn_add(int sockfd)
 {
-#ifndef WIN32
 	int	acc, ret;
 	conn_t	*tmp, *last;
 	struct	sockaddr_un	saddr;
@@ -425,7 +403,6 @@ static void conn_add(int sockfd)
 	upsdebugx(3, "new connection on fd %d", acc);
 
 	pconf_init(&tmp->ctx, NULL);
-#endif
 }
 
 static int sock_arg(conn_t *conn)
@@ -523,7 +500,7 @@ static void start_daemon(int lockfd)
 	fromlen = sizeof(struct sockaddr);
 
 	us_serialize(SERIALIZE_INIT);
-#ifndef WIN32
+
 	if ((pid = fork()) < 0)
 		fatal_with_errno(EXIT_FAILURE, "Unable to enter background");
 
@@ -534,7 +511,7 @@ static void start_daemon(int lockfd)
 
 		return;
 	}
-#endif
+
 	/* child */
 
 	close(0);
@@ -613,7 +590,6 @@ static void start_daemon(int lockfd)
 
 static int try_connect(void)
 {
-#ifndef WIN32
 	int	pipefd, ret;
 	struct	sockaddr_un saddr;
 
@@ -632,9 +608,6 @@ static int try_connect(void)
 		return pipefd;
 
 	return -1;
-#else
-	return -1;
-#endif
 }
 
 static int get_lock(const char *fn)
@@ -693,7 +666,6 @@ static void read_timeout(int sig)
 
 static void setup_sigalrm(void)
 {
-#ifndef WIN32
 	struct  sigaction sa;
 	sigset_t nut_upssched_sigmask;
 
@@ -702,7 +674,6 @@ static void setup_sigalrm(void)
 	sa.sa_flags = 0;
 	sa.sa_handler = read_timeout;
 	sigaction(SIGALRM, &sa, NULL);
-#endif
 }
 
 static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
@@ -755,13 +726,11 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 		/* ugh - probably should use select here... */
 		setup_sigalrm();
 
-#ifndef WIN32
 		alarm(2);
 		ret = read(pipefd, buf, sizeof(buf));
 		alarm(0);
 
 		signal(SIGALRM, SIG_IGN);
-#endif
 
 		close(pipefd);
 

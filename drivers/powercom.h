@@ -1,7 +1,7 @@
 /*
  * powercom.h - defines for the newpowercom.c driver
  *
- * $Id: powercom.h 2336 2010-02-11 20:16:43Z adkorte-guest $
+ * $Id$
  *
  * Copyrights:
  * (C) 2002 Simon Rozman <simon@rozman.net>
