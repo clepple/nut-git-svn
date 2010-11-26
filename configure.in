@@ -98,7 +98,7 @@ AC_CHECK_FUNCS(vsnprintf snprintf, [], [
 	AC_TYPE_LONG_LONG_INT
 ])
 
-AC_REPLACE_FUNCS(setenv inet_aton strerror atexit)
+AC_REPLACE_FUNCS(setenv strerror atexit)
 
 dnl
 dnl Only use these when compiling with gcc
@@ -254,27 +254,6 @@ fi
 
 AM_CONDITIONAL(WITH_WRAP, test "${nut_with_wrap}" = "yes")
 NUT_REPORT_FEATURE([enable libwrap (tcp-wrappers) support], [${nut_with_wrap}])
-
-dnl ----------------------------------------------------------------------
-dnl check whether to compile IPv6 features
-
-NUT_ARG_WITH([ipv6], [enable IPv6 support], [auto])
-
-dnl ${nut_with_ipv6}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_ipv6}" != "no"; then
-   dnl check for IPv6 prerequisites
-   NUT_CHECK_IPV6
-fi
-
-if test "${nut_with_ipv6}" = "yes" -a "${nut_have_ipv6}" != "yes"; then
-   AC_MSG_ERROR(["Some feature required for IPv6 support is missing"])
-fi
-
-if test "${nut_with_ipv6}" != "no"; then
-   nut_with_ipv6="${nut_have_ipv6}"
-fi
-
-NUT_REPORT_FEATURE([enable IPv6 support], [${nut_with_ipv6}])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-cgi
@@ -779,7 +758,6 @@ AC_SUBST(HAL_USER)
 AC_SUBST(HAL_DEVICE_MATCH_KEY)
 AC_SUBST(HAL_FDI_PATH)
 AC_SUBST(HAL_CALLOUTS_PATH)
-AC_SUBST(HAVE_GLIB_2_14)
 AC_SUBST(LIBHAL_CFLAGS)
 AC_SUBST(LIBHAL_LDFLAGS)
 AC_SUBST(DRIVER_BUILD_LIST)
