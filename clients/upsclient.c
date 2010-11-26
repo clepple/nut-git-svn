@@ -97,7 +97,7 @@ struct {
 
 const char *upscli_strerror(UPSCONN_t *ups)
 {
-#ifdef HAVE_SSL
+#ifdef WITH_SSL
 	unsigned long	err;
 	char	sslbuf[UPSCLI_ERRBUF_LEN];
 #endif
@@ -126,7 +126,7 @@ const char *upscli_strerror(UPSCONN_t *ups)
 		return ups->errbuf;
 
 	case 2:		/* SSL error */
-#ifdef HAVE_SSL
+#ifdef WITH_SSL
 		err = ERR_get_error();
 		if (err) {
 			ERR_error_string(err, sslbuf);
@@ -141,7 +141,7 @@ const char *upscli_strerror(UPSCONN_t *ups)
 #else
 		snprintf(ups->errbuf, UPSCLI_ERRBUF_LEN, 
 			"SSL error, but SSL wasn't enabled at compile-time");
-#endif	/* HAVE_SSL */
+#endif	/* WITH_SSL */
 		return ups->errbuf;
 
 	case 3:		/* parsing (parseconf) error */
@@ -188,7 +188,7 @@ static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 {
 	int	ret;
 
-#ifdef HAVE_SSL
+#ifdef WITH_SSL
 	if (ups->ssl) {
 		ret = SSL_read(ups->ssl, buf, buflen);
 
@@ -245,7 +245,7 @@ static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen)
 {
 	int	ret;
 
-#ifdef HAVE_SSL
+#ifdef WITH_SSL
 	if (ups->ssl) {
 		ret = SSL_write(ups->ssl, buf, buflen);
 
@@ -274,7 +274,7 @@ static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen)
 }
 
 /* stub first */
-#ifndef HAVE_SSL
+#ifndef WITH_SSL
 static int upscli_sslinit(UPSCONN_t *ups)
 {
 	return 0;	/* not supported */
@@ -392,7 +392,7 @@ int upscli_sslcert(UPSCONN_t *ups, const char *file, const char *path, int verif
 	return 1;
 }
 
-#endif	/* HAVE_SSL */
+#endif	/* WITH_SSL */
 
 int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,struct timeval * timeout)
 {
@@ -1044,7 +1044,7 @@ int upscli_disconnect(UPSCONN_t *ups)
 
 	net_write(ups, "LOGOUT\n", 7);
 
-#ifdef HAVE_SSL
+#ifdef WITH_SSL
 	if (ups->ssl) {
 		SSL_shutdown(ups->ssl);
 		SSL_free(ups->ssl);

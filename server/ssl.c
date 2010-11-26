@@ -35,7 +35,7 @@ char	*certfile = NULL;
 
 static int	ssl_initialized = 0;
 
-#ifndef HAVE_SSL
+#ifndef WITH_SSL
 
 /* stubs for non-ssl compiles */
 void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
@@ -255,4 +255,4 @@ void ssl_finish(nut_ctype_t *client)
 	}
 }
 
-#endif	/* HAVE_SSL */
+#endif	/* WITH_SSL */

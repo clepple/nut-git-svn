@@ -117,6 +117,14 @@ Gnome or KDE desktop, this will enable a full Plug & Play usage.
 See docs/nut-hal.txt for additional information on how to set up
 and use HAL support.
 
+	--with-ssl (default: auto-detect)
+	--with-nss (default: auto-detect)
+	--with-openssl (default: auto-detect)
+
+Enable SSL support, using either Mozilla NSS or OpenSSL.
+If both are present, and nothing was specified, NSS support will
+be prefered. Read docs/security.txt for instructions on SSL support.
+
 	--with-avahi (default: auto-detect)
 
 Build and install Avahi support, to publish NUT server availability

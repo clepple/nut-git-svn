@@ -23,7 +23,7 @@
 #ifndef NUT_CTYPE_H_SEEN
 #define NUT_CTYPE_H_SEEN 1
 
-#ifdef HAVE_SSL
+#ifdef WITH_SSL
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #endif
@@ -39,7 +39,7 @@ typedef struct nut_ctype_s {
 	char	*password;
 	char	*username;
 
-#ifdef	HAVE_SSL
+#ifdef	WITH_SSL
 	SSL	*ssl;
 #else
 	void	*ssl;
