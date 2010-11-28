@@ -56,9 +56,10 @@ if test -z "${nut_have_libnss_seen}"; then
 	AC_MSG_RESULT([${LIBS}])
 
 	dnl check if NSS is usable
-	AC_CHECK_HEADERS(nss/nss.h, [nut_have_libnss=yes], [nut_have_libnss=no], [AC_INCLUDES_DEFAULT])
+	AC_CHECK_HEADERS(nss.h, [nut_have_libnss=yes], [nut_have_libnss=no], [AC_INCLUDES_DEFAULT])
 	AC_CHECK_FUNCS(NSS_Init, [], [nut_have_libnss=no])
-
+	AC_SEARCH_LIBS(SSL_library_init, nss_compat_ossl, [], [nut_have_libnss=no])
+	
 	if test "${nut_have_libnss}" = "yes"; then
 		nut_with_ssl="yes"
 		nut_ssl_lib="(Mozilla NSS)"
