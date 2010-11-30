@@ -122,7 +122,7 @@ and use HAL support.
 	--with-openssl (default: auto-detect)
 
 Enable SSL support, using either Mozilla NSS or OpenSSL.
-If both are present, and nothing was specified, NSS support will
+If both are present, and nothing was specified, OpenSSL support will
 be prefered. Read docs/security.txt for instructions on SSL support.
 
 	--with-avahi (default: auto-detect)

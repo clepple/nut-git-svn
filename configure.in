@@ -411,7 +411,7 @@ dnl AM_CONDITIONAL(WITH_OPENIPMI, test "${nut_with_openipmi}" = "yes")
 
 dnl ----------------------------------------------------------------------
 dnl Check for with-ssl, and --with-nss or --with-openssl
-dnl Only one can be enabled at a time, with a preference for Mozilla NSS
+dnl Only one can be enabled at a time, with a preference for OpenSSL
 dnl if both are available
 
 nut_ssl_lib=""
@@ -434,11 +434,11 @@ if test "${nut_with_ssl}" != "no"; then
          AC_MSG_ERROR(["OpenSSL not found, required for SSL support"])
       fi
    else
-      dnl Prefer NSS over OpenSSL otherwise
-      NUT_CHECK_LIBNSS
-      if test "${nut_have_libnss}" != "yes"; then
-         NUT_CHECK_LIBOPENSSL
-         if test "${nut_have_openssl}" != "yes"; then
+      dnl Prefer OpenSSL over NSS otherwise
+      NUT_CHECK_LIBOPENSSL
+      if test "${nut_have_openssl}" != "yes"; then
+         NUT_CHECK_LIBNSS
+         if test "${nut_have_libnss}" != "yes"; then
             nut_with_ssl="no"
             AC_MSG_ERROR(["Mozilla NSS and OpenSSL neither found, required for SSL support"])
          fi
