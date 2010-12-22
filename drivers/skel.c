@@ -10,6 +10,7 @@
 	and possibly also to:
 	* docs/hid-subdrivers.txt for USB/HID devices
 	* or docs/snmp-subdrivers.txt for SNMP devices
+	* or docs/megatec.txt for Megatec / Q1 devices
 */
 
 #include "main.h"

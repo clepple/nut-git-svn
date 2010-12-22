@@ -20,9 +20,15 @@
 #ifndef UPSCLIENT_H_SEEN
 #define UPSCLIENT_H_SEEN
 
-#ifdef HAVE_SSL
-#include <openssl/err.h>
-#include <openssl/ssl.h>
+/* Mozilla NSS */
+#ifdef WITH_NSS
+	#include <nss_compat_ossl/nss_compat_ossl.h>
+#endif
+
+/* OpenSSL */
+#ifdef WITH_OPENSSL
+	#include <openssl/err.h>
+	#include <openssl/ssl.h>
 #endif
 
 #ifdef __cplusplus
@@ -49,12 +55,9 @@ typedef struct {
 
 	char	errbuf[UPSCLI_ERRBUF_LEN];
 
-#ifdef HAVE_SSL
+#ifdef WITH_SSL
 	SSL_CTX	*ssl_ctx;
 	SSL	*ssl;
-#else
-	void	*ssl_ctx;
-	void	*ssl;
 #endif
 
 	char	readbuf[64];

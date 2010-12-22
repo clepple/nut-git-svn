@@ -26,9 +26,6 @@
 
 #include "upsclient.h"
 
-static char		*upsname = NULL, *hostname = NULL;
-static UPSCONN_t	*ups = NULL;
-
 struct list_t {
 	char	*name;
 	struct	list_t	*next;
@@ -50,45 +47,56 @@ static void usage(const char *prog)
 	printf("  <ups>         UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
 	printf("\n");
 	printf("Call without -s to show all possible read/write variables.\n");
+
+	exit(EXIT_SUCCESS);
 }
 
-static void clean_exit(void)
+static void clean_exit(UPSCONN_t *ups, char *upsname, char *hostname, int code)
 {
-	if (ups) {
-		upscli_disconnect(ups);
-	}
-
 	free(upsname);
 	free(hostname);
-	free(ups);
+
+	upscli_disconnect(ups);
+
+	exit(code);
 }
 
-static void do_set(const char *varname, const char *newval)
+static int do_set(UPSCONN_t *ups, const char *upsname, const char *varname, 
+	const char *newval)
 {
 	char	buf[SMALLBUF], enc[SMALLBUF];
 
-	snprintf(buf, sizeof(buf), "SET VAR %s %s \"%s\"\n", upsname, varname, pconf_encode(newval, enc, sizeof(enc)));
+	snprintf(buf, sizeof(buf), "SET VAR %s %s \"%s\"\n",
+		upsname, varname, pconf_encode(newval, enc, sizeof(enc)));
 
 	if (upscli_sendline(ups, buf, strlen(buf)) < 0) {
-		fatalx(EXIT_FAILURE, "Can't set variable: %s", upscli_strerror(ups));
+		fprintf(stderr, "Can't set variable: %s\n", 
+			upscli_strerror(ups));
+
+		return EXIT_FAILURE;
 	}
 
 	if (upscli_readline(ups, buf, sizeof(buf)) < 0) {
-		fatalx(EXIT_FAILURE, "Set variable failed: %s", upscli_strerror(ups));
+		fprintf(stderr, "Set variable failed: %s\n", 
+			upscli_strerror(ups));
+
+		return EXIT_FAILURE;
 	}
 
 	/* FUTURE: status cookies will tie in here */
 	if (strncmp(buf, "OK", 2) != 0) {
-		fatalx(EXIT_FAILURE, "Unexpected response from upsd: %s", buf);
+		printf("Unexpected response from upsd: %s\n", buf);
+		return EXIT_FAILURE;
 	}
 
-	fprintf(stderr, "%s\n", buf);
+	return EXIT_SUCCESS;
 }
 
-static void do_setvar(const char *varname, char *uin, const char *pass)
+static int do_setvar(UPSCONN_t *ups, const char *varname, char *uin,
+		const char *pass, char *upsname, char *hostname)
 {
 	char	newval[SMALLBUF], temp[SMALLBUF], user[SMALLBUF], *ptr;
-	struct passwd	*pw;
+	struct	passwd	*pw;
 
 	if (uin) {
 		snprintf(user, sizeof(user), "%s", uin);
@@ -97,24 +105,22 @@ static void do_setvar(const char *varname, char *uin, const char *pass)
 
 		pw = getpwuid(getuid());
 
-		if (pw) {
+		if (pw)
 			printf("Username (%s): ", pw->pw_name);
-		} else {
+		else
 			printf("Username: ");
-		}
 
 		if (fgets(user, sizeof(user), stdin) == NULL) {
 			upsdebug_with_errno(LOG_INFO, "%s", __func__);
 		}
 
 		/* deal with that pesky newline */
-		if (strlen(user) > 1) {
+		if (strlen(user) > 1)
 			user[strlen(user) - 1] = '\0';
-		} else {
-			if (!pw) {
+		else {
+			if (!pw)
 				fatalx(EXIT_FAILURE, "No username available - even tried getpwuid");
-			}
-
+	
 			snprintf(user, sizeof(user), "%s", pw->pw_name);
 		}
 	}
@@ -124,7 +130,10 @@ static void do_setvar(const char *varname, char *uin, const char *pass)
 		pass = GETPASS("Password: " );
 
 		if (!pass) {
-			fatal_with_errno(EXIT_FAILURE, "getpass failed");
+			fprintf(stderr, "getpass failed: %s\n", 
+				strerror(errno));
+
+			return EXIT_FAILURE;
 		}
 	}
 
@@ -144,93 +153,116 @@ static void do_setvar(const char *varname, char *uin, const char *pass)
 	snprintf(temp, sizeof(temp), "USERNAME %s\n", user);
 
 	if (upscli_sendline(ups, temp, strlen(temp)) < 0) {
-		fatalx(EXIT_FAILURE, "Can't set username: %s", upscli_strerror(ups));
+		fprintf(stderr, "Can't set username: %s\n", 
+			upscli_strerror(ups));
+
+		return EXIT_FAILURE;
 	}
 
 	if (upscli_readline(ups, temp, sizeof(temp)) < 0) {
 
 		if (upscli_upserror(ups) == UPSCLI_ERR_UNKCOMMAND) {
-			fatalx(EXIT_FAILURE, "Set username failed due to an unknown command. You probably need to upgrade upsd.");
+			fprintf(stderr, "Set username failed due to an "
+				"unknown command.\n");
+
+			fprintf(stderr, "You probably need to upgrade upsd.\n");
+
+			clean_exit(ups, upsname, hostname, EXIT_FAILURE);
 		}
 
-		fatalx(EXIT_FAILURE, "Set username failed: %s", upscli_strerror(ups));
+		fprintf(stderr, "Set username failed: %s\n",
+			upscli_strerror(ups));
+
+		return EXIT_FAILURE;
 	}
 
 	snprintf(temp, sizeof(temp), "PASSWORD %s\n", pass);
 
 	if (upscli_sendline(ups, temp, strlen(temp)) < 0) {
-		fatalx(EXIT_FAILURE, "Can't set password: %s", upscli_strerror(ups));
+		fprintf(stderr, "Can't set password: %s\n", 
+			upscli_strerror(ups));
+
+		return EXIT_FAILURE;
 	}
 
 	if (upscli_readline(ups, temp, sizeof(temp)) < 0) {
-		fatalx(EXIT_FAILURE, "Set password failed: %s", upscli_strerror(ups));
+		fprintf(stderr, "Set password failed: %s\n", 
+			upscli_strerror(ups));
+
+		return EXIT_FAILURE;
 	}
 
 	/* no upsname means die */
 	if (!upsname) {
-		fatalx(EXIT_FAILURE, "Error: a UPS name must be specified (upsname[@hostname[:port]])");
+		fprintf(stderr, "Error: a UPS name must be specified (upsname[@hostname[:port]])\n");
+		return EXIT_FAILURE;
 	}
 
 	/* old variable names are no longer supported */
 	if (!strchr(varname, '.')) {
-		fatalx(EXIT_FAILURE, "Error: old variable names are not supported");
+		fprintf(stderr, "Error: old variable names are not supported\n");
+		return EXIT_FAILURE;
 	}
 
-	do_set(varname, newval);
-}
+	return do_set(ups, upsname, varname, newval);
+}	
 
-static const char *get_data(const char *type, const char *varname)
+static const char *get_data(const char *type, UPSCONN_t *ups, 
+	const char *upsname, const char *varname)
 {
 	int	ret;
 	unsigned int	numq, numa;
 	char	**answer;
-	const char	*query[4];
+	const	char	*query[4];
 
 	query[0] = type;
 	query[1] = upsname;
 	query[2] = varname;
-
 	numq = 3;
 
 	ret = upscli_get(ups, numq, query, &numa, &answer);
 
-	if ((ret < 0) || (numa < numq)) {
+	if ((ret < 0) || (numa < numq))
 		return NULL;
-	}
 
 	/* <type> <upsname> <varname> <desc> */
 	return answer[3];
 }
 
-static void do_string(const char *varname)
+static void do_string(UPSCONN_t *ups, const char *upsname, const char *varname)
 {
-	const char	*val;
+	const	char	*val;
 
-	val = get_data("VAR", varname);
+	val = get_data("VAR", ups, upsname, varname);
 
 	if (!val) {
-		fatalx(EXIT_FAILURE, "do_string: can't get current value of %s", varname);
+		fprintf(stderr, "do_string: can't get current value of %s\n",
+			varname);
+		return;
 	}
 
 	printf("Type: STRING\n");
 	printf("Value: %s\n", val);
 }
 
-static void do_enum(const char *varname)
+static void do_enum(UPSCONN_t *ups, const char *upsname, const char *varname)
 {
 	int	ret;
 	unsigned int	numq, numa;
-	char	**answer, buf[SMALLBUF];
-	const char	*query[4], *val;
+	char	**answer, *val;
+	const	char	*query[4], *tmp;
 
 	/* get current value */
-	val = get_data("VAR", varname);
+	tmp = get_data("VAR", ups, upsname, varname);
 
-	if (!val) {
-		fatalx(EXIT_FAILURE, "do_enum: can't get current value of %s", varname);
+	if (!tmp) {
+		fprintf(stderr, "do_enum: can't get current value of %s\n",
+			varname);
+		return;
 	}
 
-	snprintf(buf, sizeof(buf), "%s", val);
+	/* tmp is a pointer into answer - have to save it somewhere else */
+	val = xstrdup(tmp);
 
 	query[0] = "ENUM";
 	query[1] = upsname;
@@ -240,7 +272,8 @@ static void do_enum(const char *varname)
 	ret = upscli_list_start(ups, numq, query);
 
 	if (ret < 0) {
-		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+		fprintf(stderr, "Error: %s\n", upscli_strerror(ups));
+		return;
 	}
 
 	ret = upscli_list_next(ups, numq, query, &numa, &answer);
@@ -252,27 +285,32 @@ static void do_enum(const char *varname)
 		/* ENUM <upsname> <varname> <value> */
 
 		if (numa < 4) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %d args, need at least 4)", numa);
+			fprintf(stderr, "Error: insufficient data "
+				"(got %d args, need at least 4)\n", numa);
+
+			free(val);
+			return;
 		}
 
 		printf("Option: \"%s\"", answer[3]);
 
-		if (!strcmp(answer[3], buf)) {
+		if (!strcmp(answer[3], val))
 			printf(" SELECTED");
-		}
 
 		printf("\n");
 
 		ret = upscli_list_next(ups, numq, query, &numa, &answer);
 	}
+
+	free(val);
 }
 
-static void do_type(const char *varname)
+static void do_type(UPSCONN_t *ups, const char *upsname, const char *varname)
 {
 	int	ret;
 	unsigned int	i, numq, numa;
 	char	**answer;
-	const char	*query[4];
+	const	char	*query[4];
 
 	query[0] = "TYPE";
 	query[1] = upsname;
@@ -290,54 +328,54 @@ static void do_type(const char *varname)
 	for (i = 3; i < numa; i++) {
 
 		if (!strcasecmp(answer[i], "ENUM")) {
-			do_enum(varname);
+			do_enum(ups, upsname, varname);
 			return;
 		}
 
 		if (!strncasecmp(answer[i], "STRING:", 7)) {
-			do_string(varname);
+			do_string(ups, upsname, varname);
 			return;
 		}
 
 		/* ignore this one */
-		if (!strcasecmp(answer[i], "RW")) {
+		if (!strcasecmp(answer[i], "RW"))
 			continue;
-		}
 
 		printf("Type: %s (unrecognized)\n", answer[i]);
 	}
+
 }
 
-static void print_rw(const char *varname)
+static void print_rw(UPSCONN_t *ups, const char *upsname, const char *varname)
 {
-	const char	*tmp;
+	const	char	*tmp;
 
 	printf("[%s]\n", varname);
 
-	tmp = get_data("DESC", varname);
+	tmp = get_data("DESC", ups, upsname, varname);
 
-	if (tmp) {
+	if (tmp)
 		printf("%s\n", tmp);
-	} else {
+	else
 		printf("Description unavailable\n");
-	}
 
-	do_type(varname);
+	do_type(ups, upsname, varname);
 
 	printf("\n");
-}
+}	
 
-static void print_rwlist(void)
+static int print_rwlist(UPSCONN_t *ups, const char *upsname)
 {
 	int	ret;
 	unsigned int	numq, numa;
-	const char	*query[2];
+	const	char	*query[2];
 	char	**answer;
 	struct	list_t	*lhead, *llast, *ltmp, *lnext;
 
 	/* the upsname is now required */
 	if (!upsname) {
-		fatalx(EXIT_FAILURE, "Error: a UPS name must be specified (upsname[@hostname[:port]])");
+		fprintf(stderr, "Error: a UPS name must be specified (upsname[@hostname[:port]])\n");
+		return EXIT_FAILURE;
 	}
 
 	llast = lhead = NULL;
@@ -352,10 +390,12 @@ static void print_rwlist(void)
 
 		/* old upsd --> fall back on old LISTRW technique */
 		if (upscli_upserror(ups) == UPSCLI_ERR_UNKCOMMAND) {
-			fatalx(EXIT_FAILURE, "Error: upsd is too old to support this query");
+			fprintf(stderr, "Error: upsd is too old to support this query\n");
+			return EXIT_FAILURE;
 		}
 
-		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+		fprintf(stderr, "Error: %s\n", upscli_strerror(ups));
+		return EXIT_FAILURE;
 	}
 
 	ret = upscli_list_next(ups, numq, query, &numa, &answer);
@@ -364,7 +404,9 @@ static void print_rwlist(void)
 
 		/* RW <upsname> <varname> <value> */
 		if (numa < 4) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %d args, need at least 4)", numa);
+			fprintf(stderr, "Error: insufficient data "
+				"(got %d args, need at least 4)\n", numa);
+			return EXIT_FAILURE;
 		}
 
 		/* sock this entry away for later */
@@ -373,11 +415,10 @@ static void print_rwlist(void)
 		ltmp->name = xstrdup(answer[2]);
 		ltmp->next = NULL;
 
-		if (llast) {
+		if (llast)
 			llast->next = ltmp;
-		} else {
+		else
 			lhead = ltmp;
-		}
 
 		llast = ltmp;
 
@@ -391,23 +432,28 @@ static void print_rwlist(void)
 	while (ltmp) {
 		lnext = ltmp->next;
 
-		print_rw(ltmp->name);
+		print_rw(ups, upsname, ltmp->name);
 
 		free(ltmp->name);
 		free(ltmp);
 		ltmp = lnext;
 	}
+
+	return EXIT_SUCCESS;
 }
 
 int main(int argc, char **argv)
 {
-	int	i, port;
+	int	i, port, ret;
+	char	*upsname, *hostname, *setvar;
 	const char	*prog = xbasename(argv[0]);
-	char	*password = NULL, *username = NULL, *setvar = NULL;
+	char	*password = NULL, *username = NULL;
+	UPSCONN_t	ups;
+
+	setvar = username = NULL;
 
 	while ((i = getopt(argc, argv, "+s:p:u:V")) != -1) {
-		switch (i)
-		{
+		switch (i) {
 		case 's':
 			setvar = optarg;
 			break;
@@ -422,38 +468,41 @@ int main(int argc, char **argv)
 			exit(EXIT_SUCCESS);
 		default:
 			usage(prog);
-			exit(EXIT_SUCCESS);
+			break;
 		}
 	}
 
 	argc -= optind;
 	argv += optind;
 
-	if (argc < 1) {
+	if (argc < 1)
 		usage(prog);
-		exit(EXIT_SUCCESS);
-	}
 
-	/* be a good little client that cleans up after itself */
-	atexit(clean_exit);
+	upsname = hostname = NULL;
 
 	if (upscli_splitname(argv[0], &upsname, &hostname, &port) != 0) {
-		fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]");
+		fprintf(stderr, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
+		clean_exit(&ups, upsname, hostname, EXIT_FAILURE);
 	}
 
-	ups = xcalloc(1, sizeof(*ups));
-
-	if (upscli_connect(ups, hostname, port, 0) < 0) {
-		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+	if (upscli_connect(&ups, hostname, port, 0) < 0) {
+		fprintf(stderr, "Can't connect: %s\n", upscli_strerror(&ups));
+		clean_exit(&ups, upsname, hostname, EXIT_FAILURE);
 	}
 
+	/* setting a variable? */
 	if (setvar) {
-		/* setting a variable */
-		do_setvar(setvar, username, password);
-	} else {
-		/* if not, get the list of supported read/write variables */
-		print_rwlist();
+		ret = do_setvar(&ups, setvar, username, password, upsname,
+			hostname);
+
+		clean_exit(&ups, upsname, hostname, ret);
 	}
 
-	exit(EXIT_SUCCESS);
+	/* if not, get the list of supported read/write variables */
+	ret = print_rwlist(&ups, upsname);
+
+	clean_exit(&ups, upsname, hostname, ret);
+
+	/* NOTREACHED */
+	exit(EXIT_FAILURE);
 }
