@@ -24,7 +24,8 @@
 
 /* Mozilla NSS */
 #ifdef WITH_NSS
-	#include <nss_compat_ossl/nss_compat_ossl.h>
+	#include <nss/nss.h>
+	#include <ssl.h>
 #endif
 
 /* OpenSSL */
@@ -44,10 +45,12 @@ typedef struct ctype_s {
 	char	*password;
 	char	*username;
 
-#ifdef	WITH_SSL
+#ifdef	WITH_OPENSSL
 	SSL	*ssl;
+#elif defined(WITH_NSS)
+	PRFileDesc	*ssl;
 #else
-	void	*ssl;
+	void *ssl;
 #endif
 	int	ssl_connected;
 
