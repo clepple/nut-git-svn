@@ -23,13 +23,16 @@
 #include "nut_ctype.h"
 
 extern char	*certfile;
+extern char	*certpasswd;
+extern int ssl_initialized;
 
 void ssl_init(void);
+void ssl_cleanup(void);
+
+void net_starttls(nut_ctype_t *client, int numarg, const char **arg);
 void ssl_finish(nut_ctype_t *client);
 
 int ssl_read(nut_ctype_t *client, char *buf, size_t buflen);
 int ssl_write(nut_ctype_t *client, const char *buf, size_t buflen);
-
-void net_starttls(nut_ctype_t *client, int numarg, const char **arg);
 
 #endif	/* NETSSL_H_SEEN */
