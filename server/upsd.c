@@ -648,6 +648,7 @@ static void upsd_cleanup(void)
 	free(statepath);
 	free(datapath);
 	free(certfile);
+	free(certname);
 	free(certpasswd);
 
 	free(fds);

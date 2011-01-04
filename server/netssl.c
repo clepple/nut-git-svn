@@ -60,6 +60,7 @@ int ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 	return -1;
 }
 char	*certfile = NULL;
+char	*certname = NULL;
 char	*certpasswd = NULL;
 
 int	ssl_initialized = 0;
@@ -190,13 +191,6 @@ static SECStatus BadCertHandler(ctype_t *arg, PRFileDesc *fd)
 	return SECSuccess;
 }
 
-static SECStatus GetClientAuthData(ctype_t *arg, PRFileDesc *fd,
-	CERTDistNames *caNames, CERTCertificate **pRetCert, SECKEYPrivateKey **pRetKey)
-{
-	upslogx(LOG_DEBUG, "GetClientAuthData\n");
-	return NSS_GetClientAuthData(arg, fd, caNames, pRetCert, pRetKey);
-}
-
 static void HandshakeCallback(PRFileDesc *fd, ctype_t *client_data)
 {
 	upslogx(LOG_DEBUG, "HandshakeCallback\n");
@@ -264,6 +258,11 @@ void ssl_init()
 		
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 
+	if (!certname || certname[0]==0 ) {
+		upslogx(LOG_ERR, "The SSL certificate name is not specified.");
+		return;
+	}
+
 	PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
 	
 	PK11_SetPasswordFunc(nss_password_callback);
@@ -305,7 +304,7 @@ void ssl_init()
 		return;
 	}
 	
-	cert = PK11_FindCertFromNickname("My nut server", NULL);
+	cert = PK11_FindCertFromNickname(certname, NULL);
 	if(cert==NULL)	{
 		nss_error("PK11_FindCertFromNickname\n");
 		return;
@@ -454,12 +453,6 @@ static int ssl_accept(nut_ctype_t *client)
 		return;
 	}
 	
-	status = SSL_GetClientAuthDataHook(client->ssl, (SSLGetClientAuthData)GetClientAuthData, client);
-	if (status != SECSuccess) {
-		nss_error("SSL_GetClientAuthDataHook");
-		return;
-	}
-	
 	status = SSL_HandshakeCallback(client->ssl, (SSLHandshakeCallback)HandshakeCallback, client);
 	if (status != SECSuccess) {
 		nss_error("SSL_HandshakeCallback");
@@ -484,6 +477,7 @@ static int ssl_accept(nut_ctype_t *client)
 	status = SSL_ForceHandshake(client->ssl);
 	if (status != SECSuccess) {
 		nss_error("SSL_ForceHandshake");
+		/* TODO : Close the connexion. */
 		return;
 	}
 
