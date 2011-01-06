@@ -38,6 +38,7 @@
 	#include <key.h>
 	#include <keyt.h>
 	#include <secerr.h>
+	#include <sslerr.h>
 #endif /* WITH_NSS */
 
 
@@ -63,6 +64,7 @@ char	*certfile = NULL;
 char	*certname = NULL;
 char	*certpasswd = NULL;
 
+int certrequest = 0;
 int	ssl_initialized = 0;
 
 void ssl_finish(nut_ctype_t *client)
@@ -181,19 +183,27 @@ static int ssl_error(PRFileDesc *ssl, int ret)
 static SECStatus AuthCertificate(CERTCertDBHandle *arg, PRFileDesc *fd,
 	PRBool checksig, PRBool isServer)
 {
-	upslogx(LOG_DEBUG, "AuthCertificate\n");
-	return SSL_AuthCertificate(arg, fd, checksig, isServer);
+	ctype_t *client  = (ctype_t *)SSL_RevealPinArg(fd);
+	SECStatus status = SSL_AuthCertificate(arg, fd, checksig, isServer);
+	upslogx(LOG_DEBUG, "NSS AuthCertificate: "
+		"Intend to authenticate client %s (checksig=%s) : %s.",
+		client?client->addr:"(unnamed)",
+		checksig?"TRUE":"FALSE",
+		status==SECSuccess?"SUCCESS":"FAILED");
+	return status;
 }
 
 static SECStatus BadCertHandler(ctype_t *arg, PRFileDesc *fd)
 {
-	upslogx(LOG_DEBUG, "BadCertHandler\n");
-	return SECSuccess;
+	upslogx(LOG_DEBUG, "NSS BadCertHandler");
+	return certrequest==NETSSL_CERTREQ_REQUIRE?SECFailure:SECSuccess;
 }
 
 static void HandshakeCallback(PRFileDesc *fd, ctype_t *client_data)
 {
-	upslogx(LOG_DEBUG, "HandshakeCallback\n");
+	upslogx(LOG_DEBUG, "NSS HandshakeCallback: "
+		"SSL handshake done successfully with client %s.",
+		client_data->addr);
 }
 
 
@@ -302,6 +312,23 @@ void ssl_init()
 	if (status != SECSuccess) {
 		nss_error("SSL_OptionSetDefault(SSL_ENABLE_TLS, PR_TRUE)");
 		return;
+	}
+
+	if (certrequest == NETSSL_CERTREQ_REQUEST || 
+		certrequest == NETSSL_CERTREQ_REQUIRE ) {
+		status = SSL_OptionSetDefault(SSL_REQUEST_CERTIFICATE, PR_TRUE);
+		if (status != SECSuccess) {
+			nss_error("SSL_OptionSetDefault(SSL_REQUEST_CERTIFICATE, PR_TRUE)");
+			return;
+		}
+	}
+
+	if (certrequest == NETSSL_CERTREQ_REQUIRE ) {
+		status = SSL_OptionSetDefault(SSL_REQUIRE_CERTIFICATE, PR_TRUE);
+		if (status != SECSuccess) {
+			nss_error("SSL_OptionSetDefault(SSL_REQUIRE_CERTIFICATE, PR_TRUE)");
+			return;
+		}
 	}
 	
 	cert = PK11_FindCertFromNickname(certname, NULL);
@@ -476,9 +503,15 @@ static int ssl_accept(nut_ctype_t *client)
 	 * Probably SSL session key object allocation. */
 	status = SSL_ForceHandshake(client->ssl);
 	if (status != SECSuccess) {
-		nss_error("SSL_ForceHandshake");
-		/* TODO : Close the connexion. */
-		return;
+		PRErrorCode code = PR_GetError();
+		if (code==SSL_ERROR_NO_CERTIFICATE) {
+			upslogx(LOG_WARNING, "Client %s do not provide certificate.",
+				client->addr);
+		} else {
+			nss_error("SSL_ForceHandshake");
+			/* TODO : Close the connexion. */
+			return;
+		}
 	}
 
 #endif /* WITH_OPENSSL | WITH_NSS */
