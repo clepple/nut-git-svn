@@ -1003,8 +1003,13 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 			upslogx(LOG_NOTICE, "Can not connect to %s in SSL, continue uncrypted", ups->host);
 		} else {
 			upslogx(LOG_INFO, "Connected to %s in SSL", ups->host);
+			if (certverify == 0) {
+				/* you REALLY should set CERTVERIFY to 1 if using SSL... */
+				upslogx(LOG_WARNING, "Certificate verification is disabled");
+			}
 		}
 	}
+	
 	return 0;
 }
 
