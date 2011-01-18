@@ -114,6 +114,7 @@ typedef struct HOST_CERT_s {
 	
 	struct HOST_CERT_s	*next;
 }	HOST_CERT_t;
+static HOST_CERT_t* upscli_find_host_cert(const char* hostname);
 
 
 static int upscli_initialized = 0;
@@ -219,13 +220,19 @@ static SECStatus AuthCertificateDontVerify(CERTCertDBHandle *arg, PRFileDesc *fd
 
 static SECStatus BadCertHandler(UPSCONN_t *arg, PRFileDesc *fd)
 {
+	HOST_CERT_t* cert;
 	upslogx(LOG_WARNING, "Certificate validation failed for %s",
 		(arg&&arg->host)?arg->host:"<unnamed>");
 	/* BadCertHandler is called when the NSS certificate validation is failed.
 	 * If the certificate verification (user conf) is mandatory, reject authentication
 	 * else accept it.
-	 */ 
-	return verify_certificate==0 ? SECSuccess : SECFailure;
+	 */
+	cert = upscli_find_host_cert(arg->host);
+	if (cert != NULL) {
+		return cert->certverify==0 ?  SECSuccess : SECFailure;
+	} else {
+		return verify_certificate==0 ? SECSuccess : SECFailure;
+	}
 }
 
 static SECStatus GetClientAuthData(UPSCONN_t *arg, PRFileDesc *fd,
@@ -382,7 +389,7 @@ void upscli_add_host_cert(const char* hostname, const char* certname, int certve
 #endif /* WITH_NSS */
 }
 
-HOST_CERT_t* upscli_find_host_cert(const char* hostname)
+static HOST_CERT_t* upscli_find_host_cert(const char* hostname)
 {
 #ifdef WITH_NSS
 	HOST_CERT_t* cert = first_host_cert;
@@ -695,8 +702,8 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 		upslog_with_errno(1, "SSL_connect do not accept handshake.");
 		ssl_error(ups->ssl, res);
 		return -1;
-	case -1:
-		upslog_with_errno(1, "Unknown return value from SSL_connect");
+	default:
+		upslog_with_errno(1, "Unknown return value from SSL_connect %d", res);
 		ssl_error(ups->ssl, res);
 		return -1;
 	}	
@@ -722,12 +729,13 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 		return -1;
 	}
 	
-	if (verifycert)
+	if (verifycert) {
 		status = SSL_AuthCertificateHook(ups->ssl,
 			(SSLAuthCertificate)AuthCertificate, CERT_GetDefaultCertDB());
-	else
+	} else {
 		status = SSL_AuthCertificateHook(ups->ssl,
 			(SSLAuthCertificate)AuthCertificateDontVerify, CERT_GetDefaultCertDB());
+	}
 	if (status != SECSuccess) {
 		nss_error("upscli_sslinit / SSL_AuthCertificateHook");
 		return -1;
