@@ -3,10 +3,10 @@
 ACTION!="add", GOTO="nut-usbups_rules_end"
 SUBSYSTEM=="usb_device", GOTO="nut-usbups_rules_real"
 SUBSYSTEM=="usb", GOTO="nut-usbups_rules_real"
-SUBSYSTEMS!="usb", GOTO="nut-usbups_rules_end"
+SUBSYSTEM!="usb", GOTO="nut-usbups_rules_end"
 
 LABEL="nut-usbups_rules_real"
-#  Krauler UP-M500VA  - megatec_usb
+#  Krauler UP-M500VA  - blazer_usb
 ATTR{idVendor}=="0001", ATTR{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # Hewlett Packard
@@ -16,8 +16,16 @@ ATTR{idVendor}=="03f0", ATTR{idProduct}=="1f01", MODE="664", GROUP="@RUN_AS_GROU
 ATTR{idVendor}=="03f0", ATTR{idProduct}=="1f02", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  HP T750 INTL  - usbhid-ups
 ATTR{idVendor}=="03f0", ATTR{idProduct}=="1f06", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  HP T1000 INTL  - usbhid-ups
+ATTR{idVendor}=="03f0", ATTR{idProduct}=="1f08", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  HP T1500 INTL  - usbhid-ups
+ATTR{idVendor}=="03f0", ATTR{idProduct}=="1f09", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  HP R/T 2200 INTL (like SMART2200RMXL2U)  - usbhid-ups
 ATTR{idVendor}=="03f0", ATTR{idProduct}=="1f0a", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  HP R1500 G2 INTL  - usbhid-ups
+ATTR{idVendor}=="03f0", ATTR{idProduct}=="1fe0", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  HP T750 G2  - usbhid-ups
+ATTR{idVendor}=="03f0", ATTR{idProduct}=="1fe1", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # Eaton
 #  various models  - usbhid-ups
@@ -52,19 +60,19 @@ ATTR{idVendor}=="050d", ATTR{idProduct}=="1100", MODE="664", GROUP="@RUN_AS_GROU
 # APC
 #  various models  - usbhid-ups
 ATTR{idVendor}=="051d", ATTR{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  various 5G models  - usbhid-ups
+ATTR{idVendor}=="051d", ATTR{idProduct}=="0003", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # Powerware
 #  various models  - bcmxcp_usb
 ATTR{idVendor}=="0592", ATTR{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GROUP@"
-#  Agiler UPS  - megatec_usb
+#  Agiler UPS  - blazer_usb
 ATTR{idVendor}=="05b8", ATTR{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GROUP@"
-#  Belkin F6C1200-UNV  - megatec_usb
+#  Belkin F6C1200-UNV  - blazer_usb
 ATTR{idVendor}=="0665", ATTR{idProduct}=="5161", MODE="664", GROUP="@RUN_AS_GROUP@"
-
-# Liebert
 #  various models  - bcmxcp_usb
 ATTR{idVendor}=="06da", ATTR{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GROUP@"
-#  Mustek Powermust  - megatec_usb
+#  Mustek Powermust  - blazer_usb
 ATTR{idVendor}=="06da", ATTR{idProduct}=="0003", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  various models  - usbhid-ups
 ATTR{idVendor}=="06da", ATTR{idProduct}=="ffff", MODE="664", GROUP="@RUN_AS_GROUP@"
@@ -88,20 +96,60 @@ ATTR{idVendor}=="09ae", ATTR{idProduct}=="1003", MODE="664", GROUP="@RUN_AS_GROU
 ATTR{idVendor}=="09ae", ATTR{idProduct}=="1007", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  e.g. TrippLite ECO550UPS  - usbhid-ups
 ATTR{idVendor}=="09ae", ATTR{idProduct}=="1008", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. TrippLite ECO550UPS  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="1009", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. TrippLite ECO550UPS  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="1010", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  e.g. TrippLite OMNI1000LCD  - usbhid-ups
 ATTR{idVendor}=="09ae", ATTR{idProduct}=="2005", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  e.g. TrippLite OMNI900LCD  - usbhid-ups
 ATTR{idVendor}=="09ae", ATTR{idProduct}=="2007", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="2008", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. TrippLite Smart1000LCD  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="2009", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="2010", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="2011", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="2012", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="2013", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="2014", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="3008", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="3009", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="3010", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="3011", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  e.g. TrippLite smart2200RMXL2U  - usbhid-ups
 ATTR{idVendor}=="09ae", ATTR{idProduct}=="3012", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="3013", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
 ATTR{idVendor}=="09ae", ATTR{idProduct}=="3014", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="3015", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  e.g. TrippLite SmartOnline SU1500RTXL2UA (older unit?)  - usbhid-ups
 ATTR{idVendor}=="09ae", ATTR{idProduct}=="4001", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  e.g. TrippLite SmartOnline SU6000RT4U?  - usbhid-ups
 ATTR{idVendor}=="09ae", ATTR{idProduct}=="4002", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  e.g. TrippLite SmartOnline SU1500RTXL2ua  - usbhid-ups
 ATTR{idVendor}=="09ae", ATTR{idProduct}=="4003", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. TrippLite SmartOnline SU1000XLA  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="4004", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="4005", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="4006", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="4007", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="4008", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # PowerCOM
 #  PowerCOM IMP - IMPERIAL Series  - usbhid-ups
@@ -114,13 +162,13 @@ ATTR{idVendor}=="0d9f", ATTR{idProduct}=="00a4", MODE="664", GROUP="@RUN_AS_GROU
 ATTR{idVendor}=="0d9f", ATTR{idProduct}=="00a5", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  PowerCOM BNT - Black Knight Pro  - usbhid-ups
 ATTR{idVendor}=="0d9f", ATTR{idProduct}=="00a6", MODE="664", GROUP="@RUN_AS_GROUP@"
-#  Unitek Alpha 1200Sx  - megatec_usb
+#  Unitek Alpha 1200Sx  - blazer_usb
 ATTR{idVendor}=="0f03", ATTR{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # Liebert
 #  Liebert PowerSure PSA UPS  - usbhid-ups
 ATTR{idVendor}=="10af", ATTR{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_GROUP@"
-#  Ablerex 625L USB  - megatec_usb
+#  Ablerex 625L USB  - blazer_usb
 ATTR{idVendor}=="ffff", ATTR{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 LABEL="nut-usbups_rules_end"

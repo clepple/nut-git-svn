@@ -7,7 +7,7 @@
         <match key="usb_device.product_id" int="0x0000">
           <append key="info.category" type="string">battery</append>
           <merge key="info.capabilities" type="strlist">battery</merge>
-          <merge key="info.addons" type="strlist">hald-addon-megatec_usb</merge>
+          <merge key="info.addons" type="strlist">hald-addon-blazer_usb</merge>
           <merge key="battery.type" type="string">ups</merge>
         </match>
       </match>
@@ -35,8 +35,36 @@
           <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
           <merge key="battery.type" type="string">ups</merge>
         </match>
+        <!--  HP T1000 INTL  -->
+        <match key="usb_device.product_id" int="0x1f08">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <!--  HP T1500 INTL  -->
+        <match key="usb_device.product_id" int="0x1f09">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
         <!--  HP R/T 2200 INTL (like SMART2200RMXL2U)  -->
         <match key="usb_device.product_id" int="0x1f0a">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <!--  HP R1500 G2 INTL  -->
+        <match key="usb_device.product_id" int="0x1fe0">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <!--  HP T750 G2  -->
+        <match key="usb_device.product_id" int="0x1fe1">
           <append key="info.category" type="string">battery</append>
           <merge key="info.capabilities" type="strlist">battery</merge>
           <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
@@ -149,6 +177,13 @@
           <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
           <merge key="battery.type" type="string">ups</merge>
         </match>
+        <!--  various 5G models  -->
+        <match key="usb_device.product_id" int="0x0003">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
       </match>
 
       <!-- Powerware -->
@@ -166,7 +201,7 @@
         <match key="usb_device.product_id" int="0x0000">
           <append key="info.category" type="string">battery</append>
           <merge key="info.capabilities" type="strlist">battery</merge>
-          <merge key="info.addons" type="strlist">hald-addon-megatec_usb</merge>
+          <merge key="info.addons" type="strlist">hald-addon-blazer_usb</merge>
           <merge key="battery.type" type="string">ups</merge>
         </match>
       </match>
@@ -175,12 +210,10 @@
         <match key="usb_device.product_id" int="0x5161">
           <append key="info.category" type="string">battery</append>
           <merge key="info.capabilities" type="strlist">battery</merge>
-          <merge key="info.addons" type="strlist">hald-addon-megatec_usb</merge>
+          <merge key="info.addons" type="strlist">hald-addon-blazer_usb</merge>
           <merge key="battery.type" type="string">ups</merge>
         </match>
       </match>
-
-      <!-- Liebert -->
       <match key="usb_device.vendor_id" int="0x06da">
         <!--  various models  -->
         <match key="usb_device.product_id" int="0x0002">
@@ -193,7 +226,7 @@
         <match key="usb_device.product_id" int="0x0003">
           <append key="info.category" type="string">battery</append>
           <merge key="info.capabilities" type="strlist">battery</merge>
-          <merge key="info.addons" type="strlist">hald-addon-megatec_usb</merge>
+          <merge key="info.addons" type="strlist">hald-addon-blazer_usb</merge>
           <merge key="battery.type" type="string">ups</merge>
         </match>
         <!--  various models  -->
@@ -269,6 +302,20 @@
           <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
           <merge key="battery.type" type="string">ups</merge>
         </match>
+        <!--  e.g. TrippLite ECO550UPS  -->
+        <match key="usb_device.product_id" int="0x1009">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <!--  e.g. TrippLite ECO550UPS  -->
+        <match key="usb_device.product_id" int="0x1010">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
         <!--  e.g. TrippLite OMNI1000LCD  -->
         <match key="usb_device.product_id" int="0x2005">
           <append key="info.category" type="string">battery</append>
@@ -283,6 +330,83 @@
           <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
           <merge key="battery.type" type="string">ups</merge>
         </match>
+        <!--  e.g. ?  -->
+        <match key="usb_device.product_id" int="0x2008">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <!--  e.g. TrippLite Smart1000LCD  -->
+        <match key="usb_device.product_id" int="0x2009">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <!--  e.g. ?  -->
+        <match key="usb_device.product_id" int="0x2010">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <!--  e.g. ?  -->
+        <match key="usb_device.product_id" int="0x2011">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <!--  e.g. ?  -->
+        <match key="usb_device.product_id" int="0x2012">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <!--  e.g. ?  -->
+        <match key="usb_device.product_id" int="0x2013">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <!--  e.g. ?  -->
+        <match key="usb_device.product_id" int="0x2014">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <!--  e.g. ?  -->
+        <match key="usb_device.product_id" int="0x3008">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <!--  e.g. ?  -->
+        <match key="usb_device.product_id" int="0x3009">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <!--  e.g. ?  -->
+        <match key="usb_device.product_id" int="0x3010">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <!--  e.g. ?  -->
+        <match key="usb_device.product_id" int="0x3011">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
         <!--  e.g. TrippLite smart2200RMXL2U  -->
         <match key="usb_device.product_id" int="0x3012">
           <append key="info.category" type="string">battery</append>
@@ -291,7 +415,21 @@
           <merge key="battery.type" type="string">ups</merge>
         </match>
         <!--  e.g. ?  -->
+        <match key="usb_device.product_id" int="0x3013">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <!--  e.g. ?  -->
         <match key="usb_device.product_id" int="0x3014">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <!--  e.g. ?  -->
+        <match key="usb_device.product_id" int="0x3015">
           <append key="info.category" type="string">battery</append>
           <merge key="info.capabilities" type="strlist">battery</merge>
           <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
@@ -313,6 +451,41 @@
         </match>
         <!--  e.g. TrippLite SmartOnline SU1500RTXL2ua  -->
         <match key="usb_device.product_id" int="0x4003">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <!--  e.g. TrippLite SmartOnline SU1000XLA  -->
+        <match key="usb_device.product_id" int="0x4004">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <!--  e.g. ?  -->
+        <match key="usb_device.product_id" int="0x4005">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <!--  e.g. ?  -->
+        <match key="usb_device.product_id" int="0x4006">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <!--  e.g. ?  -->
+        <match key="usb_device.product_id" int="0x4007">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <!--  e.g. ?  -->
+        <match key="usb_device.product_id" int="0x4008">
           <append key="info.category" type="string">battery</append>
           <merge key="info.capabilities" type="strlist">battery</merge>
           <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
@@ -363,7 +536,7 @@
         <match key="usb_device.product_id" int="0x0001">
           <append key="info.category" type="string">battery</append>
           <merge key="info.capabilities" type="strlist">battery</merge>
-          <merge key="info.addons" type="strlist">hald-addon-megatec_usb</merge>
+          <merge key="info.addons" type="strlist">hald-addon-blazer_usb</merge>
           <merge key="battery.type" type="string">ups</merge>
         </match>
       </match>
@@ -383,7 +556,7 @@
         <match key="usb_device.product_id" int="0x0000">
           <append key="info.category" type="string">battery</append>
           <merge key="info.capabilities" type="strlist">battery</merge>
-          <merge key="info.addons" type="strlist">hald-addon-megatec_usb</merge>
+          <merge key="info.addons" type="strlist">hald-addon-blazer_usb</merge>
           <merge key="battery.type" type="string">ups</merge>
         </match>
       </match>
