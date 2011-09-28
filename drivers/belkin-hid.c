@@ -28,13 +28,18 @@
 #include "belkin-hid.h"
 #include "usb-common.h"
 
-#define BELKIN_HID_VERSION      "Belkin HID 0.12"
+#define BELKIN_HID_VERSION      "Belkin HID 0.13"
 
 /* Belkin */
 #define BELKIN_VENDORID	0x050d
 
 /* Liebert */
 #define LIEBERT_VENDORID	0x10af
+/* Note that there are at least two Liebert firmware types which both report
+ * a VID:PID of 10af:0001. The newer ones tend not to have the Belkin broken
+ * Usage Pages (and therefore use standard HID PDC paths) but they have
+ * incorrect exponents for some fields.
+ */
 
 /* USB IDs device table */
 static usb_device_id_t belkin_usb_device_table[] = {
@@ -63,6 +68,47 @@ static usb_device_id_t belkin_usb_device_table[] = {
 	/* Terminating entry */
 	{ -1, -1, NULL }
 };
+
+/* These lookup tables include the 1e-7 factor which seems to be due to a
+ * broken report descriptor in certain Liebert units.
+ */
+static info_lkp_t liebert_online_info[] = {
+        { 1, "online", NULL },
+        { 1e-7, "online", NULL },
+        { 0, "!online", NULL },
+        { 0, NULL, NULL }
+};
+static info_lkp_t liebert_discharging_info[] = {
+        { 1, "dischrg", NULL },
+        { 1e-7, "dischrg", NULL },
+        { 0, "!dischrg", NULL },
+        { 0, NULL, NULL }
+};
+static info_lkp_t liebert_charging_info[] = {
+        { 1, "chrg", NULL },
+        { 1e-7, "chrg", NULL },
+        { 0, "!chrg", NULL },
+        { 0, NULL, NULL }
+};
+static info_lkp_t liebert_lowbatt_info[] = {
+        { 1, "lowbatt", NULL },
+        { 1e-7, "lowbatt", NULL },
+        { 0, "!lowbatt", NULL },
+        { 0, NULL, NULL }
+};
+static info_lkp_t liebert_replacebatt_info[] = {
+        { 1, "replacebatt", NULL },
+        { 1e-7, "replacebatt", NULL },
+        { 0, "!replacebatt", NULL },
+        { 0, NULL, NULL }
+};
+static info_lkp_t liebert_shutdownimm_info[] = {
+        { 1, "shutdownimm", NULL },
+        { 0, "!shutdownimm", NULL },
+        { 0, NULL, NULL }
+};
+
+static double liebert_exponent_correction = 1.0;
 
 /* some conversion functions specific to Belkin */
 
@@ -340,10 +386,13 @@ static hid_info_t belkin_hid2nut[] = {
   { "ups.type", 0, 0, "UPS.BELKINDevice.BELKINUPSType", NULL, "%s", 0, belkin_upstype_conversion },
 
   /* status */
-  { "BOOL", 0, 0, "UPS.PowerSummary.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, discharging_info },
-  { "BOOL", 0, 0, "UPS.PowerSummary.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, charging_info },
-  { "BOOL", 0, 0, "UPS.PowerSummary.ShutdownImminent", NULL, NULL, 0, shutdownimm_info },
-  { "BOOL", 0, 0, "UPS.PowerSummary.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info },
+  { "BOOL", 0, 0, "UPS.PowerSummary.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, liebert_discharging_info },
+  { "BOOL", 0, 0, "UPS.PowerSummary.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, liebert_charging_info },
+  { "BOOL", 0, 0, "UPS.PowerSummary.ShutdownImminent", NULL, NULL, 0, liebert_shutdownimm_info },
+  { "BOOL", 0, 0, "UPS.PowerSummary.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, liebert_online_info },
+  { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, NULL, HU_FLAG_QUICK_POLL, liebert_replacebatt_info },
+  { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, NULL, HU_FLAG_QUICK_POLL, liebert_lowbatt_info },
+
   /* { "BOOL", 0, 0, "UPS.PowerSummary.BelowRemainingCapacityLimit", NULL, "%s", 0, lowbatt_info }, broken! */
   { "BOOL", 0, 0, "UPS.BELKINStatus.BELKINPowerStatus", NULL, NULL, 0, belkin_overload_conversion },
   { "BOOL", 0, 0, "UPS.BELKINStatus.BELKINPowerStatus", NULL, NULL, 0, belkin_overheat_conversion },
