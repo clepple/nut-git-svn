@@ -1,0 +1,27 @@
+//Here to go all the devices with other drivers that are supported by NUT
+
+*Following are the devices that have other/ specific drivers*
+
+[options="header", width="80%", cols="10,15,15"]
+|======================================================
+|*Manufacturer* |*Model Name* |*Driver*
+
+|*Powerware*	|3110	|genericups upstype=7
+|	|3115	|genericups upstype=11
+|	|5119, 5125	|genericups upstype=15
+|	|5119 RM	|upscode2
+|	|9110	|upscode2
+|	|9120	|upscode2
+|	|9150	|upscode2
+|	|9305	|upscode2
+ 
+
+ 
+ 
+
+
+ 
+
+ 
+  
+|======================================================

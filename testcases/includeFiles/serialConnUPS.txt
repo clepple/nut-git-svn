@@ -1,0 +1,40 @@
+//Here to go all the serial drivers that are supported by NUT
+
+*Following are the devices that have Serial drivers*
+
+[options="header", width="80%", cols="10,15,15"]
+|======================================================
+|*Manufacturer* |*Model Name* |*Driver*
+
+|*Eaton* |Ellipse MAX USBS 600/850/1100/1500 VA Serial cable
+|mge-shut or newmge-shut
+|	|Evolution 650/850/1150/1550/2000 VA Serial port
+|mge-shut or newmge-shut
+|	|Evolution S 1250/1750/2500/3000 VA Serial port
+|mge-shut or newmge-shut
+|	|EX 700/1000/1500 VA Serial port
+|mge-shut or newmge-shut
+|	|EX 2200/3000/3000 XL VA Serial port
+|mge-shut or newmge-shut
+|	|EX 1000 RT2U / 1500 RT2U Serial port
+|mge-shut or newmge-shut
+|	|MX 5/8/10/15/20 kVA Serial port
+|mge-shut or newmge-shut
+|	|EX RT 1:1 7/11 kVA EX RT 3:1 5/7/11 kVA
+|mge-shut or newmge-shut
+|	|9395 Serial port| bcmxcp
+
+|*Powerware*	|PW5115 Serial port	|bcmxcp
+|	|PW5125	|bcmxcp
+|	|PW9120 Serial port	|bcmxcp
+|	|PW9125	|bcmxcp
+|	|PW9315	|bcmxcp
+|	|Powerware 9130	|bcmxcp
+ 
+ 
+
+ 
+
+ 
+  
+|======================================================

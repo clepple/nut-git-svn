@@ -1,0 +1,14 @@
+
+ifdef::os-windows[]
+include::./includeFiles/uninstall-os-windows.txt[]
+endif::os-windows[]
+
+ifdef::os-deb[]
+include::./includeFiles/uninstall-os-deb.txt[]
+endif::os-deb[]
+
+//ifdef::os-rpm[]
+//include::./includeFiles/uninstall-os-rpm.txt[]
+//endif::os-rpm[]
+
+

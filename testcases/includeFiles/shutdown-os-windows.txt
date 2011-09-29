@@ -1,0 +1,48 @@
+Shutdown of devices
+-------------------
+
+[options="header", width="80%", cols="5,15,25,25,25"]
+|======================================================
+|*Test Case ID* |*Purpose* |*Prereq* |*Steps* |*Expected Output*
+
+|4.4.1 |Shutdown OS on Power Failure |Refer Test Case ID 4.3.1
+|1. Modify the shutdown command in +"upsmon.conf"+ file SHUTDOWNCMD 
++"C:\\WINDOWS\\system32\\shutdown.exe -s -t 0"+
+
+Note: modify the path depending on where "shutdown.exe" is available
+
+2. Interrupt the power supply
+
+|OS should shutdown after +*Low Battery*+ event is triggered.
+
+Restart OS and check if +*"UPS on battery"*+ and +*Low Battery*+ message 
+are logged in eventviewer.
+
+|4.4.2 |Restore Power Failure |Refer Test Case ID 4.3.1
+|Restore power supply of the device within 1 minute from the time of power fail
+|+*"UPS is on line"*+ message should be displayed and OS should not shutdown.
+Verify above message to be logged in eventviewer.
+
+|4.4.3 |Check for Low Battery |Refer Test Case ID 4.4.1
+|Interrupt power supply and wait till low battery event occurs.
+|OS should shutdown with *"UPS has a low battery"* message getting displayed.
+Verify above message is logged in 
+
+Restart OS and check if +*"UPS on battery"*+ and +*Low Battery*+ message 
+are logged in eventviewer.
+
+|4.4.4	|Communication Lost when UPS on battery	|Refer Test Case ID 4.4.1
+|1. Interrupt power supply
+
+2. unplug the cable from the UPS.
+
+3. Verify OS started shuting down.
+|1. Check +*"UPS is on battery"*+ message should be displayed.
+
+2. +*"UPS communication lost"*+ message should display.
+
+3. OS should shutdown.
+
+Restart OS and check if above messages are logged in eventviewer.
+
+|======================================================

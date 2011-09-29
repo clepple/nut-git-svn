@@ -1,0 +1,13 @@
+ifdef::os-windows[]
+include::./includeFiles/devicecommunication-os-windows.txt[]
+endif::os-windows[]
+
+ifdef::os-deb[]
+include::./includeFiles/devicecommunication-os-deb.txt[]
+endif::os-deb[]
+
+//ifdef::os-rpm[]
+//include::./includeFiles/devicecommunication-os-rpm.txt[]
+//endif::os-rpm[]
+
+

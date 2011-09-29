@@ -1,0 +1,483 @@
+Communication with device
+-------------------------
+
+ifdef::os-deb[]
+[options="header", width="80%", cols="5,15,25,25,25"]
+|======================================================
+|*Test Case ID* |*Purpose* |*Prereq* |*Steps* |*Expected Output*
+
+|4.3.1 |Verify device communication established with valid (driver and port) 
+data for *ups.conf* file.
+|Refer Test Case ID 4.1.1, Appendix-A for configuration
+|Type the following command in terminal.
+
++*# /sbin/upsdrvctl start <UPSModelName>*+
+
++*# /usr/sbin/upsd*+
+|Device driver controller service should start with following message: 
++Network UPS Tool-UPS driver controller xxxx+
+Network UPS Tool: MGE UPS system /SHUT driver 0.66 (2.2.0-0) 
+
++Detected UPS <model name> with <port name>.+
+
++Communication with UPS <upsname>@localhost established+
+
+1. ups name and port name should match with that, specified in the ups.conf file.
+ 
+2. Verify the driver version is the one intended to test.
+
+3. Verify if the service is running terminal using the following command
+
++*# ps -ef grep ups*+ command.
+
+|4.3.2 |Verify device details (upsc command) 
+|Refer Test Case ID 4.3.1 as prerequisite.
+|Type this command in terminal. 
+
++*# upsc <upsName>*+
+|Device details should be displayed as shown in example below:
+
++ups.firmware: cont: 00:50 INV: 01.50
+ups.load:0.0
+ups.model: Powerware UPS 1500VA
+ups.power.nomila=1500
+ups.USB:
+ups.status: OL
+ups.voltage.normal:230+
+
+*Note:* All supported values should be displayed for the selected model.
+
+|4.3.3 |Communication Lost with the device |Refer Test Case ID 4.3.1.
+|Unplug Network, Serial or USB cable from device
+|+*"Communication with UPS lost"*+
+
+message should display. Verify above message is logged in
+
++*# vi /var/log/messages*+
+
+|4.3.4 |Verify the device status |Refer Test Case ID 4.3.3
+|Perform step 4.3.3 Type this command in terminal. 
+
++*# upsc <upsmodelname>*+
+|+*"Error: Data stale"*+ message should get displayed. Verify above message is 
+logged in
+
++*# vi /var/log/messages*+
+
+|4.3.5 |Verify device Communication established |Refer Test ID 4.3.4.
+|Reconnect the removed cable to device |"Communication with UPS established" 
+message should be displayed in terminal. Verify above message is logged in
+
++*# vi /var/log/messages*+
+
+|4.3.6 |Verify device details displayed |Refer Test Case ID 4.3.5 for prerequisite.
+Perform step 4.3.6
+|Type this command in terminal.  
+
++*# upsc xxxx*+
+|Device details should be displayed. Verify above message is logged in
+
++*# vi /var/log/messages*+
+
+|4.3.7 |Verify device service is running, This test will verify if the startup 
+script is working |Refer Test Case ID 4.3.1. |Restart the OS.
+|When OS restarted "Communication with UPS established" message should be displayed on terminal.
+Verify service upsd is running.
+Type this command in terminal to check service.
+
++*# ps -ef grep upsd*+
+
+|4.3.8 |Verify device service is stop |Refer Test Case ID 4.3.1.
+|Stop the driver service using the command in terminal 
+
++*# /sbin/upsdrvctl stop <upsName>*
+
+*# upsc <upsName>*+
+|Following message "Broadcast message from root@localhost and date
+
++Communication with UPS xxxx@localhost lost+
+
++"UPS xxxx@localhost is unavailable"+
+
+Check the upsdrvctl service is stopped.
+Type the following command in terminal to check service.
+
++# ps -ef grep ups+
+
+Error: Drivers not connected
+Verify above message is logged in 
++# vi /var/log/messages+
+
+|4.3.9 |Verify invalid (driver) data for *ups.conf* file.
+|Refer Test Case ID 4.1.1, Appendix-E for configuration.
+|Type this command in terminal to start driver service 
+
++*# /sbin/upsdrvctl start <upsName>
+
+# /usr/sbin/upsd*+
+|Following message should be display.
+
++"No communication with UPS driver failed to start (exist start =1) can't start 
+driver: no such file or directory."
+
+"Communication with UPS xxxx@localhost lost"
+
+"UPS xxxxr@localhost is unavailable."+
+
+|4.3.10 |Verify invalid (port) data for *ups.conf* file 
+|Refer Test Case ID 4.1.1, Appendix-E for configuration.
+|Type this command in terminal to start driver service 
+
++*# /sbin/upsdrvctl start <upsName>
+
+# /usr/sbin/upsd*+
+|Network UPS Tools - UPS driver controller x.x.x
+Network UPS Tools - network XML UPS 0.30 (x.x.x)
+
++Connectivity test: Could not resolve hostname 'xxx.xxx.xxx.xxx': Host not found.+ 
+
+Driver failed to start (exit status=1). Network UPS Tools upsd x.x.x
+listening on localhost port 3493. 
+
++Can't connect to UPS [<upsName>] (netxml-ups-<upsName>)+
+
+
+|4.3.11 |Verify invalid (listen) data for *upsd.conf* file 
+|Refer Test Case ID 4.1.1, Appendix-E for configuration
+|Type this command in terminal to start driver service 
+
++*# /sbin/upsdrvctl start <upsName>
+
+# /usr/sbin/upsd*+
+|Network UPS Tools - UPS driver controller x.x.x
+Network UPS Tools - network XML UPS 0.30 (x.x.x) Warning: This is an 
+experimental driver. Warning: This is an experimental driver. Some features
+may not function correctly. Connectivity test: 200 OK Network UPS Tools upsd 2.6.0
+listening on 127.0.0.1 port 3493 listening on ::1 port 3493
+Connected to UPS [xxxx]: driver name Ignoring duplicate user root 
+Ignoring duplicate password for root
+
+|4.3.12 |Verify invalid (username) data for *upsd.users* file. Give an invalid 
+ups details
+|Refer Test Case ID 4.1.1, Appendix-E for configuration
+|Type this command in terminal to start driver service 
+
++*# /sbin/upsdrvctl start <upsName>*
+
+*# /usr/sbin/upsd*+
+|"Network UPS Tools - UPS driver controller x.x.x 
+Network UPS Tools - network UPS Tools - network xml UPS 0.30 (x.x.x)
+Warning: This is an experimental driver. 
+Some feature may not function correctly. Connectivity test:200" OK
+
+|4.3.12 |Verify invalid *(blank password)* data for *upsd.users* file
+|Refer Test Case ID 4.1.1, Appendix-E for configuration.
+|Type this command in terminal to start driver service 
+
++*# /sbin/upsdrvctl start <upsName>*
+
+*# /usr/sbin/upsd*+
+|"Network UPS Tools - UPS driver controller x.x.x 
+Network UPS Tools - network UPS Tools - network xml UPS 0.30 (x.x.x)
+Warning: This is an experimental driver.
+Some feature may not function correctly. 
+Connectivity test: 200" OK
+Network UPS Tools upsd x.x.x
+listening on localhost port 3493
+Connected to UPS [xxxx]: netxml-ups-2200
+"Communication with UPS established" message should display.
+
+|4.3.12 |Verify invalid *(maximum password)* data for *upsd.users* file
+|Refer Test Case ID 4.1.1, Appendix-E for configuration.
+|Type this command in terminal to start driver service 
+
++*# /sbin/upsdrvctl start <upsName>*
+
+*# /usr/sbin/upsd*+
+|"Network UPS Tools - UPS driver controller x.x.x 
+Network UPS Tools - network UPS Tools - network xml UPS 0.30 (x.x.x)
+Warning: This is an experimental driver.
+Some feature may not function correctly. 
+Connectivity test:200" OK
+Network UPS Tools upsd x.x.x
+listening on localhost port 3493
+Connected to UPS [xxxx]: netxml-ups-2200
+"Communication with UPS established"
+
+|4.3.13 |Verify invalid *(minimum password)* data for *upsd.users* file
+|Refer Test Case ID 4.1.1, Appendix-E for configuration.
+|Type this command in terminal to start driver service 
+
++*# /sbin/upsdrvctl start <upsName>*
+
+*# /usr/sbin/upsd*+
+|"Network UPS Tools - UPS driver controller x.x.x 
+Network UPS Tools - network UPS Tools - network xml UPS 0.30 (x.x.x)
+Warning: This is an experimental driver.
+Some feature may not function correctly. 
+Connectivity test:200" OK
+Network UPS Tools upsd 2.6.0
+listening on localhost port 3493
+Connected to UPS [xxxx]: netxml-ups-2200
+"Communication with UPS established"
+
+|4.3.14 |Verify invalid *(Action)* data for *upsd.users* file
+|Refer Test Case ID 4.1.1, Appendix-E for configuration.
+|Type this command in terminal to start driver service 
+
++*# /sbin/upsdrvctl start <upsName>*
+
+*# /usr/sbin/upsd*+
+|"Network UPS Tools - UPS driver controller x.x.x
+Network UPS Tools - network UPS Tools - network xml UPS 0.30 (x.x.x)
+Warning: This is an experimental driver.
+Some feature may not function correctly. 
+Connectivity test:200" OK
+Network UPS Tools upsd 2.6.0
+listening on localhost port 3493
+Connected to UPS [xxxx]: netxml-ups-2200
+"Communication with UPS established"
+
+|4.3.15 |Verify invalid *(instcmds)* data for *upsd.users* file
+|Refer Test Case ID 4.1.1, Appendix-E for configuration.
+|Type this command in terminal to start driver service 
+
++*# /sbin/upsdrvctl start <upsName>*
+
+*# /usr/sbin/upsd*+
+|"Network UPS Tools - UPS driver controller x.x.x 
+Network UPS Tools - network UPS Tools - network xml UPS 0.30 (x.x.x)
+Warning: This is an experimental driver.
+Some feature may not function correctly. 
+Connectivity test:200" OK
+Network UPS Tools upsd x.x.x
+listening on localhost port 3493
+Connected to UPS [xxxx]: netxml-ups-2200
+"Communication with UPS established" message should display. 
+
+|4.3.16 |Verify invalid *(cmdscript for /us/local/ups/bin)* data for 
+*upssched.conf* file
+|Refer Test Case ID 4.1.1, Appendix-E for configuration.
+|Type this command in terminal to start driver service 
+
++*# /sbin/upsdrvctl start <upsName>*
+
+*# /usr/sbin/upsd*+
+|"Network UPS Tools - UPS driver controller x.x.x 
+Network UPS Tools - network UPS Tools - network xml UPS 0.30 (x.x.x)
+Warning: This is an experimental driver.
+Some feature may not function correctly. 
+Connectivity test:200" OK
+Network UPS Tools upsd x.x.x
+listening on localhost port 3493
+Connected to UPS [xxxx]: netxml-ups-2200
+"Communication with UPS established" message should display.
+
+|4.3.17 |Verify invalid *(usr id)* data for *upsmon.conf*
+|Refer Test Case ID 4.1.1, Appendix-E for configuration.
+|Type this command in terminal
+
++*# /sbin/upsdrvctl start <upsName>*
+
+*# /usr/sbin/upsd*
+
+*# /usr/sbin/upsmon*+
+|"Network UPS Tools - UPS driver controller x.x.x 
+Network UPS Tools - network UPS Tools - network xml UPS 0.30 (x.x.x)
+Warning: This is an experimental driver.
+Some feature may not function correctly. 
+Connectivity test:200" OK
+Network UPS Tools upsd x.x.x
+listening on localhost port 3493
+Connected to UPS [xxxx]: netxml-ups-2200
+"Communication with UPS established" message should display.
+Network UPS Tools upsmon x.x.x
++UPS:<upsName>@FC-14-64 (master) (power value 1)
+Using power down flag file /etc/killpower+
+
+|4.3.18 |Verify invalid *(monitor name)* data for *upsmon.conf* file
+|Refer Test Case ID 4.1.1, Appendix-E for configuration.
+|Type this command in terminal
+
++*# /sbin/upsdrvctl start <upsName>
+
+# /usr/sbin/upsd
+
+# /usr/sbin/upsmon*+
+|"Network UPS Tools - UPS driver controller x.x.x 
+Network UPS Tools - network UPS Tools - network xml UPS 0.30 (x.x.x)
+Warning: This is an experimental driver.
+Some feature may not function correctly. 
+Connectivity test:200" OK
+Network UPS Tools upsd x.x.x
+listening on localhost port 3493
+Connected to UPS [<upsName>]: netxml-ups-<upsName>
+
++"Communication with UPS <upsName invalid> lost" and 
+"UPS <PW2200invaild>@localhost" is unavailable. message should display.
+Network UPS Tools upsmon x.x.x.
+UPS: <upsName>@FC-14-64 (master) (power value 1)
+Using power down flag file /etc/killpower+
+
+|4.3.19 |Verify invalid *(localhost)* data for *upsmon.conf* file
+|Refer Test Case ID 4.1.1, Appendix-E for configuration.
+|Type this command in terminal
+
++*# /sbin/upsdrvctl start <upsName>
+
+# /usr/sbin/upsd
+
+# /usr/sbin/upsmon*+
+|"Network UPS Tools - UPS driver controller x.x.x 
+Network UPS Tools - network UPS Tools - network xml UPS 0.30 (x.x.x)
+Warning: This is an experimental driver.
+Some feature may not function correctly. 
+Connectivity test:200" OK
+Network UPS Tools upsd x.x.x
+listening on localhost port 3493
+Connected to UPS <upsName>: netxml-ups-<upsName>
++"Communication with UPS <<upsName> invalid> lost" and 
+"UPS <<upsName> invaild>@localhost" is unavailable. message should display. 
+Network UPS Tools upsmon x.x.x
+UPS: <upsName>@<invalid> (master) (power value 1) power value should be change
+Using power down flag file /etc/killpower+
+
+|4.3.20 |Verify invalid *(power value)* data for *upsmon.conf* file
+|Refer Test Case ID 4.1.1, Appendix-E for configuration.
+|Type this command in terminal
+
++*# /sbin/upsdrvctl start <upsName>
+
+# /usr/sbin/upsd
+
+# /usr/sbin/upsmon*+
+|"Network UPS Tools - UPS driver controller x.x.x 
+Network UPS Tools - network UPS Tools - network xml UPS 0.30 (x.x.x)
+Warning: This is an experimental driver.
+Some feature may not function correctly. 
+Connectivity test:200" OK
+Network UPS Tools upsd x.x.x
+listening on localhost port 3493
+Connected to UPS [<upsName>]: netxml-ups-<upsName>
++"Communication with UPS <<upsName> invalid> lost" and "UPS <<upsName>invaild>@localhost 
+is unavailable". message should display. Network UPS Tools upsmon x.x.x
+UPS: <upsName>@localhost (master) (power value 3) power value should be change
+Using power down flag file /etc/killpower+
+
+|4.3.21 |Verify invalid *(user id)* data for *upsmon.conf* file
+|Refer Test Case ID 4.1.1, Appendix-E for configuration.
+|Type this command in terminal
+
++*# /sbin/upsdrvctl start <upsName>
+
+# /usr/sbin/upsd
+
+# /usr/sbin/upsmon*+
+|"Network UPS Tools - UPS driver controller x.x.x
+Network UPS Tools - network UPS Tools - network xml UPS 0.30 (x.x.x)
+Warning: This is an experimental driver.
+Some feature may not function correctly. 
+Connectivity test:200" OK
+Network UPS Tools upsd x.x.x
+listening on localhost port 3493
+Connected to UPS <upsName>: netxml-ups-<upsName>
++"Communication with UPS established" and "UPS <upsName>@localhost is unavailable". 
+message should display. Network UPS Tools upsmon x.x.x
+UPS: <upsName>@localhost (master) (power value 1) power value should be change
+Using power down flag file /etc/killpower+
+
+|4.3.22 |Verify invalid data *(invalid password)* for *upsmon.conf* file
+|Refer Test Case ID 4.1.1, Appendix-E for configuration.
+|Type this command in terminal
+
++*# /sbin/upsdrvctl start <upsName>
+
+# /usr/sbin/upsd
+
+# /usr/sbin/upsmon*+
+|"Network UPS Tools - UPS driver controller x.x.x
+Network UPS Tools - network UPS Tools - network xml UPS 0.30 (x.x.x)
+Warning: This is an experimental driver.
+Some feature may not function correctly. 
+Connectivity test:200" OK
+Network UPS Tools upsd x.x.x
+listening on localhost port 3493
+Connected to UPS <upsName>: netxml-ups-<upsName>
+"Communication with UPS established" message should display.
+Network UPS Tools upsmon x.x.x
+UPS: <upsName>@localhost (master) (power value 1) power value should be change
+Using power down flag file /etc/killpower+
+
+|4.3.23 |Verify invalid data *(master)* for *upsmon.conf* file
+|Refer Test Case ID 4.1.1, Appendix-E for configuration.
+|Type this command in terminal
+
++*# /sbin/upsdrvctl start <upsName>*
+
+*# /usr/sbin/upsd*
+
+*# /usr/sbin/upsmon*+
+|"Network UPS Tools - UPS driver controller x.x.x 
+Network UPS Tools - network UPS Tools - network xml UPS 0.30 (x.x.x)
+Warning: This is an experimental driver.
+Some feature may not function correctly. 
+Connectivity test:200" OK
+Network UPS Tools upsd x.x.x
+listening on localhost port 3493
+Connected to UPS <upsName>: netxml-ups-<upsName>
++"Communication with UPS established"+ message should display.
++Network UPS Tools upsmon x.x.x
+UPS: <upsName>@localhost (slave) (power value 1) power value should be change
+Using power down flag file /etc/killpower. 
+should change to slave.+
+
+|4.3.24 |Verify invalid *(slave)* data for *upsmon.conf* file
+|Refer Test Case ID 4.1.1, Appendix-E for configuration.
+|Type this command in terminal
+
++*# /sbin/upsdrvctl start <upsName>*
+
+*# /usr/sbin/upsd*
+
+*# /usr/sbin/upsmon*+
+|"Network UPS Tools - UPS driver controller x.x.x 
+Network UPS Tools - network UPS Tools - network xml UPS 0.30 (x.x.x)
+Warning: This is an experimental driver.
+Some feature may not function correctly. 
+Connectivity test:200" OK
+Network UPS Tools upsd x.x.x
+listening on localhost port 3493
+Connected to UPS <upsName>: netxml-ups-<upsName>
++"Communication with UPS established"+ message should display.
+Network UPS Tools upsmon x.x.x
+UPS: <upsName>@localhost (slave) (power value 1) power value should be change
+Using power down flag file /etc/killpower. 
+should change to slave.
+
+|4.3.25 |Verify invalid data *(#comment sentence)* for *upsmon.conf* file
+|Refer Test Case ID 4.1.1, Appendix-E for configuration
+|Type this command in terminal
+
++*# /sbin/upsdrvctl start <upsName>*
+
+*# /usr/sbin/upsd*
+
+*# /usr/sbin/upsmon*+
+|"Network UPS Tools - UPS driver controller x.x.x 
+Network UPS Tools - network UPS Tools - network xml UPS 0.30 (x.x.x)
+Warning: This is an experimental driver.
+Some feature may not function correctly. 
+Connectivity test:200" OK
+Network UPS Tools upsd x.x.x
+listening on localhost port 3493
+Connected to UPS <upsName>: netxml-ups-<upsName>
+Network UPS Tools upsmon x.x.x
+Using power down flag file /etc/killpower
+Fatal error: insufficient power configured!
+Sum of power values........: 0
+Minimum value (MINSUPPLIES): 1
+Edit your upsmon.conf and change the values.
+
+|======================================================
+
+endif::os-deb[]

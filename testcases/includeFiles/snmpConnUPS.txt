@@ -1,0 +1,29 @@
+//Here to go all the SNMP drivers that are supported by NUT
+
+*Following are the devices that have SNMP drivers*
+
+[options="header", width="80%", cols="10,15,15"]
+|======================================================
+|*Manufacturer* |*Model Name* |*Driver*
+
+|*Eaton* |EX RT (SNMP) NMC Transverse card (ref 66074)	|snmp-ups (experimental)
+|	|BladeUPS (SNMP) ConnectUPS Web/SNMP Card	|snmp-ups (experimental)
+|	|Various models (XML/HTTP mode) NMC Minislot (Ref 66102)	
+|netxml-ups (experimental)
+|	|Various models (SNMP mode) NMC Minislot (Ref 66102)	|snmp-ups (experimental)
+|	|Various models (XML/HTTP mode) SNMP/Web Minislot card (ref 66244)	
+|netxml-ups (experimental)
+|	|Various models (SNMP mode) SNMP/Web Minislot card (ref 66244)	
+|snmp-ups (experimental)
+|	|ePDU Managed	|snmp-ups (experimental)
+|	|ePDU Monitored	|snmp-ups or netxml-ups
+ 
+|*Powerware*	|BladeUPS (SNMP) ConnectUPS Web/SNMP Card	
+|snmp-ups (experimental)
+
+
+ 
+
+ 
+  
+|======================================================

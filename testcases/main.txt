@@ -1,0 +1,26 @@
+//This main.txt text is the place where in, you can define the filters for 
+//generating test Cases using AsciiDoc. 
+//Later use this to convert to convertdocbook2odf, need to check how to do this.
+
+include::install.txt[]
+include::uninstall.txt[]
+
+include::devicecommunication.txt[]
+include::shutdown.txt[]
+
+include::commandInterface.txt[]
+include::performanceendurancetesting.txt[]
+
+//NUT configuration
+include::./includeFiles/appendixA.txt[]
+
+//Only Eaton UPS's are added in the list. Need to add for other UPS's 
+//supported by NUT
+Appendix-B
+----------
+
+include::./includeFiles/serialConnUPS.txt[]
+include::./includeFiles/usbConnUPS.txt[]
+include::./includeFiles/snmpConnUPS.txt[]
+include::./includeFiles/otherConnUPS.txt[]
+

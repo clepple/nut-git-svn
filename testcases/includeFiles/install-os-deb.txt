@@ -1,0 +1,121 @@
+Install NUT
+===========
+
+[options="header", width="80%", cols="5,15,25,25,25"]
+|======================================================
+|*Test Case ID* |*Purpose* |*Prereq* |*Steps* |*Expected Output*
+|4.1.1 |Install NUT Client and check if installation is done and all the 
+required files are present |Download *NUT Client* package from NUT web site.
+copy on localhard disk e.g. /home. 
+|Type the following command in terminal 
+
++*# rpm -ivh /home/nut-client-xxxx.rpm*+ 
+|Following files should be present in folder 
+
++*/usr/bin*+
++upsc, upscmd,upslog,upsrw, upsschedcmd
+
+*/usr/sbin* 
+upsd, upsmon,upssched
+
+*/etc/ups*
+ups.conf, upsd.conf, upsd.users, upsmon.conf and upssched.conf
+
+*/etc/rc.d/init.d/ups*
+
+*/sbin/upsdrvctl*+
+
+|4.1.2 |Install NUT Server and check if installation is done and all the 
+required files are present |Download the *NUT Server* package, powerman package 
+and netxml package from NUT web site and copy on localhard disk.
+e.g. /home. 
+|Type the following command in terminal
+
++*# rpm -ivh /home/nut-xxxx.rpm*
+
+*# rpm -ivh /home/powerman-x.x.x.rpm*
+
+*# rpm -ivh /home/nut-xml-x.x.x.rpm*+
+|Server rpm file should get installed with the following message 
+nut-xxxx.el4.i386.rpm: V3 DSA signature: NO KEY, key ID 217521f6 preparing.... [100%] 
+1: nut..... [100%]
+Powerman package should display with following message.
+powerman-x.x.x-.rpm
+V3 DSA signature: NO KEY, key ID 217521f6 preparing.... [100%] 
+1: nut..... [100%]
+
+|4.1.3 |Verify the signature of the downloaded binary |System to be in network 
+with internet connection and binary to be on local drive 
+|Type the following command in the terminal
+
++*# export http_proxy= "http://proxy.etn.com:8080"*
+
+*# gpg --fetch-keys http://www.networkupstools.org/source/nut-key.gpg*
+
+*# wget http://www.networkupstools.org/source/2.6/nut-2.6.0.tar.gz*
+
+*# wget http://www.networkupstools.org/source/2.6/nut-2.6.0.tar.gz.sig*
+
+*# gpg -verify /home/nut-yyyy.tar.gz.sig*+
+
+|Proxy setting should be accepted. gpg: key 204DDF1B: 
+"Arnaud Quette <aquette@debian.org>" not changed
+gpg: Total number processed: 1
+gpg:              unchanged: 1
+
+http://www.networkupstools.org/source/2.6/nut-2.6.0.tar.gz
+Resolving proxy.etn.com... 151.110.126.120
+Connecting to proxy.etn.com. 151.110.126.120 :8080... connected.
+Proxy request sent, awaiting response... 200 OK
+Length: 1703273 (1.6M) [application/x-gzip]
+Saving to: "nut-2.6.0.tar.gz"
+100%[===========>] 1,703,273   45.3K/s   in 53s
+
+http://www.networkupstools.org/source/2.6/nut-2.6.0.tar.gz.sig
+Resolving proxy.etn.com... 151.110.126.120
+Connecting to proxy.etn.com. 151.110.126.120 :8080... connected.
+Proxy request sent, awaiting response... 200 OK
+Length: 72 [application/x-gzip]
+Saving to: "nut-2.6.0.tar.gz.sig.1"
+
+|4.1.4 |Upgrade the old files with the newer version |Download the new nut 
+client package from NUT web site and copy on localhard disk e.g. /home.
+|Type the following command in terminal
+ 
++*# rpm -U /home/nut-client-<new version>.rpm*+
+
++*# rpm -U /home/nut-<new version>.rpm*+
+
++*# rpm -U /home/powerman-x.x.x.rpm*+
+
++*# rpm -U /home/nut-xml-x.x.x.rpm*+
+|NUT client rpm file should be installed with following message.
+nut-client-xxxx.el4.i386.rpm: V3 DSA signature: NO KEY, key ID 217521f6 preparing.... [100%] 
+1: nut-client..... [100%]
+
+Server rpm file should install with following message 
+nut-yyyy.el4.i386.rpm: V3 DSA signature: NO KEY, key ID 217521f6 preparing.... [100%] 
+1: nut..... [100%]
+
+Powerman package should display with following message.
+powerman-x.x.x-.rpm
+V3 DSA signature: NO KEY, key ID 217521f6 preparing.... [100%] 
+1: nut..... [100%]
+
+Nut xml package should display with following message.
+nut-xml.x.x.x.rpm
+V3 DSA signature: NO KEY, key ID 217521f6 preparing.... [100%] 
+1: nut..... [100%]
+
+Following files should be present in folder 
+
++*/usr/bin	upsc, upscmd,upslog,upsrw, upsschedcmd 
+
+/usr/sbin	upsd, upsmon,upssched
+
+/etc/ups	ups.conf, upsd.conf, upsd.users, upsmon.conf and upssched.conf 
+
+/etc/rc.d/init.d/	     ups
+
+/sbin/	upsdrvctl*+
+|======================================================

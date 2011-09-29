@@ -1,0 +1,13 @@
+ifdef::os-windows[]
+include::./includeFiles/shutdown-os-windows.txt[]
+endif::os-windows[]
+
+ifdef::os-deb[]
+include::./includeFiles/shutdown-os-deb.txt[]
+endif::os-deb[]
+
+//ifdef::os-rpm[]
+//include::./includeFiles/shutdown-os-rpm.txt[]
+//endif::os-rpm[]
+
+

@@ -1,0 +1,74 @@
+//Here to go all the USB drivers that are supported by NUT
+
+*Following are the devices that have USB drivers*
+
+[options="header", width="80%", cols="10,15,15"]
+|======================================================
+|*Manufacturer* |*Model Name* |*Driver*
+
+|*Eaton*	|Protection Station 500/650/800 VA USB	|usbhid-ups
+|	|Ellipse ASR USBS 600/750/1000/1500 VA USB cable	|usbhid-ups
+|	|Ellipse MAX USBS 600/850/1100/1500 VA USB cable	|usbhid-ups
+|	|Evolution 650/850/1150/1550/2000 VA USB port	|usbhid-ups
+|	|Evolution S 1250/1750/2500/3000 VA USB port	|usbhid-ups
+|	|EX 700/1000/1500 VA USB port	|usbhid-ups
+|	|EX 2200/3000/3000 XL VA USB port	|usbhid-ups
+|	|EX 1000 RT2U / 1500 RT2U USB port	|usbhid-ups
+|	|MX 5/8/10/15/20 kVA USB port	|usbhid-ups
+|	|Nova AVR 625/1250 USB	|usbhid-ups
+|	|E Series NV UPS 400-2000 VA	|blazer_usb
+
+|*MGE UPS System*	|Comet EX RT USB	|usbhid-ups
+|	|Comet EX RT 3:1 USB	|usbhid-ups
+|	|Protection Center 420 USB	|usbhid-ups
+|	|Protection Center 500 USB	|usbhid-ups
+|	|Protection Center 675 USB	|usbhid-ups
+|	|NOVA AVR 600 USB USB	|usbhid-ups
+|	|NOVA AVR 1100 USB	|usbhid-ups
+|	|Pulsar Ellipse USB	|usbhid-ups
+|	|Pulsar Ellipse USB	|usbhid-ups
+|	|Pulsar Ellipse Premium USB	|usbhid-ups
+|	|Pulsar Ellipse Premium USB	|usbhid-ups
+|	|Ellipse Office 600 USB	|usbhid-ups
+|	|Ellipse Office 750 USB	|usbhid-ups
+|	|Ellipse Office 1000 USB	|usbhid-ups
+|	|Ellipse Office 1500 USB	|usbhid-ups
+|	|Ellipse MAX 600 USB	|usbhid-ups
+|	|Ellipse MAX 850 USB	|usbhid-ups
+|	|Ellipse MAX 1100 USB	|usbhid-ups
+|	|Ellipse MAX 1500 USB	|usbhid-ups
+|	|Pulsar Evolution USB	|usbhid-ups
+|	|Evolution 650 USB	|usbhid-ups
+|	|Evolution 850 USB	|usbhid-ups
+|	|Evolution 1150 USB	|usbhid-ups
+|	|Evolution S 1250 USB	|usbhid-ups
+|	|Evolution 1550 USB	|usbhid-ups
+|	|Evolution S 1750 USB	|usbhid-ups
+|	|Evolution 2000 USB	|usbhid-ups
+|	|Evolution S 2500 USB	|usbhid-ups
+|	|Evolution S 3000 USB	|usbhid-ups
+|	|Pulsar M 2200 USB	|usbhid-ups
+|	|Pulsar M 3000 USB	|usbhid-ups
+|	|Pulsar M 3000 XL USB	|usbhid-ups
+|	|Pulsar 700 USB	|usbhid-ups
+|	|Pulsar 1000 USB	|usbhid-ups
+|	|Pulsar 1500 USB	|usbhid-ups
+|	|Pulsar 1000 RT2U USB	|usbhid-ups
+|	|Pulsar 1500 RT2U USB	|usbhid-ups
+|	|Pulsar MX 4000 RT USB	|usbhid-ups
+|	|Pulsar MX 5000 RT USB	|usbhid-ups
+|	|Comet / Galaxy (USB) USB Card (ref 66067)	|usbhid-ups
+
+|*Powerware*	|Powerware 9130	|usbhid-ups
+|	|PW3105	|bcmxcp_usb
+|	|PW5110	|bcmxcp_usb
+|	|PW5115 USB port	|bcmxcp_usb
+|	|PW9120 USB port	|bcmxcp_usb
+
+ 
+ 
+ 
+
+
+ 
+|======================================================

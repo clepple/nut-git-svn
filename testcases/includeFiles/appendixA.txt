@@ -1,0 +1,101 @@
+Appendix-A
+----------
+
+[options="header", width="80%", cols="5,10,25"]
+|======================================================
+|*Test Data ID* |*Description* |*Configuration of UPS files*
+
+
+|1 |Information of device driver |Refer Appendix-B for more device driver 
+information for your UPS model
+
+|2 |Legend |+*<upsModelName>*+ or +*<upsName>*+ represents the UPS model 
+name, this can also be user defined.
+
++*xxxx*+ represents nut version
+
+|3 |Stop services. |Before configuring the ups file stop the following 
+services incase they are started.
+
++*# /sbin/upsdrvctl stop <upsModelName>
+
+# /usr/sbin/upsd -c stop
+
+# /usr/sbi/upsmon -c stop*+
+
+//Definig for Windows OS
+ifdef::os-windows[]
+|4 |Configure *"ups.conf"* file |Edit "ups.conf" file to enter valid 
+data of UPS model, UPS driver and port as mentioned below.
+
++*# vi /etc/nut/ups.conf*
+ 
+[<upsModelName>]
+driver= refer Appendix D for Driver details and connectivity.+
+
+For USB Connectivity	+*port=auto*+
+
+For Serial Connectivity	+*port=COM1*+
+
+For SNMP Connectivity +*port=<ip address>*+
+
+*Note:* Verify the actual serial port number and modify this value accordingly.
+endif::os-windows[]
+
+//Repetating for Non Windows OS, as the macro was not able to take inside the tables
+ifdef::os-deb[]
+|4 |Configure *"ups.conf"* file |Edit "ups.conf" file to enter valid 
+data of UPS model, UPS driver and port as mentioned below.
+
++*# vi /etc/nut/ups.conf*
+
+    [<upsModelName>]
+    driver= refer Appendix D for Driver details and connectivity.+
+	
+For USB Connectivity +*port=auto*+
+
+For Serial Connectivity +*port=/dev/ttyS0*+
+
+For SNMP Connectivity +*port=<ip address>*+
+
+*Note:* Verify the actual serial port number and modify the value accordingly.
+endif::os-deb[]	
+
+|5 |Configure *"upsd.conf"* file |edit the below file 
+ifdef::os-windows[]
++*etc/nut/upsd.conf*+ from installed path and uncomment the 
+endif::os-windows[]
+ifdef::os-deb[]
++*# vi /etc/nut/upsd.conf*+
+endif::os-deb[]	
+
++*LISTEN localhost 3493*+
+
+|6  |Configure *"upsd.users"* file |Edit "upsd.users" file using
+
++*# /etc/nut/upsd.users*+
+
+paste the below line in the file and save and exit
+
+    +[root]
+	
+    password= eaton01
+	
+    allowfrom=localhost
+	
+    actions = SET   
+    
+	instcmds= ALL+
+	
+Configure +*upsmon.conf"*+ file
+
+	+*# /etc/nut/upsmon.conf*+
+
+RUN_AS_USER root paste the below line in the file and save and exit
+
+    +*MONITOR <upsModelName>@localhost 1 root eaton01 master*+
+
+|======================================================	
+
+
+

@@ -1,0 +1,32 @@
+Uninstallation of NUT package
+-----------------------------
+
+[options="header", width="80%", cols="5,15,25,25,25"]
+|======================================================
+|*Test Case ID* |*Purpose* |*Prereq* |*Steps* |*Expected Output*
+|4.2.1 |Remove all files of NUT by uninstalling NUT Client package | Download the new nut client package from 
+NUT web site and copy on localhard disk e.g. /home.
+|Type this command in terminal 
+
++*# rpm -e /home/nut-client-xxxx.el4.rpm*+
+|NUT client rpm file should be removed with following message 
+
++nut-client-xxxx.el4.rpm is preparing to remove ..[100%]+
+
+|4.2.1 |Remove all files of NUT by uninstalling NUT Server package | Download the new nut client package from 
+NUT web site and copy on localhard disk e.g. /home.
+|Type this command in terminal 
+
++*# rpm -e /home/nut-xxxx.el4.rpm*+
+|NUT server rpm file should be removed with following message 
+
++nut-xxxx.el4.rpm is preparing to remove .. [100%].+
+
+Check the following files removed.
+upsc, upscmd,upslog,upsrw, upsschedcmd  from /usr/bin folder
+upsd, upsmon,upssched from /usr/sbin folder
+ups from /etc/rcd.d/init.d folder
+Upsdrvctl from /sbin folder
+
+|======================================================
+

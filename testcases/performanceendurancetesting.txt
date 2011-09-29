@@ -1,0 +1,17 @@
+Performance and endurance testing
+---------------------------------
+
+[options="header", width="80%", cols="5,15,25,25,25"]
+|======================================================
+|*Test Case ID* |*Purpose* |*Prereq* |*Steps* |*Expected Output*
+
+|4.6.1 |Verify endurance testing |Refer Test Case ID 4.3.1.
+|Keep the setup running for more than 2 days. 
+
+1. Note down the memory usage, CPU usage before launching the test.
+
+2. Note down the memory usage, CPU usage at the end of the test.
+|1. Device Communication should not be lost.
+
+2. Write down the memory and CPU usage.
+|======================================================

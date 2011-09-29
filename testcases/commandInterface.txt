@@ -1,0 +1,13 @@
+ifdef::os-windows[]
+include::./includeFiles/commandInterface-os-windows.txt[]
+endif::os-windows[]
+
+ifdef::os-deb[]
+include::./includeFiles/commandInterface-os-deb.txt[]
+endif::os-deb[]
+
+//ifdef::os-rpm[]
+//include::./includeFiles/commandInterface-os-rpm.txt[]
+//endif::os-rpm[]
+
+

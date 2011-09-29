@@ -1,0 +1,1255 @@
+Command Interface
+-----------------
+
+ifdef::os-windows[]
+The following section can be used to execute the commands that are supported 
+by NUT.
+
+[options="header", width="80%", cols="5,15,25,25,25"]
+|======================================================
+|*Test Case ID* |*Purpose* |*Prereq* |*Steps* |*Expected Output*
+
+//upsd
+|4.5.1 |Verify *help* command of *"upsd"* |Refer Test Case ID 4.3.1
+|Type the following command in terminal.
+
++*# /NUT/sbin/upsd -h*+
+|Help options supported by "upsd" should get displayed. 
+
+|4.5.2 |Verify *version* command of *"upsd"* |Refer Test Case ID 4.3.1.
+|Type the following command in terminal.
+
++*# /NUT/sbin/upsd -V*+
+|Network ups tools upsd version should get displayed.
+
+|4.5.3 |Verify the upsd reload command |Refer Test Case ID 4.3.1.
+|Type the following command in terminal.
+
++*# /NUT/sbin/upsd -c reload*+
+|upsd should reload its configuration files without shutting down the process.
+
+//upsrw
+|4.5.4 |Verify *upsrw* (help) command |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsrw -h*+
+|Help options supported by "upsrw" should get displayed.
+
+|4.5.5	|Verify variables supported by +"upsrw"+ |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsrw <upsModelName>*+
+|Variables that can be set on that device should be displayed
+For example: +battery.charge.low battery.charge.high+
+
+|4.5.6 |Verify setting of upsrw	|Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsrw -s battery.charge.low=00 -u<username> -p <pwd> <upsModelName>*+
+|Variable value specified should be set.
+
+//upsdrvctl
+|4.5.7 |Verify the upsdrvctl help option |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsdrvctl -h*+
+|Help options supported by "upsdrvctl" should get displayed.
+
+|4.5.8 |Verify the invalid parameter in *upsdrvctl* |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsdrvctl -y*+
+|Help options supported by "upsdrvctl" should get displayed.
+
+|4.5.9 |Verify the upsdrvctl shutdown command |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# NUT/sbin/upsdrvctl shutdown <upsModleName>*+
+|UPS should shutdown after executing this command.
+
+|4.5.10 |Verify the upsdrvctl command |Refer Test Case ID 4.3.1.
+|Type the command in terminal
+
++*# /sbin/upsdrvctl stop <upsModleName>*+
+|Upsdrvctl service should be stop. With the following message. 
++"Communication with UPS lost"+.
+
+//upsc
+|4.5.11 |Verify device details *upsc* |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*#  /NUT/bin/upsc <upsModelName>*+
+|Parameters supported by the device to be displayed. For example 
+
++input voltage: 230
+output voltage: 240
+Frequency: 50Hz
+battery voltage: 120 v
+output load: 23+
+
+|4.5.12 |Verify device hostname *upsc*|Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc -l*+
+|List of each device mentioned in ups.conf should be displayed.
+For example: +MGE-E650+
+
+|4.5.13 |Verify invalid device name of *upsc* |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc -d*+
+|upsc usage or Help options supported by "upsc" should get displayed.
+
+|4.5.14	|Verify device model name |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.model*+
+|Model name of the device to get displayed.
+
+|4.5.15 |Verify device nominal power |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.power.nominal*+ 
+|Nominal Power value of the device should be displayed.
+
+|4.5.16	|Verify device serial number |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.serial*+
+|Serial number of the device should be displayed.
+
+|4.5.17 |Verify device status |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.status*+
+|Status of the device should be displayed. 
+For example: +OB (on battery) or OL (on line)+
+
+|4.5.18 |Verify device vendor ID |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.vendor.id*+
+|Vendor ID of the device should be displayed.
+
+|4.5.19 |Verify device model name |Refer Test Case ID 4.3.1
+|Type this command in terminal
+
++*# upsc <upsModelName> device.model*+
+|Device model name should display for example +"Powerware 9120"+
+
+|4.5.20 |Verify device manufacturer name |Refer Test Case ID 4.3.1
+|Type this command in terminal
+
++*# upsc <upsModelName> device.mfr*+
+|Device manufacturer name should be displayed. For example +"Eaton"+
+
+|4.5.21 |Verify device model serial |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> device.serial*+
+|Serial number of the device should be displayed. 
+
+|4.5.22 |Verify device type |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> device.type*+
+|Device type should be  (ups,pdu and scd) displayed. for example +<UPS>+
+
+|4.5.23 |Verify device alarm |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.alarm*+
+|Alarm of the device should be displayed, (if any present). 
+For example  +<OVERHEAT>, <Bypass>, <Overolad>, etc+.
+
+|4.5.24 |Verify device clock time |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.time*+
+|Internal clock time of the device should display. For example +<12:34>+
+
+|4.5.25 |Verify device clock date |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.date*+
+|Internal clock date of the device should be displayed. 
+For example +<03/12/2010>+
+
+|4.5.26	|Verify device manufacturer name |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.mfr*+
+|Manufacturer name of the device should be displayed. For example +<EATON>+
+
+|4.5.27 |Verify device manufactured date |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.mfr.date*+
+|Manufactured date of the device should be displayed.For example +<03/12/2010>+
+
+|4.5.28 |Verify device vendor ID |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.vendorid*+
+|Vendor ID of the device should be displayed. For UPS for example +<0463>+
+
+|4.5.29 |Verify device product ID |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.productid*+
+|Product id of the device should be displayed. For example +<0003>+
+
+|4.5.30 |Verify device firmware |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.firmware*+
+|Firmware of the device should be displayed. For example +<01.01.0003>+
+
+|4.5.31 |Verify device auxiliary firmware |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.firmware.aux*+
+|Card firmware should be displayed. For example: 
++Network Management Card/Mosaic 4M 16M/HB+
+
+|4.5.32 |Verify device temperature |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.temperature*+
+|Temperature of the device should be displayed in *C. For example +<42>+
+
+|4.5.33 |Verify device load percent |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.load*+
+|Load percent of device should be displayed. For example +<023.4>+
+
+|4.5.34 |Verify device high load status |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.load.high*+
+|High load status of the device should be displayed. For example: +<100>+
+
+|4.5.35 |Verify device system identifier |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.id*+
+|System identifier of the device should be displayed. For example +<Sierra>+
+
+|4.5.36 |Verify Device delay start time |Refer Test Case ID 4.3.1.
+|Type this command in terminal 
+
++*# upsc <upsModelName> ups.delay.start*+
+|Load delay restart time (seconds) of the device should be displayed. 
+For example +<0>+
+
+|4.5.37 |Verify device delay reboot time. |Refer Test Case ID 4.3.1
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.delay.reboot*+
+|Rebooting interval time (seconds) of the device should be displayed. 
+For example +<60>+
+
+|4.5.38 |Verify device delay shutdown time |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.delay.shutdown*+
+|Delay shutdown interval (seconds) of the device should be displayed.
+For example +<20>+
+
+|4.5.39 |Verify device time start |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.timer.start*+
+|Start time of the device should be displayed. For example +<30>+
+
+|4.5.40 |Verify device reboot time |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.timer.reboot*+
+|Reboot time (seconds) of the device should be displayed. 
+For example +<10>+
+
+|4.5.41 |Verify device shutdown time |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.timer.shutdown*+
+|Shutdown time (seconds) of the device should be displayed. 
+For example +<10>+
+
+|4.5.42 |Verify device battery interval test |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.test.interval*+
+|Battery test Interval (seconds) between self tests of the device should be 
+displayed. For example +<1209600>+ two weeks
+
+|4.5.43	|Verify device test result |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.test.result*+
+|Result of the last self test of the device should be displayed.
+For example  +<Done and passed>+
+
+|4.5.44 |Verify device display language |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.display.language*+
+|Display language used on front panel of the device should be displayed. 
+For example +<E>+
+
+|4.5.45 |Verify device contacts |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.contacts*+
+|External contact sensors of the device should be displayed. For example +<F0>+
+
+|4.5.46 |Verify device apparent power value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.power*+
+|Apparent power value of the device should be displayed. For example +<500>+
+
+|4.5.47 |Verify device real power value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.realpower*+
+|Current real power (Watts) value of the device should be displayed.
+For example +<300>+
+
+|4.5.48	|Verify device nominal real power value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.realpower.nominal*+
+|Nominal real power (Watts) value of the device should be displayed. 
+For example +<300>+
+
+|4.5.49 |Verify device beeper status. |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.beeper.status*+
+|Beeper status (enabled, disabled or muted) of the device should be displayed.
+For example +<enabled>+
+
+|4.5.50 |Verify device type |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.type*+
+|Status of the device should be displayed. For example +<offline>+
+
+|4.5.51	|Verify device watchdog status  |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.watchdog.status*+
+|Watchdog status (enabled or disabled) of the device should be displayed. 
+For example +<disable>+
+
+|4.5.52 |Verify device auto start status |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.start.auto*+
+|Auto start status of the device should be displayed. For example +<yes>+
+
+|4.5.53	|Verify device start battery status	|Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.start.battery*+
+|Start battery status of the Device should be displayed. For example +<yes>+
+
+|4.5.54	|Verify device reboot start status |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ups.start.reboot*+
+|Reboot start status of the device should be displayed (enabled or disabled).
+For example +<enabled>+
+
+|4.5.55 |Verify device input voltage |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> input.voltage*+
+|Input voltage of the device should be displayed. For example +<121.5>+
+
+|4.5.56 |Verify device maximum input voltage |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> input.voltage.maximum*+
+|Maximum input voltage of the device should be displayed. For example +<130>+
+
+|4.5.57	|Verify device minimum input voltage |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> input.voltage.minimum*+
+|Minimum input voltage of the device should be displayed. For example +<100>+
+
+|4.5.58	|Verify device nominal input voltage |Refer Test Case ID 4.3.1.
+|Type this command in terminal 
+
++*# upsc <upsModelName> input.voltage.nominal*+
+|Input voltage of the device should be displayed. For example +<120>+
+
+|4.5.59 |Verify device extended input voltage |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> input.voltage.extended*+
+|Extended input voltage status of the device should be displayed. 
+For example +<no>+
+
+|4.5.60 |Verify device input transfer reason |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++# upsc <upsModelName> input.transfer.reason*+
+|Input transfer reason status of the device should be displayed. 
+For example +<T>+
+
+|4.5.61 |Verify device low input transfer value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> input.transfer.low*+
+|Low input transfer value of the device should be displayed. For example +<91>+
+
+|4.5.62 |Verify device high  input transfer value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> input.transfer.high*+
+|High input transfer value of the device should be displayed.For example +<132>+
+
+|4.5.63 |Verify device low minimum input transfer value	|Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> input.transfer.low.min*+
+|Low minimum input transfer value of the device should be displayed point. 
+For example +<85>+
+
+|4.5.64 |Verify device low maximum input transfer value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> input.transfer.low.max*+
+|Low maximum input transfer value of the device should be displayed point.
+For example +<85>+
+
+|4.5.65 |Verify device high minimum input transfer value |Refer Test Case ID 4.3.1
+|Type this command in terminal
+
++*# upsc <upsModelName> input.transfer.high.min*+
+|High minimum input transfer value of the device should be displayed. 
+For example +<131>+
+
+|4.5.66 |Verify device high maximum input transfer value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> input.transfer.high.max*+
+|sHigh maximum input transfer value of the device should be displayed. 
+For example +<136>+
+
+|4.5.67 |Verify device input power sensitivity |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> input. sensitivity*+
+|Input power sensitivity value of the device should be displayed. 
+For example +<H (high)>+
+
+|4.5.68 |Verify device input quality |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> input.quality*+
+|Input power quality of the device should be displayed. For example +<FF>+
+
+|4.5.69 |Verify device input current |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> input.current*+
+|Input current (A) value of the device should be displayed. For example +<4.25>+.
+
+|4.5.70 |Verify device nominal input current |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> input.current.nominal*+
+|Nominal input current (A) value of the device should be displayed. 
+For example +<5.0>+
+
+|4.5.71 |Verify device input frequency |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> input.frequency*+
+|Input line frequency (Hz) of the device should be displayed. For example +<50 Hz>+
+
+|4.5.72 |Verify device nominal input frequency |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> input.frequency.nominal*+
+|Nominal input line frequency (Hz) of the device should be displayed. 
+For example +<60 Hz>+
+
+|4.5.73 |Verify device low input frequency value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> input.frequency.low*+
+|Input line frequency low (Hz) value of the device should be displayed.
+For example +<47>+
+
+|4.5.75	|Verify device high input frequency value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> input.frequency.high*+
+|Input line frequency high (Hz) value of the device should be displayed.
+For example +<63>+
+
+|4.5.76 |Verify device extended input frequency |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> input.frequency.extended*+
+|Extended input frequency range of the device should be displayed. 
+For example +<no>+
+
+|4.5.77	|Verify device low boost input transfer |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> input.transfer.boost.low*+
+|Low voltage boosting transfer point of the device should be displayed. 
+For example +<190>+
+
+|4.5.78 |Verify device high boost input transfer |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> input.transfer.boost.high*+
+|High voltage boosting transfer point of the device should be displayed. 
+For example +<210>+
+
+|4.5.79 |Verify device low trim value of input transfer |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> input.transfer.trim.low*+
+|Low voltage trimming transfer value of the device should be displayed. 
+For example +<230>+
+
+|4.5.80	|Verify device high trim value of input transfer |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> input.transfer.trim.high*+
+|High voltage trimming transfer value of the device should be displayed.
+For example +<240>+
+
+|4.5.81 |Verify device output voltage |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> output.voltage*+
+|Output voltage (V) value of the device should be displayed.
+For example +<120.9>+
+
+|4.5.82 |Verify device nominal output voltage |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> output.voltage.nominal*+
+|Nominal output voltage (V) value of the device should be displayed. 
+For example +<120>+
+
+|4.5.83 |Verify device output frequency |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> output.frequency*+
+|Output frequency (Hz) of the device should be displayed. For example +<59.9>+
+
+|4.5.84 |Verify device nominal output frequency |Refer Test Case ID 4.3.1
+|Type this command in terminal
+
++*# upsc <upsModelName> output.frequency.nominal*+
+|Nominal output frequency (Hz) of the device should be displayed. 
+For example +<60>+
+
+|4.5.85	|Verify device output current |Refer Test Case ID 4.3.1
+|Type this command in terminal
+
++*# upsc <upsModelName> output.current*+
+|Output current (A) of the device should be displayed. For example +<4.25>+
+
+|4.5.86	|Verify device nominal output current |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> output.current.nominal*+
+|Nominal output current (A) of the device should be displayed. 
+For example +<5.0>+
+
+|4.5.87	|Verify device current value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> current*+
+|Current value of the device should be displayed. For example +<4A>+
+
+|4.5.88 |Verify device maximum current value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> current.maximum*+
+|Maximum current (A) of the device should be displayed 
+
+|4.5.89 |Verify device minimum current value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> current.minimum*+
+|Minimum current (A) of the device should be displayed.
+
+|4.5.90 |Verify device peak current value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> peakcurrent*+
+|Peak current value of the device should be displayed.
+
+|4.5.91 |Verify device voltage value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> voltage*+
+|Voltage (V) value of the device should be displayed.
+
+|4.5.92 |Verify device maximum voltage |Refer Test Case ID 4.3.1
+|Type this command in terminal
+
++*# upsc <upsModelName> voltage.maximum*+
+|Maximum voltage (V) value of the device should be displayed.
+
+|4.5.93 |Verify device minimum voltage |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> voltage.minimum*+
+|Minimum voltage (V) value of the device should be displayed.
+
+|4.5.94 |Verify device apparent power value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName>.power*+
+|Apparent power (VA) value of the device should be displayed.
+
+|4.5.95 |Verify device maximum apparent power value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> power.maximum*+
+|Maximum apparent power (VA) value of the device should be displayed.
+
+|4.5.96 |Verify device minimum apparent power value |Refer Test Case ID 4.3.1.
+|Type this command in terminal.
+
++*# upsc <upsModelName> power.minimum*+
+|Minimum apparent power (VA) value of the device should be displayed.
+
+|4.5.97 |Verify device power percent |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> power.percent*+
+|Apparent power percent of the device should be displayed.
+
+|4.5.98 |Verify device maximum power percent |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> power.maximum.percent*+
+|Maximum apparent power percent of the device should be displayed.
+
+|4.5.99 |Verify device minimum power percent |Refer Test Case ID 4.3.1
+|Type this command in terminal
+
++*# upsc <upsModelName> power.minimum.percent*+
+|Minimum apparent power percent of the device should be displayed.
+
+|4.5.100 |Verify device real power value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> real power*+
+|Real power (W) value of the device should be displayed.
+
+|4.5.101 |Verify device power factor value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> powerfactor*+
+|Power Factor (dimensionless value between 0.00 and 1.00) of the device 
+should be displayed.
+
+|4.5.102 |Verify device crest factor value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> crestfactor*+
+|Crest Factor (dimensionless value greater or equal to 1) of the device 
+should be displayed.
+
+|4.5.103 |Verify device battery charge value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> battery.charge*+
+|Battery charge (percent) of the device should be displayed. For example <100>
+
+|4.5.104 |Verify device low battery charge |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> battery.charge.low*+
+|Remaining battery level charge when UPS switches to LB (percent) of the 
+device should be displayed. For example +<20>+
+
+|4.5.105 |Verify device battery restart charge |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> battery.charge.restart*+
+|Device should display minimum battery level for UPS restart after power-off.
+For example +<20>+
+
+|4.5.106 |Verify device battery charge warning |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> battery.charge.warning*+
+|Battery charge warning percent of the device should be displayed. 
+For example +<50>+
+
+|4.5.107 |Verify device battery voltage value |Refer Test Case ID 4.3.1.
+|Type this command in terminal 
+
++*# upsc <upsModelName> battery.voltage*+
+|Battery voltage (V) value of the device should be displayed. 
+For example +<24.84>+
+
+|4.5.108 |Verify device battery capacity value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> battery.capacity*+
+|Battery capacity (Ah) value of the device should be displayed. 
+For example +<7.2>+
+
+|4.5.109 |Verify device battery current value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> battery.current*+
+|Battery current (A) value of the device should be displayed. 
+For example +<1.19.>+
+
+|4.5.110 |Verify device battery temperature |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> battery.temperature*+
+|sBattery temperature (degrees C) of the device should be displayed. 
+For example +<050.7>+
+
+|4.5.111	|Verify device nominal voltage |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> voltage.nominal*+
+|Nominal voltage (V) value of the device should be displayed.
+
+|4.5.112 |Verify device nominal battery voltage value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> battery.voltage.nominal*+
+|Nominal battery voltage (V) of the device should be displayed. 
+For example +<024>+
+
+|4.5.113 |Verify device battery runtime value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> battery.runtime*+
+|Remaining battery runtime (seconds) of the device should be displayed.
+For example +<1080>+
+
+|4.5.114 |Verify device low battery runtime |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> battery.runtime.low*+
+|Low battery runtime of the device should be displayed.  For example +<180>+
+
+|4.5.115 |Verify device battery alarm threshold value. |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> battery.alarm.threshold*+
+|Battery alarm threshold value of the device should be displayed. For example +<0>+
+
+|4.5.116 |Verify device battery date |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> battery.date*+
+|Battery change date of the device should be displayed. 
+For example +<03/12/2010>+
+
+|4.5.117 |Verify device battery manufactured date |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> battery.mfr.date*+
+|Battery manufacturing date of the device should be displayed.
+For example +<2005/04/02>+.
+
+|4.5.118 |Verify device battery packs |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> battery.packs*+
+|Number of battery packs of the device should be displayed. For example +<001>+
+
+|4.5.119 |Verify device bad packs of battery |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> battery.packs.bad*+
+|Number of bad battery packs of the device should be displayed. 
+For example +<000>+
+
+|4.5.120 |Verify device battery type status |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> battery.type*+
+|Battery type of the device should be displayed. For example +<PbAc>+
+
+|4.5.121 |Verify device battery protection status |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> battery.protection*+
+|Battery protection status of the device should be displayed. For example +<Yes>+
+
+|4.5.122 |Verify device battery energy save status |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> battery.energysave*+
+|Battery energy save status of the device should be displayed. For example +<no>+
+
+|4.5.123 |Verify device ambient temperature |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ambient.temperature*+
+|Ambient temperature (degrees C) of the device should be displayed. 
+For example +<25.40>+
+
+|4.5.124 |Verify device ambient temperature alarm |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ambient.temperature.alarm*+
+|Ambient temperature alarm (enabled/disabled) of the device should be displayed.
+For example +<enabled>+
+
+|4.5.125 |Verify device ambient high temperature |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ambient.temperature.high*+
+|Ambience temperature threshold high (degrees C) value of the device should be 
+displayed. For example +<40>+
+
+|4.5.126 |Verify device ambient low temperature |Refer Test Case ID 4.3.1.
+|Type this command in terminal 
+
++*# upsc <upsModelName> ambient.temperature.low*+
+|Ambient temperature threshold low (degrees C) value of the device should be 
+displayed. For example +<5>+
+
+|4.5.127 |Verify device maximum ambient temperature |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*#upsc <upsModelName> ambient.temperature.maximum*+
+|Maximum ambient temperature (degrees C) of the device should be displayed. 
+For example +<37.6>+
+
+|4.5.128 |Verify device minimum ambient temperature |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ambient.temperature.minimum*+
+|Minimum ambient temperature (degrees C) of the device should be displayed.
+For example +<181>+
+
+|4.5.129 |Verify device humidity |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ambient.humidity*+
+|Ambient relative humidity (percent) of the device should be displayed. 
+For example +<038.8>+
+
+|4.5.130 |Verify device humidity alarm |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ambient.humidity.alarm*+
+|Relative humidity alarm status (enabled/disabled) of the device should be 
+displayed. For example +<enabled>+
+
+|4.5.131 |Verify device humidity high |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ambient.humidity.high*+
+|Relative humidity threshold high (percent) of the device should be displayed. 
+For example +<80>+
+
+|4.5.132 |Verify device humidity low |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ambient.humidity.low*+
+|Relative humidity threshold low (percent) of the device should be displayed. 
+For example +<10>+
+
+|4.5.133 |Verify device maximum humidity |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ambient.humidity.maximum*+
+|Maximum relative humidity (percent) of the device should be displayed. 
+For example +<60>+
+
+|4.5.134 |Verify device minimum humidity |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> ambient.humidity.minimum*+
+|Minimum relative humidity (percent) of the device should be displayed. 
+For example +<13>+
+
+|4.5.135 |Verify device outlet system identifier |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> outlet.n.id*+
+|Outlet system identifier of the device should be displayed. For example +<n>+
+1 = load segment 1
+2 = load segment 2
+
+|4.5.136 |Verify device outlet description |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> outlet.n.desc*+
+|Outlet description of the device should be displayed. For example: +"main outlet"+
+or available +<load segment>+
+
+|4.5.137 |Verify device outlet switch |Refer Test Case ID 4.3.1. 
+|Type this command in terminal
+
++*# upsc <upsModelName> outlet.n.switch*+
+|Outlet switch control status (on/off) of the device should be displayed. 
+For example +<ON>+
+
+|4.5.138 |Verify device outlet status |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> outlet.n.status*+
+|Outlet status (on/off) of the device should be displayed. For example +<on>+
+
+|4.5.139 |Verify device outlet ability |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> outlet.n.switchable*+
+|Outlet switch ability (yes/no) of the device should be displayed. 
+For example +<yes>+
+
+|4.5.140 |Verify device outlet low charge |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> outlet.n.autoswitch.charge.low*+
+|Remaining battery low level to power off this outlet (percent) of the device 
+should be displayed. For example +<80>+
+
+|4.5.141 |Verify device outlet shutdown delay |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> outlet.n.delay.shutdown*+
+|Outlet shutdown delay of the device should be displayed. For example +<180>+
+
+|4.5.142 |Verify device outlet start delay |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> outlet.n.delay.start*+
+|Outlet start delay of the device should be displayed (seconds). 
+For example +<120>+
+
+|4.5.143 |Verify device outlet current  |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> outlet.n.current*+
+|Outlet current (A) value of the device should be displayed. 
+For example +<0.19>+
+
+|4.5.144 |Verify device outlet maximum current |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> outlet.n.current.maximum*+
+|Maximum outlet current (A) value of the device should be displayed.
+For example +<0.56>+
+
+|4.5.145 |Verify device outlet current real power value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> outlet.n.realpower*+
+|Outlet current of real power (W) of the device should be displayed.
+For example +<28>+
+
+|4.5.146 |Verify device output voltage |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> outlet.n.voltage*+
+|Outlet Voltage (V) of the device should be displayed. For example +<247>+
+
+|4.5.147 |Verify device outlet power factor |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> outlet.n.powerfactor*+
+|Power Factor (dimensionless value between 0 and 1) of the device should be 
+displayed. For example +<0.85>+
+
+|4.5.148 |Verify device outlet crest factor |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> outlet.n.crestfactor*+
+|Crest Factor (dimensionless, equal to or greater than 1) of the device should 
+be displayed. For example +<1.41>+
+
+|4.5.149 |Verify device outlet apparent power value |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> outlet.n.power*+
+|Outlet apparent power (VA) of the device should be displayed. 
+For example +<46>+
+
+|4.5.150 |Verify device driver name |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> driver.name*+
+|Driver name of the device should be displayed. For example +<driver name>+
+
+|4.5.151 |Verify device driver version |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> driver.version*+
+|Driver version (NUT release) of the device should be displayed. 
+For example +<X.Y.Z>+
+
+|4.5.152 |Verify device internal driver version |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> driver.version.internal*+
+|Internal driver version (if tracked separately) of the device should be 
+displayed. For example +<1.23.45>+
+
+|4.5.153 |Verify device driver parameter |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> driver.parameter.port*+
+|For SNMP connectivity	IP address of the port should be displayed
+For example : +<http://166.99.170.141/>+
+
+|4.5.154 |Verify device driver flag |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> driver.flag.xxx*+
+|Flag xxx (ups.conf or cmdline -x) status of the device should be displayed.
+For example +<enabled or absent>+
+
+|4.5.155 |Verify device server information |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> server.info*+
+|Server information of the device should be displayed. 
+For example: +<Network UPS Tools upsd vX.Y.Z>+
+
+|4.5.156 |Verify device server version |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> server.version*+
+|Server version of the device should be displayed. For example +<2.6.0>+
+
+|4.5.157 |Verify device load turn OFF |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
+//upscmd
++*# upscmd -u <username> -p <pwd> <upsModelName> load.off*+
+|Load of the device should be turn OFF immediately.
+
+|4.5.158 |Verify device List information |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc -L*+
+|Lists of each ups on device should be displayed with description. 
+This should be the same as mentioned in the ups.conf file description 
+For example: +<9125: PW 9125 + Serial >+
+
+|4.5.159 |Verify polling interval of the device |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> driver.parameter.pollinterval*+
+|Polling interval of the device should be displayed.
+For example: +<2>+
+
+|4.5.160 |Verify polling frequency of the device |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> driver.parameter.pollfreq*+
+|Polling frequency of the device should be displayed. For example: +<30>+
+
+|4.5.161 |Verify vendor specifics ambient status |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsc <upsModelName> vendor.specifics.abmstatus*+
+|ABM battery status of the device should be displayed.
+For example: <BatteryFloating>
+
+|4.5.162 |Verify device shutdown reboot |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upscmd -u <username> -p <pwd> <upsModelName> shutdown.reboot*+
+|Load of the device should shutdown and reboot. 
+
+|4.5.163 |Verify device shutdown reboot graceful |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upscmd -u <username> -p <pwd> <upsModelName> shutdown.reboot.graceful*+
+|Load of the device should shutdown gracefully and reboot.
+
+|4.5.164 |Verify device test panel |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upscmd -u <username> -p <pwd> <upsModelName> test.panel.start*+
+|Device panel test should start and verified on device panel. 
+
+|4.5.165 |Verify device test panel stop |Refer Test Case ID 4.3.1.
+|Type this command in terminal 
+
++*# upscmd -u <username> -p <pwd> <upsModelName> test.panel.stop*+
+|Device panel test should stop. 
+
+|4.5.166 |Verify device test failure start |Refer Test Case ID 4.3.1.
+|Type this command in terminal 
+
++*# upscmd -u <username> -p <pwd> <upsModelName> test.failure.start*+
+|A simulated power failure test should start and displayed on front panel.
+
+|4.5.167 |Verify device test failure stop |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upscmd -u <username> -p <pwd> <upsModelName> test.failure.stop*+
+|A simulated power failure test should stop and displayed on front panel.
+
+|4.5.168 |Verify device battery test start |Refer Test Case ID 4.3.1.
+|Type this command in terminal 
+
++*# upscmd -u <username> -p <pwd> <upsModelName> test.battery.start*+
+|Battery test should start.
+
+|4.5.169 |Verify device battery start quick |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upscmd -u <username> -p <pwd> <upsModelName> test.battery.start.quick*+
+|"quick" battery test should be start.
+
+|4.5.170 |Verify device battery start beep |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upscmd -u <username> -p <pwd> <upsModelName> test.battery.start.deep*+
+|A "deep" battery test should be start.
+
+|4.5.171 |Verify device battery stop |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upscmd -u <username> -p <pwd> <upsModelName> test.battery.stop*+
+|Battery test should be stop.
+
+|4.5.172 |Verify device calibrate start |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upscmd -u <username> -p <pwd> <upsModelName> calibrate.start*+
+|Calibration run time should be start 
+
+|4.5.173 |Verify device calibrate stop |Refer Test Case ID 4.3.1.
+|Type this command in terminal 
+
++*# upscmd -u <username> -p <pwd> <upsModelName> calibrate.stop*+
+|Calibration run time should be stop
+
+|4.5.174 |Verify device bypass start |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upscmd -u <username> -p <pwd> <upsModelName> bypass.start*+
+|Device should start bypass mode.
+
+|4.5.175 |Verify device bypass mode stop |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upscmd -u <username> -p <pwd> <upsModelName> bypass.stop*+
+|Device should take out of the bypass mode 
+
+|4.5.176 |Verify device minimum and maximum input reset	|Refer Test Case ID 4.3.1.
+|Type this command in terminal 
+
++*# upscmd -u <username> -p <pwd> <upsModelName> reset.input.minmax*+
+|Minimum and maximum input voltage of the device should be reset.
+
+|4.5.177 |Verify device reset watchdog |Refer Test Case ID 4.3.1.
+|Type this command in terminal 
+
++*# upscmd -u <username> -p <pwd> <upsModelName> reset.watchdog*+
+|Watchdog timer of the device should be reset.
+
+|4.5.178 |Verify device beeper enable. |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upscmd -u <username> -p <pwd> <upsModelName> beeper.enable*+
+|Beeper of the device should be enabling. 
+
+|4.5.179 |Verify device beeper disable. |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upscmd -u <username> -p <pwd> <upsModelName> beeper.disable*+
+|Beeper of the device should be disabling.
+
+|4.5.180 |Verify device beeper mute. |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upscmd -u <username> -p <pwd> <upsModelName> beeper.mute*+
+|Beeper of the device should be mute.
+
+|4.5.181 |Verify device beeper toggle |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upscmd -u <username> -p <pwd> <upsModelName> beeper.toggle*+
+|Beeper of the device should be toggle.
+
+|4.5.182 |Verify device load turn ON |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upscmd -u <username> -p <pwd> <upsModelName> load.on*+
+|Load of the device should be turn ON immediately.
+
+|4.5.183 |Verify device shutdown return |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upscmd -u <username> -p <pwd> shutdown.return*+
+|Load should be turn OFF after a delay and return ON.
+
+|4.5.184 |Verify device shutdown stay off |Refer Test Case ID 4.3.1.
+|Type this command in terminal 
+
++*# upscmd -u <username> -p <pwd> <upsModelName> shutdown.stayoff*+
+|Load should be turn OFF after a delay and remain OFF.
+
+|4.5.185 |Verify device shudown stop |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+ 
++*# upscmd -u <username> -p <pwd> <upsModelName> shutdown.stop*+
+|Shutdown of the load should stop.
+
+|4.5.186 |Verify upscmd help file |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upscmd -h*+
+|Help options supported by "upscmd" should get displayed.
+
+|4.5.187 |Verify upscmd variable is supported by device |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upscmd -l <upsModelName>*+
+|Variable supported by this device should be display. 
+For example:
+
++test.panel.start
+test.battery.start
+test.battery.stop
+calibre.stop
+calibre.start+
+
+|4.5.188 |Verify  upscmd with valid data |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*#upscmd -u <username> -p <pwd> <upsModelName> battery.test*+
+|Battery test should be start in device.
+
+|4.5.189 |Verify  upscmd with invalid data for ( root or password) 
+|Refer Test Case ID 4.3.1
+|Type this command in terminal
+
++*#upscmd -u <invalid username> -p <invalid pwd> <upsModelName> battery.test*+
+|Message should display +"Unexpected response from upsd: ERR ACCESS-DENIED"+.
+
+|4.5.190 |Verify the upsmon help data |Refer Test Case ID 4.3.1.
+|Type this command in terminal
+
++*# upsmon -h*+
+|Help options supported by "Upsmon" should get displayed.
+
+|======================================================
+
+endif::os-windows[]

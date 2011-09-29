@@ -1,0 +1,14 @@
+Uninstallation of NUT package
+-----------------------------
+
+[options="header", width="80%", cols="5,15,25,25,25"]
+|======================================================
+|*Test Case ID* |*Purpose* |*Prereq* |*Steps* |*Expected Output*
+|4.2.1	|Uninstall from Add/Remove programs	| 4.1.1 to 4.1.4
+|Remove NUT from Add/Remove programs |All files to be removed except user created.
+
+|4.2.2	|Uninstall using msi package	| 4.1.1
+|Execute the msi package, choose remove option 
+|All files to be removed except user created.
+
+|======================================================

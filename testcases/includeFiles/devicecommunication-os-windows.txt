@@ -1,0 +1,113 @@
+Communication with device
+-------------------------
+
+ifdef::os-windows[]
+[options="header", width="80%", cols="5,15,25,25,65"]
+|======================================================
+|*Test Case ID* |*Purpose* |*Prereq* |*Steps* |*Expected Output*
+
+|4.3.1	|Verify communication established with device	
+|Refer Test Case ID 4.1.1, Appendix-A for configuration 
+
+|Configure the required files as per prerequisite and start NUT service, either from
+ 
++Start Menu-> AllPrograms->NUT->Start Service or from windows service manager+.
+
+|+*Communication with UPS <upsName>@localhost established*+ 
+
+message to pop up and the same to be logged in windows Eventviewer. 
+
+Check if following services are started in the task manager
+nut, upsd, upsmon, respective Serial, USB or SNMP drivers as mentioned in 
+config files.
+
+Verify by executing the following command in terminal.
+
++*# upsc <upsName>
+
+# upscmd -l <upsName>*+
+
+|4.3.2	|Verify device details (upsc command)	|Refer Test Case ID 4.3.1.
+
+|Type the following command in terminal.
+
++*# upsc <upsName>*+
+|List of paramentres supported by UPS to are be displayed.
++Eg:
+
+battery.capacity: 9.00
+battery.charge: 100
+battery.charge.low: 20
+battery.charge.restart: 0
+battery.energysave: no battery.protection: yes+
+
+|4.3.3	|Device Communication Lost	|Refer Test Case ID 4.3.1 as prerequisite.
+|Unplug connectivity cable from device
+|+*"Communication with UPS lost"*+ 
+message should display. Verify above message is logged in Event Viewer.
+
+|4.3.4	|Verify the device status	|Refer Test Case ID 4.3.3 as prerequisite
+|Unplug connectivity cable from device
+|Type this command in terminal.
+
++*# upsc <upsName>*+
+
+Verify +*Error: Data stale*+ message is logged in Event Viewer.
+
+|4.3.5	|Verify device Communication established	|Refer Test ID 4.3.4 as 
+prerequisite.	|Re-Connect the cable to device
+|+*"Communication with UPS established"*+
+Verify above message is logged in Event Viewer
+
+|4.3.6	|Verify device details displayed	|Refer Test Case ID 4.3.5 for 
+prerequisite.	|Type this command in terminal.  
+
++*# upsc <upsName>*+
+|List of paramentres supported by UPS to get displayed.
+			
+|4.3.7	|Verify device service is running	|Refer Test Case ID 4.3.1 as 
+prerequisite.	|Restart the OS.	
+|On OS restart +*"Communication with UPS established"*+ message should get 
+popped and the same to be logged in windows event viewer.
+
+Verify whether the following services are running in Task Manager.
+
++*upsd, upsmon, nut*+
+
+|4.3.8	|Verify device service is stop.	|4.3.1	
+|Stop the *NUT service* from service manger or from start menu.
+|Verify the following services are running in Task Manager.
+
++*upsd, upsmon, nut*+
+
+|4.3.9	|Verify invalid (driver) data for ups.conf file.	|4.3.1
+|Update the +*"ups.conf"*+ file with an '*invalid driver*' name and restart the 
+service.
+|Verify the following services are running in Task Manager.
++upsd, upsmon, nut+ and also the driver mentioned in the +"ups.conf"+ file is started 
+and the following message should get display and logged in eventviewer.
+
++*"No communication with UPS driver failed to start (exist start =1) can't 
+start driver: no such file or directory."*+
+
++*"Communication with UPS <upsName>@localhost lost"*+ and 
+
++*"UPS <upsName>@localhost is unavailable."*+
+
+|4.3.10	|Verify invalid port (for connectivity) data for ups.conf file.	|4.3.1
+|Update the +*"ups.conf"*+ file with an '*invalid port*' name and restart the service.
+|+*Network UPS Tools upsd x.x.x listening on localhost port 3493
+Can't connect to UPS <upsName> (<upsDriverName>): No such file or directory.
+Connectivity test: Could not resolve hostname 'xxx.xxx.xxx.xxx': Host not found.
+Driver failed to start (exit status=1).*+
+
+Message to get logged in event viewer.
+
+|4.3.11	|Verify invalid data (invalid password) for upsmon.conf file.	|4.3.1
+|Update the +*"upsmon.conf"*+ file with an '*invalid password*' that doesnot 
+match with the one specified in +*upsd.users*+ file and restart the service.
+|+*upsmon - Login on UPS [<upsName>@localhost] failed - got [ERR ACCESS-DENIED].*+ 
+Message to get logged in eventviewer.
+
+|======================================================
+endif::os-windows[]
