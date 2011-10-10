@@ -1,4 +1,4 @@
-/*  belkin-hid.h - data to monitor Belkin UPS Systems USB/HID devices with NUT
+/*  belkin-hid.c - data to monitor Belkin UPS Systems USB/HID devices with NUT
  *
  *  Copyright (C)
  *	2003 - 2008	Arnaud Quette <arnaud.quette@free.fr>
@@ -69,46 +69,96 @@ static usb_device_id_t belkin_usb_device_table[] = {
 	{ -1, -1, NULL }
 };
 
-/* These lookup tables include the 1e-7 factor which seems to be due to a
- * broken report descriptor in certain Liebert units.
- */
+static const char *liebert_online_fun(double value);
+static const char *liebert_discharging_fun(double value);
+static const char *liebert_charging_fun(double value);
+static const char *liebert_lowbatt_fun(double value);
+static const char *liebert_replacebatt_fun(double value);
+static const char *liebert_shutdownimm_fun(double value);
+static const char *liebert_config_voltage_fun(double value);
+
 static info_lkp_t liebert_online_info[] = {
-        { 1, "online", NULL },
-        { 1e-7, "online", NULL },
-        { 0, "!online", NULL },
-        { 0, NULL, NULL }
-};
-static info_lkp_t liebert_discharging_info[] = {
-        { 1, "dischrg", NULL },
-        { 1e-7, "dischrg", NULL },
-        { 0, "!dischrg", NULL },
-        { 0, NULL, NULL }
-};
-static info_lkp_t liebert_charging_info[] = {
-        { 1, "chrg", NULL },
-        { 1e-7, "chrg", NULL },
-        { 0, "!chrg", NULL },
-        { 0, NULL, NULL }
-};
-static info_lkp_t liebert_lowbatt_info[] = {
-        { 1, "lowbatt", NULL },
-        { 1e-7, "lowbatt", NULL },
-        { 0, "!lowbatt", NULL },
-        { 0, NULL, NULL }
-};
-static info_lkp_t liebert_replacebatt_info[] = {
-        { 1, "replacebatt", NULL },
-        { 1e-7, "replacebatt", NULL },
-        { 0, "!replacebatt", NULL },
-        { 0, NULL, NULL }
-};
-static info_lkp_t liebert_shutdownimm_info[] = {
-        { 1, "shutdownimm", NULL },
-        { 0, "!shutdownimm", NULL },
-        { 0, NULL, NULL }
+	{ 0, NULL, liebert_online_fun }
 };
 
-static double liebert_exponent_correction = 1.0;
+static info_lkp_t liebert_discharging_info[] = {
+        { 0, NULL, liebert_discharging_fun }
+};
+
+static info_lkp_t liebert_charging_info[] = {
+        { 0, NULL, liebert_charging_fun }
+};
+
+static info_lkp_t liebert_lowbatt_info[] = {
+        { 0, NULL, liebert_lowbatt_fun }
+};
+
+static info_lkp_t liebert_replacebatt_info[] = {
+        { 0, NULL, liebert_replacebatt_fun }
+};
+
+static info_lkp_t liebert_shutdownimm_info[] = {
+        { 0, NULL, liebert_shutdownimm_fun }
+};
+
+static info_lkp_t liebert_config_voltage_info[] = {
+	{ 0, NULL, liebert_config_voltage_fun },
+};
+
+static double liebert_voltage_mult = 1.0;
+static char liebert_conversion_buf[10];
+
+/* These lookup functions also cover the 1e-7 factor which seems to be due to a
+ * broken report descriptor in certain Liebert units.
+ */
+static const char *liebert_online_fun(double value)
+{
+	return value ? "online" : "!online";
+}
+
+static const char *liebert_discharging_fun(double value)
+{
+	return value ? "dischrg" : "!dischrg";
+}
+
+static const char *liebert_charging_fun(double value)
+{
+	return value ? "chrg" : "!chrg";
+}
+
+static const char *liebert_lowbatt_fun(double value)
+{
+	return value ? "lowbatt" : "!lowbatt";
+}
+
+static const char *liebert_replacebatt_fun(double value)
+{
+	return value ? "replacebatt" : "!replacebatt";
+}
+
+static const char *liebert_shutdownimm_fun(double value)
+{
+	return value ? "shutdownimm" : "!shutdownimm";
+}
+
+/*! Apply heuristics to Liebert ConfigVoltage for correction of other values.
+ */
+static const char *liebert_config_voltage_fun(double value)
+{
+	if( value < 1 ) {
+		if( abs(value - 1e-7) < 1e-9 ) {
+			liebert_voltage_mult = 1e7;
+			upsdebugx(2, "ConfigVoltage = %g -> assuming correction factor = %g\n",
+				value, liebert_voltage_mult);
+		} else {
+			upslogx(LOG_NOTICE, "ConfigVoltage exponent looks wrong, but not correcting.");
+		}
+	}
+
+	snprintf(liebert_conversion_buf, sizeof(liebert_conversion_buf), "%f",
+			value * liebert_voltage_mult * 10.0);
+	return liebert_conversion_buf;
+}
 
 /* some conversion functions specific to Belkin */
 
@@ -385,6 +435,7 @@ static hid_info_t belkin_hid2nut[] = {
   { "ups.test.result", 0, 0, "UPS.BELKINControls.BELKINTest", NULL, "%s", 0, belkin_test_info },
   { "ups.type", 0, 0, "UPS.BELKINDevice.BELKINUPSType", NULL, "%s", 0, belkin_upstype_conversion },
 
+  { "output.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%s", HU_FLAG_STATIC, liebert_config_voltage_info },
   /* status */
   { "BOOL", 0, 0, "UPS.PowerSummary.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, liebert_discharging_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, liebert_charging_info },
