@@ -21,6 +21,7 @@
 
 
 # 2010-12-6 Prachi Gandhi / Chetan Agarwal
+# 2011-10-25 Prachi Gandhi
 #            Script to check the code conformance as per the NUT Coding guidelines.
 
 # FIXME:	1. Add "function pointer" in 'MatchList' table for each check
@@ -57,7 +58,7 @@ DIR = "/NUT/trunk"
 
 #Regex for pattern matching
 MEMCALL_REGEX = '.*[^x]([mc]|re)alloc[\ ]*\(.*[;]+'
-COMMENT_REGEX = "(?<!http:)\//(?!www)"
+COMMENT_REGEX = "(?<!http:)\//[^%|^EN|^W3C|^DTD](?!www)"
 GOTOCHK_REGEX = "\sgoto\s"
 PRINTFCHK_REGEX = "\sprintf\("
 SYSLOGCHK_REGEX = "\ssyslog\("
@@ -69,7 +70,7 @@ EXCEPTION	= 2
 REGEX		= 3
 RESULT		= 4
 	
-MatchList = [["memory", "/", "common.c|main.c", MEMCALL_REGEX, []],["comment", "/", "common.c", COMMENT_REGEX, []],["goto", "/", "common.c", GOTOCHK_REGEX, []],["printf", "/", "common.c", PRINTFCHK_REGEX, []], ["syslog", "/", "common.c", SYSLOGCHK_REGEX, []], ["time", "/", "common.c", TIMEHCHK_REGEX, []], ["shebang", "/", "common.c", SHEBANGCHK_REGEX, []]]
+MatchList = [["memory", "/", "common.c|main.c", MEMCALL_REGEX, []],["comment", "/", "common.c", COMMENT_REGEX, []],["goto", "/", "common.c", GOTOCHK_REGEX, []],["printf", "/", "common.c|snprintf.c", PRINTFCHK_REGEX, []], ["syslog", "/", "common.c", SYSLOGCHK_REGEX, []], ["time", "/", "common.c", TIMEHCHK_REGEX, []], ["shebang", "/", "common.c", SHEBANGCHK_REGEX, []]]
 
 def grep(exprlst, list):
 	""" Function to find the match in the file for passed regex 
@@ -82,18 +83,46 @@ def grep(exprlst, list):
 	expr = re.compile(exprlst)
 	n = 0
 	#check for the match as per regex passed in given file
-	for text in list:				
-		n=n+1
-		match = expr.search(text)		
-		if match != None:	
-			matchList.append([text, n])
+	ind = 0
+	for text in list:						
+		n=n+1				
+		if exprlst == MEMCALL_REGEX:
+			match = expr.search(text)	
+			if(match):
+				tmp = text.split("=")	
+				ind = iter(list)
+				text1 = ind.next()
+				if text1 == "\n":
+					text1 = ind.next()
+				varname = str(tmp[0]).lstrip()
+				varname = str(varname).rstrip()
+				varname = str(varname).replace("[","\[")
+				varname = str(varname).replace("]","\]")
+								
+				expr1 = "if[\s]*\([[\!|\s]*|\!=\s*NULL|\==\s*NULL]" 
+				#expr1 = "if[\s]*\([\!|\s]*"+varname+".*"  
+							
+				expr11 = re.compile(expr1)
+				match1 = expr11.search(text1)	
+				if(match1 == None):
+					matchList.append([text,n])
+		else:
+			match = expr.search(text)
+			if match != None:
+				matchList.append([text,n])
 									
 	return matchList
 
 def usage():
 	""" Function to display the usage of this script
 	"""
-	print "usage: codeconf.py [folder location] [checking option]\n"
+	print "\nusage: code_conformation.py [folder location] [checking option]\n"
+	print "usage: code_conformation.py\n"
+	print "\t *** Default folder location = current NUT directory, Default option = all ***\n"
+	print "usage: code_confromation.py [folder location]\n"
+	print "\t *** Default option = all ***\n"
+	print "usage: code_confromation.py [checking option]\n"
+	print "\t *** Default folder location = current NUT directory ***\n"
 	print "checking options: " + "mem " + "or all or " + "\"mem|comm|goto|printf|sys|time|shebang\"" + " or " + "\"all|~printf\"" + " or " + "\"all|~printf|~goto\"\n"
 	print "default option: all\n"
 	print "help: -h --help"
@@ -203,25 +232,59 @@ def main():
 	argscnt = len(sys.argv)
 	
 	# Display usage and exit script if folder location is not mentioned
-	if argscnt < 2:
-		usage()
-		exit()		
+	#if argscnt < 2:
+	#	usage()
+	#	exit()		
 	
 	# Display usage and exit script only if "help" option is specified not the folder location
-	if argscnt == 2:		
-		if sys.argv[1] == "-h" or sys.argv[1] == "--help":
-			usage()
-			exit()
-		else:
-			print "Default option : all"
+	#if argscnt == 2:		
+	#	if sys.argv[1] == "-h" or sys.argv[1] == "--help":
+	#		usage()
+	#		exit()
+	#	else:
+	#		print "Default option : all"
 	# Display only if folder location is mentioned make default checking option as "all"
-			CodeConfByte = CodeConfByte | allByte
+	#		CodeConfByte = CodeConfByte | allByte
 		
 	# Default check option is "all" otherwise create list of all options
-	ArgumentList = "all"
+	#ArgumentList = "all"
 	if argscnt > 2:
 		ArgumentList = []		
 		ArgumentList = sys.argv[2].split("|")
+		sourcename = sys.argv[1]
+	else:
+		# check if 1st argument is source location or exception option
+		if argscnt > 1:
+			argument = sys.argv[1]			
+			p = re.compile("\/")
+			match = p.search(argument)
+			if match:
+				sourcename = argument
+				ArgumentList = []
+				ArgumentList = "all"
+				CodeConfByte = CodeConfByte | allByte				
+			else:
+				folders = sys.argv[0].split("/")
+				#if folders[0] == scripts:
+				if len(folders) > 1:
+					sourcename = "."
+				else:
+					sourcename = "../.."
+				ArgumentList = []
+				ArgumentList = sys.argv[1].split("|")				
+		else:
+			folders = sys.argv[0].split("/")
+			sourcename = "../.."
+			if folders[0]== "." and folders[1] == "code_conformation.py":
+				if len(folders) < 2:
+					sourcename = "../.."
+			else:
+				if len(folders) > 1:
+                        		sourcename = "."
+	                        else:
+					sourcename = "../.."
+			ArgumentList = "all"
+			CodeConfByte = CodeConfByte | allByte
 			
 	# As per all options creat code conformance byte	
 	for ListItem in ArgumentList:								
@@ -260,7 +323,8 @@ def main():
 			exit()		
 					
 	# Get all invalid logs as per options mentioned from passed source location
-	getfilelist(sys.argv[1])
+	#getfilelist(sys.argv[1])
+	getfilelist(sourcename)
 			
 	# Log header
 	print "%s | %s | %s" %("\nFileName".ljust(nMaxLen),"Line#".ljust(6),"Code")
@@ -268,14 +332,23 @@ def main():
 	
 	# Display all Invalid logs with full file path, line number and invalid statement
 	for no in xrange(len(MatchList)):
-		Display(MatchList[no],no)	
+		if no != 3: 
+		# Do not display printf statements
+			Display(MatchList[no],no)	
 			
 	# Display Code conformance summary
 	totallog = 0
 	print "Code Conformance Summary:\n"	
 	for no in xrange(len(MatchList)):
 		totallog = totallog + len(MatchList[no][RESULT])
-		print "Invalid " "\"%s\"" " count	: %s \n" %(MatchList[no][CHECK], len(MatchList[no][RESULT]))
+		strTemp = "Invalid "
+		matchIndex = MatchList[no][CHECK]
+		if no == 2:
+			strTemp = "Warning "
+		if no == 3:
+			strTemp = "Warning "
+			
+		print strTemp + "%s count	: %s \n" %(MatchList[no][CHECK], len(MatchList[no][RESULT]))
 	
 	# Display total invalid logs count
 	print "\nTotal Invalid log count	: %s" %(str(totallog))
