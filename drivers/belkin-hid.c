@@ -3,6 +3,7 @@
  *  Copyright (C)
  *	2003 - 2008	Arnaud Quette <arnaud.quette@free.fr>
  *  2005        Peter Selinger <selinger@users.sourceforge.net>
+ *  2011        Charles Lepple <clepple+nut@gmail>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
  *
@@ -28,7 +29,7 @@
 #include "belkin-hid.h"
 #include "usb-common.h"
 
-#define BELKIN_HID_VERSION      "Belkin HID 0.13"
+#define BELKIN_HID_VERSION      "Belkin HID 0.14"
 
 /* Belkin */
 #define BELKIN_VENDORID	0x050d
@@ -437,10 +438,14 @@ static hid_info_t belkin_hid2nut[] = {
 
   { "output.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%s", HU_FLAG_STATIC, liebert_config_voltage_info },
   /* status */
-  { "BOOL", 0, 0, "UPS.PowerSummary.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, liebert_discharging_info },
+  { "BOOL", 0, 0, "UPS.PowerSummary.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, liebert_discharging_info }, /* might not need to be liebert_* version */
   { "BOOL", 0, 0, "UPS.PowerSummary.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, liebert_charging_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.ShutdownImminent", NULL, NULL, 0, liebert_shutdownimm_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, liebert_online_info },
+  { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, liebert_discharging_info },
+  { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, liebert_charging_info },
+  { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ShutdownImminent", NULL, NULL, 0, liebert_shutdownimm_info },
+  { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, liebert_online_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, NULL, HU_FLAG_QUICK_POLL, liebert_replacebatt_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, NULL, HU_FLAG_QUICK_POLL, liebert_lowbatt_info },
 
