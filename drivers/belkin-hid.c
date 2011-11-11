@@ -435,7 +435,10 @@ static hid_info_t belkin_hid2nut[] = {
   { "ups.serial", 0, 0, "UPS.PowerSummary.iSerialNumber", NULL, "%s", 0, stringid_conversion },
   { "ups.test.result", 0, 0, "UPS.BELKINControls.BELKINTest", NULL, "%s", 0, belkin_test_info },
   { "ups.type", 0, 0, "UPS.BELKINDevice.BELKINUPSType", NULL, "%s", 0, belkin_upstype_conversion },
-
+  /* Liebert PSA: */
+  { "input.frequency", 0, 0, "UPS.Input.Frequency", NULL, "%s", 0, divide_by_10_conversion },
+  { "input.voltage", 0, 0, "UPS.Input.Voltage", NULL, "%s", 0, liebert_config_voltage_info },
+  { "output.voltage", 0, 0, "UPS.Output.Voltage", NULL, "%s", 0, liebert_config_voltage_info },
   { "output.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%s", HU_FLAG_STATIC, liebert_config_voltage_info },
   /* status */
   { "BOOL", 0, 0, "UPS.PowerSummary.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, liebert_discharging_info }, /* might not need to be liebert_* version */
