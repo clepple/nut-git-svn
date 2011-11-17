@@ -77,6 +77,7 @@ static const char *liebert_lowbatt_fun(double value);
 static const char *liebert_replacebatt_fun(double value);
 static const char *liebert_shutdownimm_fun(double value);
 static const char *liebert_config_voltage_fun(double value);
+static const char *liebert_line_voltage_fun(double value);
 
 static info_lkp_t liebert_online_info[] = {
 	{ 0, NULL, liebert_online_fun }
@@ -110,7 +111,8 @@ static info_lkp_t liebert_line_voltage_info[] = {
 	{ 0, NULL, liebert_line_voltage_fun },
 };
 
-static double liebert_voltage_mult = 1.0;
+static double liebert_config_voltage_mult = 1.0;
+static double liebert_line_voltage_mult = 1.0;
 static char liebert_conversion_buf[10];
 
 /* These lookup functions also cover the 1e-7 factor which seems to be due to a
