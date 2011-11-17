@@ -29,7 +29,7 @@
 #include "belkin-hid.h"
 #include "usb-common.h"
 
-#define BELKIN_HID_VERSION      "Belkin HID 0.14"
+#define BELKIN_HID_VERSION      "Belkin HID 0.15"
 
 /* Belkin */
 #define BELKIN_VENDORID	0x050d
@@ -106,6 +106,10 @@ static info_lkp_t liebert_config_voltage_info[] = {
 	{ 0, NULL, liebert_config_voltage_fun },
 };
 
+static info_lkp_t liebert_line_voltage_info[] = {
+	{ 0, NULL, liebert_line_voltage_fun },
+};
+
 static double liebert_voltage_mult = 1.0;
 static char liebert_conversion_buf[10];
 
@@ -143,21 +147,41 @@ static const char *liebert_shutdownimm_fun(double value)
 }
 
 /*! Apply heuristics to Liebert ConfigVoltage for correction of other values.
+ * Logic is weird since the ConfigVoltage item comes after InputVoltage and
+ * OutputVoltage.
  */
 static const char *liebert_config_voltage_fun(double value)
 {
 	if( value < 1 ) {
 		if( abs(value - 1e-7) < 1e-9 ) {
-			liebert_voltage_mult = 1e7;
-			upsdebugx(2, "ConfigVoltage = %g -> assuming correction factor = %g\n",
-				value, liebert_voltage_mult);
+			liebert_config_voltage_mult = 1e8;
+			liebert_line_voltage_mult = 1e7; /* stomp this in case input voltage was low */
+			upsdebugx(2, "ConfigVoltage = %g -> assuming correction factor = %g",
+				value, liebert_config_voltage_mult);
 		} else {
 			upslogx(LOG_NOTICE, "ConfigVoltage exponent looks wrong, but not correcting.");
 		}
 	}
 
 	snprintf(liebert_conversion_buf, sizeof(liebert_conversion_buf), "%f",
-			value * liebert_voltage_mult * 10.0);
+			value * liebert_config_voltage_mult);
+	return liebert_conversion_buf;
+}
+
+static const char *liebert_line_voltage_fun(double value)
+{
+	if( value < 1 ) {
+		if( abs(value - 1e-7) < 1e-9 ) {
+			liebert_line_voltage_mult = 1e7;
+			upsdebugx(2, "Input/OutputVoltage = %g -> assuming correction factor = %g",
+				value, liebert_line_voltage_mult);
+		} else {
+			upslogx(LOG_NOTICE, "LineVoltage exponent looks wrong, but not correcting.");
+		}
+	}
+
+	snprintf(liebert_conversion_buf, sizeof(liebert_conversion_buf), "%f",
+			value * liebert_line_voltage_mult);
 	return liebert_conversion_buf;
 }
 
@@ -436,10 +460,14 @@ static hid_info_t belkin_hid2nut[] = {
   { "ups.test.result", 0, 0, "UPS.BELKINControls.BELKINTest", NULL, "%s", 0, belkin_test_info },
   { "ups.type", 0, 0, "UPS.BELKINDevice.BELKINUPSType", NULL, "%s", 0, belkin_upstype_conversion },
   /* Liebert PSA: */
+  { "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL },  /* why .broken above? */
   { "input.frequency", 0, 0, "UPS.Input.Frequency", NULL, "%s", 0, divide_by_10_conversion },
-  { "input.voltage", 0, 0, "UPS.Input.Voltage", NULL, "%s", 0, liebert_config_voltage_info },
-  { "output.voltage", 0, 0, "UPS.Output.Voltage", NULL, "%s", 0, liebert_config_voltage_info },
-  { "output.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%s", HU_FLAG_STATIC, liebert_config_voltage_info },
+  { "input.voltage", 0, 0, "UPS.Input.Voltage", NULL, "%s", 0, liebert_line_voltage_info },
+  { "output.voltage", 0, 0, "UPS.Output.Voltage", NULL, "%s", 0, liebert_line_voltage_info },
+  /* You would think these next two would be off by the same factor. You'd be wrong. */
+  { "battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%s", 0, liebert_line_voltage_info },
+  { "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%s", HU_FLAG_STATIC, liebert_config_voltage_info },
+  { "ups.load", 0, 0, "UPS.Output.PercentLoad", NULL, "%.0f", 0, NULL },
   /* status */
   { "BOOL", 0, 0, "UPS.PowerSummary.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, liebert_discharging_info }, /* might not need to be liebert_* version */
   { "BOOL", 0, 0, "UPS.PowerSummary.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, liebert_charging_info },
