@@ -165,7 +165,7 @@ static const char *liebert_config_voltage_fun(double value)
 		}
 	}
 
-	snprintf(liebert_conversion_buf, sizeof(liebert_conversion_buf), "%f",
+	snprintf(liebert_conversion_buf, sizeof(liebert_conversion_buf), "%.1f",
 			value * liebert_config_voltage_mult);
 	return liebert_conversion_buf;
 }
@@ -182,7 +182,7 @@ static const char *liebert_line_voltage_fun(double value)
 		}
 	}
 
-	snprintf(liebert_conversion_buf, sizeof(liebert_conversion_buf), "%f",
+	snprintf(liebert_conversion_buf, sizeof(liebert_conversion_buf), "%.1f",
 			value * liebert_line_voltage_mult);
 	return liebert_conversion_buf;
 }
