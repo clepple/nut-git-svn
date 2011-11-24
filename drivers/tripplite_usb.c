@@ -130,7 +130,7 @@
 POD ("Plain Old Documentation") - run through pod2html or perldoc. See
 perlpod(1) for more information.
 
-pod2man --name='TRIPPLITE_USB' --section=8 --release='$Rev: 2598 $' --center='Network UPS Tools (NUT)' tripplite_usb.c
+pod2man --name='TRIPPLITE_USB' --section=8 --release='$Rev$' --center='Network UPS Tools (NUT)' tripplite_usb.c
 
 =head1 NAME
 
