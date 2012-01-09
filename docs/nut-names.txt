@@ -33,6 +33,8 @@ during a transition period. The ups.* data will then be removed.
 | device.mfr     | Device manufacturer                  | Eaton
 | device.serial  | Device serial number (opaque string) | WS9643050926
 | device.type    | Device type (ups, pdu, scd)          | ups
+| device.parent  | Reference to the parent link in the
+                   PowerChain (NUT host format)         | ups1@localhost
 |========================================================================
 
 ups: General unit information

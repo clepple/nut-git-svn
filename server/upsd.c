@@ -1,8 +1,9 @@
 /* upsd.c - watches ups state files and answers queries 
 
    Copyright (C)
-	1999	Russell Kroll <rkroll@exploits.org>
-	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
+     1999	Russell Kroll <rkroll@exploits.org>
+     2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
+     2011  Arnaud Quette <arnaud.quette@free.fr>
 	2011	Arnaud Quette <arnaud.quette.free.fr>
 
    This program is free software; you can redistribute it and/or modify
@@ -39,6 +40,7 @@
 #include "sstate.h"
 #include "desc.h"
 #include "neterr.h"
+#include "powerchain.h"
 
 #ifdef HAVE_WRAP
 #include <tcpd.h>
@@ -48,7 +50,8 @@ int	deny_severity = LOG_WARNING;
 
 	/* externally-visible settings and pointers */
 
-	upstype_t	*firstups = NULL;
+	upstype_t		*firstups = NULL;
+	powerchain_t	*powerchains = NULL;
 
 	/* default 15 seconds before data is marked stale */
 	int	maxage = 15;
@@ -160,6 +163,8 @@ void listen_add(const char *addr, const char *port)
 
 	/* don't change listening addresses on reload */
 	if (reload_flag) {
+		upsdebugx(3, "listen_add: not adding %s:%s, due to reload",
+					addr, port);
 		return;
 	}
 
@@ -624,6 +629,31 @@ void driver_free(void)
 	}
 }
 
+void powerchain_free(void)
+{
+	powerlink_t		*plink, *plink_child;
+	powerchain_t	*pchain, *pchain_next;
+
+	/* Loop on Powerchains */
+	for (pchain = powerchains ; pchain ; pchain = pchain_next) {
+		pchain_next = pchain->next;
+
+		/* Loop on Powerlinks */
+		for (plink = pchain->nodes ; plink ; plink = plink_child) {
+			plink_child = plink->child;
+
+			upsdebugx(3, "powerchain_free: freeing Powerlink %s", plink->name);
+
+			free(plink->name);
+			free(plink);
+		}
+
+		upsdebugx(3, "powerchain_free: freeing Powerlinkchain");
+		free(pchain);
+	}
+	powerchains = NULL;
+}
+
 static void upsd_cleanup(void)
 {
 	if (strlen(pidfn) > 0) {
@@ -638,6 +668,7 @@ static void upsd_cleanup(void)
 	server_free();
 	client_free();
 	driver_free();
+	powerchain_free();
 
 	free(statepath);
 	free(datapath);
@@ -677,6 +708,8 @@ static void mainloop(void)
 	time(&now);
 
 	if (reload_flag) {
+		/* clears Powerchains */
+		powerchain_free();
 		conf_reload();
 		poll_reload();
 		reload_flag = 0;
