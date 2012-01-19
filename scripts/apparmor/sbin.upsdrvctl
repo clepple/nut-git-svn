@@ -1,0 +1,138 @@
+# Last Modified: Wed Jan  4 16:28:32 2012
+#include <tunables/global>
+
+
+#
+# upsdrvctl tool
+#
+/sbin/upsdrvctl {
+  #include <abstractions/base>
+
+  capability kill,
+  capability mknod,
+
+  # Configuration files
+  /etc/nut/ups.conf r,
+
+  # DRIVERS:
+  #==========
+  # Driver pid files:
+  /run/nut/*.pid r,
+
+  # Driver executables:
+  /lib/nut/dummy-ups cix,
+  /lib/nut/nut-sysinfo cix,
+  /lib/nut/usbhid-ups cix,
+# TODO: Uncomment next line to allow containment for all other drivers
+#  /lib/nut/* cix -> generic_driver,  # Fallback: not AA investigate drivers
+}
+
+#
+# generic driver
+# used for driver not inspected for apparmorization
+#
+profile /sbin/upsdrvctl//generic_driver {
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+
+  capability setgid,
+  capability setuid,
+  capability mknod,
+
+  # Nut libraries
+  /usr/local/ups/lib/lib*so* mr,
+
+  # Config file:
+  /etc/nut/ups.conf r,
+
+  # PID file:
+  /run/nut/*-* rw,
+
+  ### Enf of common driver part ###
+}
+
+
+#
+# dummy-ups driver
+#
+profile /sbin/upsdrvctl///lib/nut/dummy-ups {
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+
+  capability setgid,
+  capability setuid,
+  capability mknod,
+
+  # Nut libraries
+  /usr/local/ups/lib/lib*so* mr,
+
+  # Config file:
+  /etc/nut/ups.conf r,
+
+  # PID file:
+  /run/nut/dummy-ups-* rw,
+
+  ### Enf of common driver part ###
+
+  # Dummy source config file
+  /etc/nut/** r,
+  # Network access
+  network inet tcp,
+
+}
+
+
+#
+# nut-sysinfo driver
+#
+profile /sbin/upsdrvctl///lib/nut/nut-sysinfo {
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+
+  capability setgid,
+  capability setuid,
+  capability mknod,
+
+  # Nut libraries
+  /usr/local/ups/lib/lib*so* mr,
+
+  # Config file:
+  /etc/nut/ups.conf r,
+
+  # PID file:
+  /run/nut/nut-sysinfo-* rw,
+
+  ### Enf of common driver part ###
+
+}
+
+
+
+#
+# usbhid-ups driver
+#
+profile /sbin/upsdrvctl///lib/nut/usbhid-ups {
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+
+  capability setgid,
+  capability setuid,
+  capability mknod,
+
+  # Nut libraries
+  /usr/local/ups/lib/lib*so* mr,
+
+  # Config file:
+  /etc/nut/ups.conf r,
+
+  # PID file:
+  /run/nut/usbhid-ups-* rw,
+
+  ### Enf of common driver part ###
+
+  /dev/bus/usb/ r,
+  /dev/bus/usb/**/ r,
+  /dev/bus/usb/**[^/] rw,
+
+}
+

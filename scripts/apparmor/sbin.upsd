@@ -1,0 +1,26 @@
+# Last Modified: Tue Dec  6 09:36:01 2011
+#include <tunables/global>
+
+/sbin/upsd {
+  #include <abstractions/base>
+
+
+  capability setgid,
+  capability setuid,
+  capability kill,   # arno
+
+  /etc/group r,
+  /etc/nsswitch.conf r,
+  /etc/passwd r,        # ???
+
+  /etc/nut/ups.conf r,
+  /etc/nut/upsd.conf r,
+  /etc/nut/upsd.users r,
+
+  /usr/share/nut/cmdvartab r,
+
+  network inet stream,
+  network inet6 stream,
+
+  audit deny /{,var/}run/nut/*  rw,
+}
