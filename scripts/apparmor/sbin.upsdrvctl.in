@@ -1,0 +1,155 @@
+# vim:syntax=apparmor
+# Last Modified: Thu, 26 Jan 2012 10:27:53
+#include <tunables/global>
+
+#
+# upsdrvctl tool
+#
+@SBINDIR@/upsdrvctl {
+  #include <abstractions/base>
+
+  capability kill,
+  capability mknod,
+
+  # Configuration files
+  @CONFPATH@/ups.conf r,
+
+  # DRIVERS:
+  #==========
+  # Driver PID file and state socket:
+  # FIXME: shouldn't the below be 'rw'?
+  @STATEPATH@/*  r,
+  @PIDPATH@/*.pid r,
+  @ALTPIDPATH@/*.pid r,
+
+  # Driver executables:
+  @DRVPATH@/dummy-ups cix,
+  @DRVPATH@/nut-sysinfo cix,
+  @DRVPATH@/usbhid-ups cix,
+
+# TODO: Uncomment next line to allow containment for all other drivers
+#  @DRVPATH@/* cix -> generic_driver,  # Fallback: not AA investigate drivers
+}
+
+#
+# generic driver
+# used for driver not inspected for apparmorization
+#
+profile @SBINDIR@/upsdrvctl//generic_driver {
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+
+  capability setgid,
+  capability setuid,
+  capability mknod,
+
+  # Nut libraries
+  # FIXME: not sure why it's listed here?
+  @LIBDIR@/lib*so* mr,
+
+  # Config file:
+  @CONFPATH@/ups.conf r,
+
+  # PID file and state socket:
+  @STATEPATH@/*-*  rw,
+  @PIDPATH@/*-*.pid  rw,
+  @ALTPIDPATH@/*-*.pid  rw,
+
+  ### Enf of common driver part ###
+}
+
+
+#
+# dummy-ups driver
+#
+profile @SBINDIR@/upsdrvctl//@DRVPATH@/dummy-ups {
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+
+  capability setgid,
+  capability setuid,
+  capability mknod,
+
+  # Nut libraries
+  @LIBDIR@/lib*so* mr,
+
+  # Config file:
+  @CONFPATH@/ups.conf r,
+
+  # PID file and state socket:
+  @STATEPATH@/dummy-ups-*  rw,
+  @PIDPATH@/dummy-ups-*.pid  rw,
+  @ALTPIDPATH@/dummy-ups-*.pid  rw,
+
+  ### Enf of common driver part ###
+
+  # Dummy source config file (.seq or .dev definition file)
+  @CONFPATH@/** r,
+
+  # Network access
+  network inet tcp,
+  # FIXME: Isn't the below lines needed too?
+  #network inet stream,
+  #network inet6 stream,
+
+}
+
+
+#
+# nut-sysinfo driver
+#
+profile @SBINDIR@/upsdrvctl//@DRVPATH@/nut-sysinfo {
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+
+  capability setgid,
+  capability setuid,
+  capability mknod,
+
+  # Nut libraries
+  @LIBDIR@/lib*so* mr,
+
+  # Config file:
+  @CONFPATH@/ups.conf r,
+
+  # PID file and state socket:
+  @STATEPATH@/nut-sysinfo-*  rw,
+  @PIDPATH@/nut-sysinfo-*.pid  rw,
+  @ALTPIDPATH@/nut-sysinfo-*.pid  rw,
+
+  ### Enf of common driver part ###
+
+}
+
+
+
+#
+# usbhid-ups driver
+#
+profile @SBINDIR@/upsdrvctl//@DRVPATH@/usbhid-ups {
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+
+  capability setgid,
+  capability setuid,
+  capability mknod,
+
+  # Nut libraries
+  @LIBDIR@/lib*so* mr,
+
+  # Config file:
+  @CONFPATH@/ups.conf r,
+
+  # PID file and state socket:
+  @STATEPATH@/usbhid-ups-*  rw,
+  @PIDPATH@/usbhid-ups-*.pid  rw,
+  @ALTPIDPATH@/usbhid-ups-*.pid  rw,
+
+  ### Enf of common driver part ###
+
+  /dev/bus/usb/ r,
+  /dev/bus/usb/**/ r,
+  /dev/bus/usb/**[^/] rw,
+
+}
+

@@ -1,0 +1,31 @@
+# vim:syntax=apparmor
+# Last Modified: Thu, 26 Jan 2012 10:27:53
+#include <tunables/global>
+
+@SBINDIR@/upsd {
+  #include <abstractions/base>
+
+
+  capability setgid,
+  capability setuid,
+  # Needed for upsd -c {reload,stop}, which uses signals
+  capability kill,
+
+  /etc/group r,
+  /etc/nsswitch.conf r,
+  # Needed for privileges dropping
+  /etc/passwd r,
+
+  @CONFPATH@/ups.conf r,
+  @CONFPATH@/upsd.conf r,
+  @CONFPATH@/upsd.users r,
+
+  @DATADIR@/cmdvartab r,
+
+  network inet stream,
+  network inet6 stream,
+
+  audit deny @STATEPATH@/*  rw,
+  audit deny @PIDPATH@/*  rw,
+  audit deny @ALTPIDPATH@/*  rw,
+}

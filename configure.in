@@ -70,6 +70,11 @@ if test ! -d "${udevdir}"; then
    fi
 fi
 
+apparmordir='/etc/apparmor.d'
+if test ! -d "${apparmordir}"; then
+   apparmordir=''
+fi
+
 RUN_AS_USER="nobody"
 RUN_AS_GROUP="nobody"
 PIDPATH="/var/run"
@@ -1003,6 +1008,35 @@ else
 fi
 AM_CONDITIONAL(WITH_UDEV, test -n "${udevdir}")
 
+dnl AppArmor profiles installation
+AC_MSG_CHECKING(whether to install AppArmor profiles)
+AC_ARG_WITH(apparmor-dir,
+	AS_HELP_STRING([--with-apparmor-dir=PATH], [where to install AppArmor profiles (/etc/apparmor.d)]),
+[
+	case "${withval}" in
+	yes)
+		if test -z "${apparmordir}"; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR(["AppArmor directory requested but not found"])
+		fi
+		;;
+	auto)
+		;;
+	no)
+		apparmordir=""
+		;;
+	*)
+		apparmordir="${withval}"
+		;;
+	esac
+], [])
+if test -n "${apparmordir}"; then
+	AC_MSG_RESULT(using ${apparmordir})
+else
+	AC_MSG_RESULT(no)
+fi
+AM_CONDITIONAL(WITH_APPARMOR, test -n "${apparmordir}")
+
 AC_PATH_PROGS([ASCIIDOC], [asciidoc], [none])
 AM_CONDITIONAL([MANUALUPDATE], [test "x$ASCIIDOC" != "xnone"])
 AC_PATH_PROGS([A2X], [a2x], [none])
@@ -1027,6 +1061,20 @@ eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 BINDIR=${conftemp}
 AC_DEFINE_UNQUOTED(BINDIR, "${conftemp}", [Default path for user executables])
+
+dnl same for sbindir
+conftemp="${sbindir}"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+SBINDIR=${conftemp}
+AC_DEFINE_UNQUOTED(SBINDIR, "${conftemp}", [Default path for system executables])
+
+dnl same for libdir
+conftemp="${libdir}"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+LIBDIR=${conftemp}
+AC_DEFINE_UNQUOTED(LIBDIR, "${conftemp}", [Default path for NUT libraries])
 
 AC_SUBST(OS_NAME)
 AC_SUBST(TREE_VERSION)
@@ -1063,8 +1111,13 @@ AC_SUBST(DRIVER_INSTALL_TARGET)
 AC_SUBST(NETLIBS)
 AC_SUBST(SERLIBS)
 AC_SUBST(STATEPATH)
+AC_SUBST(PIDPATH)
+AC_SUBST(ALTPIDPATH)
 AC_SUBST(CONFPATH)
+AC_SUBST(DATADIR)
 AC_SUBST(BINDIR)
+AC_SUBST(SBINDIR)
+AC_SUBST(LIBDIR)
 AC_SUBST(PORT)
 AC_SUBST(RUN_AS_USER)
 AC_SUBST(RUN_AS_GROUP)
@@ -1078,6 +1131,7 @@ AC_SUBST(systemdsystemunitdir)
 AC_SUBST(systemdsystemshutdowndir)
 AC_SUBST(hotplugdir)
 AC_SUBST(udevdir)
+AC_SUBST(apparmordir)
 
 AC_OUTPUT([
  clients/Makefile
@@ -1097,6 +1151,9 @@ AC_OUTPUT([
  lib/libupsclient.pc
  lib/libnutscan.pc
  lib/Makefile
+ scripts/apparmor/Makefile
+ scripts/apparmor/sbin.upsd
+ scripts/apparmor/sbin.upsdrvctl
  scripts/augeas/Makefile
  scripts/augeas/nutnutconf.aug
  scripts/augeas/nutupsconf.aug
