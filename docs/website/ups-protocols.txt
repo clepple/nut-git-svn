@@ -18,21 +18,21 @@ these documents may not always reflect the reality within your equipment!
 APC
 ~~~
 
-- link:ups-protocols/apcsmart.html[APC's smart protocol] - unofficial decoding work
+- link:protocols/apcsmart.html[APC's smart protocol] - unofficial decoding work
 
 Belkin
 ~~~~~~
 
-- link:ups-protocols/belkinsmart.html[Belkin's smart protocol] - unofficial decoding work on the Regulator Pro
+- link:ups-protocols/belkin.html[Belkin's smart protocol] - unofficial decoding work on the Regulator Pro
 
-- link:ups-protocols/belkinuniversal.html[Belkin Universal UPS] - courtesy of Peter Selinger
+- link:ups-protocols/belkin-universal/[Belkin Universal UPS] - courtesy of Peter Selinger
 
 Eaton
 ~~~~~
 
-- Eaton Protocols Library - all official Eaton documents are here, including Powerware, MGE, ...
+- link:protocols/eaton/[Eaton Protocols Library] - all official Eaton documents are here, including Powerware, MGE, ...
 
-- Best Fortress protocol - for LI 520, 720, 1020, and 1420 models
+- link:protocols/fortress/[Best Fortress protocol] - for LI 520, 720, 1020, and 1420 models
 
 - SOLA/Best Power protocol (Phoenixtec) - courtesy of Invensys Energy Systems
 

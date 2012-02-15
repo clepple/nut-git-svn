@@ -1,0 +1,18 @@
+
+
+=== EATON Protocol Library
+
+Documents in this section are provided courtesy of Eaton.
+
+*	link:UC2concept-1002889j.odt[UPScode II Concept Description] (ODT, 50 KB)
+*	link:../mge/[MGE Office Protection Systems protocol library] (serial SHUT, USB and SNMP protocols)
+*	EATON (prev. Powerware) XCP protocol:
+** link:XCP_Rev_C1_Public_021309.pdf[X-format Communications Protocol (XCP) Specification] (PDF, 996 KB)
+** link:XCP_Alarm_Map_021309.pdf[XCP Alarm Map] (PDF, 54 KB)
+** link:XCP_Meter_Map_021309.pdf[XCP Meter Map] (PDF, 21 KB)
+* EATON (prev. Powerware) SNMP information:
+** link:../snmp/Xups.mib[Powerware PowerMIB (XUPS-MIB)] (TXT, 71 KB)
+
+
+All protocol information on this site is provided in the hope that it
+will be useful. What you do with it is up to you.
