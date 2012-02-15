@@ -23,9 +23,9 @@ APC
 Belkin
 ~~~~~~
 
-- link:ups-protocols/belkin.html[Belkin's smart protocol] - unofficial decoding work on the Regulator Pro
+- link:protocols/belkin.html[Belkin's smart protocol] - unofficial decoding work on the Regulator Pro
 
-- link:ups-protocols/belkin-universal/[Belkin Universal UPS] - courtesy of Peter Selinger
+- link:protocols/belkin-universal/[Belkin Universal UPS] - courtesy of Peter Selinger
 
 Eaton
 ~~~~~
