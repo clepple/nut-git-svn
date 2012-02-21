@@ -1,0 +1,28 @@
+
+
+=== SEC Protocol Index
+
+This protocol is now available link:../sec.html[in HTML form]
+thanks to the OCR efforts of John Marley.
+
+
+
+The 75 dpi scans are still available:
+
+
+
+link:page1.html[Page 1]
+link:page2.html[Page 2]
+link:page3.html[Page 3]
+link:page4.html[Page 4]
+link:page5.html[Page 5]
+link:page6.html[Page 6]
+link:page7.html[Page 7]
+link:page8.html[Page 8]
+link:page9.html[Page 9]
+link:page10.html[Page 10]
+link:page11.html[Page 11]
+link:page12.html[Page 12]
+link:page13.html[Page 13]
+link:page14.html[Page 14]
+link:page15.html[Page 15]

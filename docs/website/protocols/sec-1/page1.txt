@@ -1,0 +1,20 @@
+
+link:../[Up]
+| Page 1 |
+link:page2.html[Next]
+
+
+
+''''
+
+
+image:images/01.png["Page 1"]
+
+
+''''
+
+
+
+link:../[Up]
+| Page 1 |
+link:page2.html[Next]

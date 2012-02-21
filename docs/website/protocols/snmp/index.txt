@@ -1,0 +1,45 @@
+
+
+=== NUT SNMP support
+
+
+*	link:http://walnut.tuxfamily.org/projects/ups-snmp-agent/[NUT SNMP Agent sub-project page]
+*	link:http://www.exploits.org/nut/docs/1.4.0/snmp.html[NUT 1.4.0 SNMP documentation]
+
+
+=== SNMP Protocols Library
+
+Documents in this section are provided courtesy of various manufacturers.
+
+*	IETF Management Information Base:
+
+**	link:rfc1628.mib[UPS MIB (RFC 1628)] (TXT, 64 KB)
+**	link:stdupsv1.mib[fixed UPS MIB (RFC 1628)] (TXT, 45 KB)
+
+* APC Management Information Base:
+
+**	link:powernet344.mib[UPS MIB (PowerNet)] (TXT, 484 KB)
+**	link:APC-Powernet.pdf[MIB description] (PDF, 998 KB)
+
+* MGE Management Information Base:
+
+**	link:mgeups.mib[UPS MIB (MGE-MIB)] (TXT, 76 KB)
+**	link:../eaton/mge/MGE-mibs.pdf[MIB description] (PDF, 78 KB)
+
+* EATON (prev. Powerware) Management Information Base:
+
+**	link:Xups.mib[EATON (prev. Powerware) PowerMIB (XUPS-MIB)] (TXT, 71 KB)
+
+
+
+
+
+
+All protocol information on this site is provided in the hope that it
+will be useful. What you do with it is up to you.
+
+=== Offsite links
+
+
+*	link:http://www.liebert.com/downloads/[Liebert MIBs]
+
