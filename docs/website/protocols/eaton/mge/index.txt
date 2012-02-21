@@ -1,0 +1,23 @@
+
+
+=== MGE Protocol Library
+
+Documents in this section are provided courtesy of MGE Office Protection Systems, and formerly MGE UPS SYSTEMS. +
+
+. These have been mirrored from their link:http://www.mgeups.com/techinfo/techdoc/index.htm[their web server]. +
+
+. The Utalk (legacy ASCII protocol) documents only applies to MGE UPS SYSTEMS.
+
+*	link:MGE-mibs.pdf[MGE UPS SYSTEMS SNMP MIBS descriptions] (PDF, 78 KB)
+*	link:NUT_MGE_USB_Devices_Draft_AA.pdf[MGE USB Devices Draft AA] - official MGE HID UPS data (PDF, 310 KB)
+*	link:51029473zaac.pdf[Simplified SHUT protocol] (PDF, 63 KB)
+*	link:9260zw_g.pdf[U-Talk protocol general specifications] (PDF, 104 KB)
+*	link:9261zwfa.pdf[U-Talk command set specifications] (PDF, 288 KB)
+*	link:minutalk.pdf[U-Talk basic command set for UPS single monitoring communication] (PDF, 7 KB)
+*	link:http://www.mgeups.com/techinfo/techdoc/pdf/MGE_PnP_Devices_Draft_AA.pdf[MGE PnP Devices Draft AA (PDF, 24 kb)]
+
+
+
+
+All protocol information on this site is provided in the hope that it
+will be useful. What you do with it is up to you.
