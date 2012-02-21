@@ -1,0 +1,1052 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.4" />
+<title></title>
+<style type="text/css">
+/* Sans-serif font. */
+h1, h2, h3, h4, h5, h6,
+div.title, caption.title,
+thead, p.table.header,
+div#toctitle,
+span#author, span#revnumber, span#revdate, span#revremark,
+div#footer {
+  font-family: Arial,Helvetica,sans-serif;
+}
+
+/* Serif font. */
+div.sectionbody {
+  font-family: Georgia,"Times New Roman",Times,serif;
+}
+
+/* Monospace font. */
+tt {
+  font-size: inherit;
+}
+
+body {
+  margin: 1em 5% 1em 5%;
+}
+
+a {
+  color: blue;
+  text-decoration: underline;
+}
+a:visited {
+  color: fuchsia;
+}
+
+em {
+  font-style: italic;
+  color: navy;
+}
+
+strong {
+  font-weight: bold;
+  color: #083194;
+}
+
+tt {
+  font-size: inherit;
+  color: navy;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #527bbd;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+h1, h2, h3 {
+  border-bottom: 2px solid silver;
+}
+h2 {
+  padding-top: 0.5em;
+}
+h3 {
+  float: left;
+}
+h3 + * {
+  clear: left;
+}
+
+div.sectionbody {
+  margin-left: 0;
+}
+
+hr {
+  border: 1px solid silver;
+}
+
+p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+ul, ol, li > p {
+  margin-top: 0;
+}
+ul > li     { color: #aaa; }
+ul > li > * { color: black; }
+
+pre {
+  padding: 0;
+  margin: 0;
+}
+
+span#author {
+  color: #527bbd;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+span#email {
+}
+span#revnumber, span#revdate, span#revremark {
+}
+
+div#footer {
+  font-size: small;
+  border-top: 2px solid silver;
+  padding-top: 0.5em;
+  margin-top: 4.0em;
+}
+div#footer-text {
+  float: left;
+  padding-bottom: 0.5em;
+}
+div#footer-badges {
+  float: right;
+  padding-bottom: 0.5em;
+}
+
+div#preamble {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+div.tableblock, div.imageblock, div.exampleblock, div.verseblock,
+div.quoteblock, div.literalblock, div.listingblock, div.sidebarblock,
+div.admonitionblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.admonitionblock {
+  margin-top: 2.0em;
+  margin-bottom: 2.0em;
+  margin-right: 10%;
+  color: #606060;
+}
+
+div.content { /* Block element content. */
+  padding: 0;
+}
+
+/* Block element titles. */
+div.title, caption.title {
+  color: #527bbd;
+  font-weight: bold;
+  text-align: left;
+  margin-top: 1.0em;
+  margin-bottom: 0.5em;
+}
+div.title + * {
+  margin-top: 0;
+}
+
+td div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content + div.title {
+  margin-top: 0.0em;
+}
+
+div.sidebarblock > div.content {
+  background: #ffffee;
+  border: 1px solid #dddddd;
+  border-left: 4px solid #f0f0f0;
+  padding: 0.5em;
+}
+
+div.listingblock > div.content {
+  border: 1px solid #dddddd;
+  border-left: 5px solid #f0f0f0;
+  background: #f8f8f8;
+  padding: 0.5em;
+}
+
+div.quoteblock, div.verseblock {
+  padding-left: 1.0em;
+  margin-left: 1.0em;
+  margin-right: 10%;
+  border-left: 5px solid #f0f0f0;
+  color: #777777;
+}
+
+div.quoteblock > div.attribution {
+  padding-top: 0.5em;
+  text-align: right;
+}
+
+div.verseblock > pre.content {
+  font-family: inherit;
+  font-size: inherit;
+}
+div.verseblock > div.attribution {
+  padding-top: 0.75em;
+  text-align: left;
+}
+/* DEPRECATED: Pre version 8.2.7 verse style literal block. */
+div.verseblock + div.attribution {
+  text-align: left;
+}
+
+div.admonitionblock .icon {
+  vertical-align: top;
+  font-size: 1.1em;
+  font-weight: bold;
+  text-decoration: underline;
+  color: #527bbd;
+  padding-right: 0.5em;
+}
+div.admonitionblock td.content {
+  padding-left: 0.5em;
+  border-left: 3px solid #dddddd;
+}
+
+div.exampleblock > div.content {
+  border-left: 3px solid #dddddd;
+  padding-left: 0.5em;
+}
+
+div.imageblock div.content { padding-left: 0; }
+span.image img { border-style: none; }
+a.image:visited { color: white; }
+
+dl {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+dt {
+  margin-top: 0.5em;
+  margin-bottom: 0;
+  font-style: normal;
+  color: navy;
+}
+dd > *:first-child {
+  margin-top: 0.1em;
+}
+
+ul, ol {
+    list-style-position: outside;
+}
+ol.arabic {
+  list-style-type: decimal;
+}
+ol.loweralpha {
+  list-style-type: lower-alpha;
+}
+ol.upperalpha {
+  list-style-type: upper-alpha;
+}
+ol.lowerroman {
+  list-style-type: lower-roman;
+}
+ol.upperroman {
+  list-style-type: upper-roman;
+}
+
+div.compact ul, div.compact ol,
+div.compact p, div.compact p,
+div.compact div, div.compact div {
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
+}
+
+div.tableblock > table {
+  border: 3px solid #527bbd;
+}
+thead, p.table.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+tfoot {
+  font-weight: bold;
+}
+td > div.verse {
+  white-space: pre;
+}
+p.table {
+  margin-top: 0;
+}
+/* Because the table frame attribute is overriden by CSS in most browsers. */
+div.tableblock > table[frame="void"] {
+  border-style: none;
+}
+div.tableblock > table[frame="hsides"] {
+  border-left-style: none;
+  border-right-style: none;
+}
+div.tableblock > table[frame="vsides"] {
+  border-top-style: none;
+  border-bottom-style: none;
+}
+
+
+div.hdlist {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+div.hdlist tr {
+  padding-bottom: 15px;
+}
+dt.hdlist1.strong, td.hdlist1.strong {
+  font-weight: bold;
+}
+td.hdlist1 {
+  vertical-align: top;
+  font-style: normal;
+  padding-right: 0.8em;
+  color: navy;
+}
+td.hdlist2 {
+  vertical-align: top;
+}
+div.hdlist.compact tr {
+  margin: 0;
+  padding-bottom: 0;
+}
+
+.comment {
+  background: yellow;
+}
+
+.footnote, .footnoteref {
+  font-size: 0.8em;
+}
+
+span.footnote, span.footnoteref {
+  vertical-align: super;
+}
+
+#footnotes {
+  margin: 20px 0 20px 0;
+  padding: 7px 0 0 0;
+}
+
+#footnotes div.footnote {
+  margin: 0 0 5px 0;
+}
+
+#footnotes hr {
+  border: none;
+  border-top: 1px solid silver;
+  height: 1px;
+  text-align: left;
+  margin-left: 0;
+  width: 20%;
+  min-width: 100px;
+}
+
+div.colist td {
+  padding-right: 0.5em;
+  padding-bottom: 0.3em;
+  vertical-align: top;
+}
+div.colist td img {
+  margin-top: 0.3em;
+}
+
+@media print {
+  div#footer-badges { display: none; }
+}
+
+div#toc {
+  margin-bottom: 2.5em;
+}
+
+div#toctitle {
+  color: #527bbd;
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-top: 1.0em;
+  margin-bottom: 0.1em;
+}
+
+div.toclevel1, div.toclevel2, div.toclevel3, div.toclevel4 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+div.toclevel2 {
+  margin-left: 2em;
+  font-size: 0.9em;
+}
+div.toclevel3 {
+  margin-left: 4em;
+  font-size: 0.9em;
+}
+div.toclevel4 {
+  margin-left: 6em;
+  font-size: 0.9em;
+}
+
+span.aqua { color: aqua; }
+span.black { color: black; }
+span.blue { color: blue; }
+span.fuchsia { color: fuchsia; }
+span.gray { color: gray; }
+span.green { color: green; }
+span.lime { color: lime; }
+span.maroon { color: maroon; }
+span.navy { color: navy; }
+span.olive { color: olive; }
+span.purple { color: purple; }
+span.red { color: red; }
+span.silver { color: silver; }
+span.teal { color: teal; }
+span.white { color: white; }
+span.yellow { color: yellow; }
+
+span.aqua-background { background: aqua; }
+span.black-background { background: black; }
+span.blue-background { background: blue; }
+span.fuchsia-background { background: fuchsia; }
+span.gray-background { background: gray; }
+span.green-background { background: green; }
+span.lime-background { background: lime; }
+span.maroon-background { background: maroon; }
+span.navy-background { background: navy; }
+span.olive-background { background: olive; }
+span.purple-background { background: purple; }
+span.red-background { background: red; }
+span.silver-background { background: silver; }
+span.teal-background { background: teal; }
+span.white-background { background: white; }
+span.yellow-background { background: yellow; }
+
+span.big { font-size: 2em; }
+span.small { font-size: 0.6em; }
+</style>
+<script type="text/javascript">
+/*<![CDATA[*/
+window.onload = function(){asciidoc.footnotes();}
+var asciidoc = {  // Namespace.
+
+/////////////////////////////////////////////////////////////////////
+// Table Of Contents generator
+/////////////////////////////////////////////////////////////////////
+
+/* Author: Mihai Bazon, September 2002
+ * http://students.infoiasi.ro/~mishoo
+ *
+ * Table Of Content generator
+ * Version: 0.4
+ *
+ * Feel free to use this script under the terms of the GNU General Public
+ * License, as long as you do not remove or alter this notice.
+ */
+
+ /* modified by Troy D. Hanson, September 2006. License: GPL */
+ /* modified by Stuart Rackham, 2006, 2009. License: GPL */
+
+// toclevels = 1..4.
+toc: function (toclevels) {
+
+  function getText(el) {
+    var text = "";
+    for (var i = el.firstChild; i != null; i = i.nextSibling) {
+      if (i.nodeType == 3 /* Node.TEXT_NODE */) // IE doesn't speak constants.
+        text += i.data;
+      else if (i.firstChild != null)
+        text += getText(i);
+    }
+    return text;
+  }
+
+  function TocEntry(el, text, toclevel) {
+    this.element = el;
+    this.text = text;
+    this.toclevel = toclevel;
+  }
+
+  function tocEntries(el, toclevels) {
+    var result = new Array;
+    var re = new RegExp('[hH]([2-'+(toclevels+1)+'])');
+    // Function that scans the DOM tree for header elements (the DOM2
+    // nodeIterator API would be a better technique but not supported by all
+    // browsers).
+    var iterate = function (el) {
+      for (var i = el.firstChild; i != null; i = i.nextSibling) {
+        if (i.nodeType == 1 /* Node.ELEMENT_NODE */) {
+          var mo = re.exec(i.tagName);
+          if (mo && (i.getAttribute("class") || i.getAttribute("className")) != "float") {
+            result[result.length] = new TocEntry(i, getText(i), mo[1]-1);
+          }
+          iterate(i);
+        }
+      }
+    }
+    iterate(el);
+    return result;
+  }
+
+  var toc = document.getElementById("toc");
+  var entries = tocEntries(document.getElementById("content"), toclevels);
+  for (var i = 0; i < entries.length; ++i) {
+    var entry = entries[i];
+    if (entry.element.id == "")
+      entry.element.id = "_toc_" + i;
+    var a = document.createElement("a");
+    a.href = "#" + entry.element.id;
+    a.appendChild(document.createTextNode(entry.text));
+    var div = document.createElement("div");
+    div.appendChild(a);
+    div.className = "toclevel" + entry.toclevel;
+    toc.appendChild(div);
+  }
+  if (entries.length == 0)
+    toc.parentNode.removeChild(toc);
+},
+
+
+/////////////////////////////////////////////////////////////////////
+// Footnotes generator
+/////////////////////////////////////////////////////////////////////
+
+/* Based on footnote generation code from:
+ * http://www.brandspankingnew.net/archive/2005/07/format_footnote.html
+ */
+
+footnotes: function () {
+  var cont = document.getElementById("content");
+  var noteholder = document.getElementById("footnotes");
+  var spans = cont.getElementsByTagName("span");
+  var refs = {};
+  var n = 0;
+  for (i=0; i<spans.length; i++) {
+    if (spans[i].className == "footnote") {
+      n++;
+      // Use [\s\S] in place of . so multi-line matches work.
+      // Because JavaScript has no s (dotall) regex flag.
+      note = spans[i].innerHTML.match(/\s*\[([\s\S]*)]\s*/)[1];
+      noteholder.innerHTML +=
+        "<div class='footnote' id='_footnote_" + n + "'>" +
+        "<a href='#_footnoteref_" + n + "' title='Return to text'>" +
+        n + "</a>. " + note + "</div>";
+      spans[i].innerHTML =
+        "[<a id='_footnoteref_" + n + "' href='#_footnote_" + n +
+        "' title='View footnote' class='footnote'>" + n + "</a>]";
+      var id =spans[i].getAttribute("id");
+      if (id != null) refs["#"+id] = n;
+    }
+  }
+  if (n == 0)
+    noteholder.parentNode.removeChild(noteholder);
+  else {
+    // Process footnoterefs.
+    for (i=0; i<spans.length; i++) {
+      if (spans[i].className == "footnoteref") {
+        var href = spans[i].getElementsByTagName("a")[0].getAttribute("href");
+        href = href.match(/#.*/)[0];  // Because IE return full URL.
+        n = refs[href];
+        spans[i].innerHTML =
+          "[<a href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+      }
+    }
+  }
+}
+
+}
+/*]]>*/
+</script>
+</head>
+<body class="article">
+<div id="header">
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_oneac_174">OneAc&#174;</h2>
+<div class="sectionbody">
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">
+<div class="title">Warning</div>
+<div class="paragraph"><p>This Document is an arrangement with a ORC script of a scan of the Official Manual of OneAc, it may be that the inconsistency is not corrected during playback<br />
+You can check the accuracy of information by see the Scans</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="images/oneac1.png">Page 1</a>
+</p>
+</li>
+<li>
+<p>
+<a href="images/oneac2.png">Page 2</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+<div class="sect2">
+<h3 id="_advanced_interface_installation_instructions">Advanced Interface Installation Instructions</h3>
+<div class="paragraph"><p>ONEAC uninterruptible power supplies (UPS) are the first to offer an open architecture for electronic
+interfaces. This allows the user to fully integrate his computer system. While most systems today
+typically use the interface from the UPS to shut down automatically following a prolonged outage,
+these interchangeable interfaces are also capable of informing the computer system of other conditions
+such as high temperature, over/undervoltage and battery condition.</p></div>
+<div class="sect3">
+<h4 id="_installation_instructions_em_not_necessary_for_units_with_interface_already_installed_em">Installation Instructions <em>(Not necessary for units with interface already installed)</em></h4>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+Observe Electrostatic-Discharge Precautions: Keep the interface card in the static-shielded bag until you are ready to<br />
+complete the installation. Use a grounded wrist strap at the workstation where you will be installing the interface. If<br />
+this is not available, ground yourself by frequently touching the Environmental Reference Ground on the rear of the<br />
+UPS just before handling the interface card. Avoid carpeted areas during the installation because they are typically<br />
+high static areas.<br />
+</p>
+</li>
+<li>
+<p>
+Inspect the unit Make sure it is the type you need and that it has not suffered damage in shipment.
+</p>
+</li>
+<li>
+<p>
+Switch the UPS off and unplug it from the wall. (Be sure the supported equipment is ready to be shut down.)
+</p>
+</li>
+<li>
+<p>
+Remove the interface cover plate on the rear of the UPS by removing the two screws which hold it Keep these
+screws in a safe place.
+</p>
+</li>
+<li>
+<p>
+Open the static-shielded bag and remove the interface card.
+</p>
+</li>
+<li>
+<p>
+With the component side of the printed circuit board away from the center of the rear panel, slide the interface card<br />
+into the opening. just before the rear plate on the interface card reaches the rear panel of the UPS, the connectors<br />
+inside will start to touch. Gently increase pressure and move the interface slighry up and down until the rear plate<br />
+is flush with the tear panel of the UPS. install me two screws (from step 4 above) unui snug. Make sure that the<br />
+toothed washer is still attached to the screws. if these screws are lost, they may be obtained from any hardware store.<br />
+They are No. 6-32 by 3/8 inch machine screws with No. 6 intemal tooth lockwashers<br />
+</p>
+</li>
+<li>
+<p>
+Connect the appropriate cable between the UPS and the host device.
+</p>
+</li>
+<li>
+<p>
+Plug the UPS back into the wall and turn it on.
+</p>
+</li>
+</ol></div>
+</div>
+<div class="sect3">
+<h4 id="_interface_removal_instructions">Interface Removal Instructions</h4>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+As during installation, observe Electrostatic-Discharge precautions.
+</p>
+</li>
+<li>
+<p>
+Switch the UPS off and unplug it from the wall outlet.
+</p>
+</li>
+<li>
+<p>
+Remove the two screws holding the interface to the UPS back plate.
+</p>
+</li>
+<li>
+<p>
+Attach a molded cable to the DB25 connector of the interface.
+</p>
+</li>
+<li>
+<p>
+Using the hood of the cable as a handle, move the interface up and down slightly while pulling straight back from the<br />
+UPS.
+</p>
+</li>
+</ol></div>
+</div>
+<div class="sect3">
+<h4 id="_interface_general_overview_em_if_ars232_amp_if_ars422_em">Interface General Overview <em>(IF-ARS232 &amp; IF-ARS422)</em></h4>
+<div class="paragraph"><p>The advanced interface cards send ASCII characters and strings to the computer system. Configuration of the card is
+accomplished through DIP switches on the back plate of the interface Switch 1 is for baud rate and word configuration.
+The two options are 1200, 7 Data, 1 Stop, Even Parity or 9600, 8 Data, 1 Stop, No Parity (default). Switches 2 &amp;
+3 are reserved, Switch 4 is for disabling the internal buzzer when UPS monitoring is being done from a remote
+location and there is no need for the local buzzer. Switches 5 through 8 are for DTE/DCE (RS-232 only, DTE default).
+Each setting option is shown on the back plate. These interfaces will work with both the ONEAC EG and ON series of
+UPSs although not all of the information is available when used with an EG series UPS. (See the next chapter for details)</p></div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_connector_information_and_command_set">Connector Information and Command Set</h3>
+<div class="tableblock">
+<table rules="all"
+width="100%"
+frame="border"
+cellspacing="0" cellpadding="4">
+<col />
+<col />
+<col />
+<col />
+<thead>
+<tr>
+<th align="left" valign="top">Signal         </th>
+<th align="center" valign="top">IF-ARS232 pin          </th>
+<th align="left" valign="top">Signal         </th>
+<th align="center" valign="top">IF-ARS422 pin</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left" valign="top"><p class="table">RD</p></td>
+<td align="center" valign="top"><p class="table">2</p></td>
+<td align="left" valign="top"><p class="table">+ RxD</p></td>
+<td align="center" valign="top"><p class="table">2</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">TD</p></td>
+<td align="center" valign="top"><p class="table">3</p></td>
+<td align="left" valign="top"><p class="table">+ TxD</p></td>
+<td align="center" valign="top"><p class="table">3</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">RTS</p></td>
+<td align="center" valign="top"><p class="table">4</p></td>
+<td align="left" valign="top"><p class="table">- RxD</p></td>
+<td align="center" valign="top"><p class="table">4</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">CTS</p></td>
+<td align="center" valign="top"><p class="table">5</p></td>
+<td align="left" valign="top"><p class="table">- TxD</p></td>
+<td align="center" valign="top"><p class="table">5</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">DSR</p></td>
+<td align="center" valign="top"><p class="table">6</p></td>
+<td align="left" valign="top"><p class="table">Gnd</p></td>
+<td align="center" valign="top"><p class="table">7</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">Gnd</p></td>
+<td align="center" valign="top"><p class="table">7</p></td>
+<td align="left" valign="top"><p class="table">DTR</p></td>
+<td align="center" valign="top"><p class="table">20</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="paragraph"><p>The list below indicates the available information on the interface and how to obtain it. To receive the entire packet of
+information, send a %, CR, LF. A packet request on an EG series UPS only responds with the first 22 characters of the
+packet.</p></div>
+<div class="tableblock">
+<table rules="all"
+width="100%"
+frame="border"
+cellspacing="0" cellpadding="4">
+<col />
+<col />
+<col />
+<col />
+<col />
+<col />
+<thead>
+<tr>
+<th align="left" valign="top">                       </th>
+<th colspan="2" align="left" valign="top">Works                                                       </th>
+<th align="left" valign="top">Return                 </th>
+<th align="center" valign="top">Request        </th>
+<th align="center" valign="top">Packet</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left" valign="top"><p class="table"><strong>Name</strong></p></td>
+<td align="left" valign="top"><p class="table"><strong>With</strong></p></td>
+<td align="left" valign="top"><p class="table"><strong>Description</strong></p></td>
+<td align="left" valign="top"><p class="table"><strong>Format</strong></p></td>
+<td align="center" valign="top"><p class="table"><strong>Characters</strong></p></td>
+<td align="center" valign="top"><p class="table"><strong>Position</strong></p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">Manufacturer</p></td>
+<td align="left" valign="top"><p class="table">ON/EG</p></td>
+<td align="left" valign="top"><p class="table">ONEAC</p></td>
+<td align="left" valign="top"><p class="table">String=ONEAC</p></td>
+<td align="center" valign="top"><p class="table">M</p></td>
+<td align="center" valign="top"><p class="table">1-5</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">UPS Family</p></td>
+<td align="left" valign="top"><p class="table">ON/FD</p></td>
+<td align="left" valign="top"><p class="table">Family of UPS</p></td>
+<td align="left" valign="top"><p class="table">String:xx(ON/EG)</p></td>
+<td align="center" valign="top"><p class="table">F</p></td>
+<td align="center" valign="top"><p class="table">6,7</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">Fimiware Version</p></td>
+<td align="left" valign="top"><p class="table">ON/EG</p></td>
+<td align="left" valign="top"><p class="table">Version of advanced interface firmware</p></td>
+<td align="left" valign="top"><p class="table">String=x.x</p></td>
+<td align="center" valign="top"><p class="table">N</p></td>
+<td align="center" valign="top"><p class="table">8-10</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">UPS on Inverter</p></td>
+<td align="left" valign="top"><p class="table">ON/EG</p></td>
+<td align="left" valign="top"><p class="table">Is the UPS on inverter? Yes/No</p></td>
+<td align="left" valign="top"><p class="table">Char=x(Y/N)</p></td>
+<td align="center" valign="top"><p class="table">G</p></td>
+<td align="center" valign="top"><p class="table">11</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">Battery Low</p></td>
+<td align="left" valign="top"><p class="table">ON/EG</p></td>
+<td align="left" valign="top"><p class="table">Is the battery low? Yes/No</p></td>
+<td align="left" valign="top"><p class="table">Char=x(Y/N)</p></td>
+<td align="center" valign="top"><p class="table">K</p></td>
+<td align="center" valign="top"><p class="table">12</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">Current Status</p></td>
+<td align="left" valign="top"><p class="table">ON/EG</p></td>
+<td align="left" valign="top"><p class="table">Normal, on battery-low line, on battery-hi<br />
+                                        line, low battery(low), low battery(hi),<br />
+                                        replace battery, maintenance required, UPS<br />
+                                        is too hot.</p></td>
+<td align="left" valign="top"><p class="table">Char=x(@,A.Q,C,<br />
+                                                                                         S,H,D,`, respectively)</p></td>
+<td align="center" valign="top"><p class="table">X</p></td>
+<td align="center" valign="top"><p class="table">13</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">Last Transfer</p></td>
+<td align="left" valign="top"><p class="table">ON/EG</p></td>
+<td align="left" valign="top"><p class="table">Black out, low line, high line</p></td>
+<td align="left" valign="top"><p class="table">Char=x(B,L.H)</p></td>
+<td align="center" valign="top"><p class="table">W</p></td>
+<td align="center" valign="top"><p class="table">14</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">Inverter Ready</p></td>
+<td align="left" valign="top"><p class="table">ON/EG</p></td>
+<td align="left" valign="top"><p class="table">Inverter ready</p></td>
+<td align="left" valign="top"><p class="table">Char=x(Y/N)</p></td>
+<td align="center" valign="top"><p class="table">I</p></td>
+<td align="center" valign="top"><p class="table">15</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">UPS Shutdown</p></td>
+<td align="left" valign="top"><p class="table">ON/EG</p></td>
+<td align="left" valign="top"><p class="table">Time remaining to inverter off in seconds</p></td>
+<td align="left" valign="top"><p class="table">String=xxx</p></td>
+<td align="center" valign="top"><p class="table">O</p></td>
+<td align="center" valign="top"><p class="table">16-18</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">Battery Test Time</p></td>
+<td align="left" valign="top"><p class="table">ON/EG</p></td>
+<td align="left" valign="top"><p class="table">Remaining battery test time in minutes</p></td>
+<td align="left" valign="top"><p class="table">String=xx</p></td>
+<td align="center" valign="top"><p class="table">Q</p></td>
+<td align="center" valign="top"><p class="table">19,20</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">Frequency</p></td>
+<td align="left" valign="top"><p class="table">ON/EG</p></td>
+<td align="left" valign="top"><p class="table">UPS operating frequency (50/60)</p></td>
+<td align="left" valign="top"><p class="table">String=xx</p></td>
+<td align="center" valign="top"><p class="table">H</p></td>
+<td align="center" valign="top"><p class="table">21,22</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">Reserved</p></td>
+<td align="left" valign="top"><p class="table">ON</p></td>
+<td align="left" valign="top"><p class="table">Reserved</p></td>
+<td align="left" valign="top"><p class="table">String=xxxx</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="center" valign="top"><p class="table">23-26</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">Operating Voltage</p></td>
+<td align="left" valign="top"><p class="table">ON</p></td>
+<td align="left" valign="top"><p class="table">120/13O Volts</p></td>
+<td align="left" valign="top"><p class="table">Char=x(1/2)</p></td>
+<td align="center" valign="top"><p class="table">V</p></td>
+<td align="center" valign="top"><p class="table">27</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">Front Panel Display</p></td>
+<td align="left" valign="top"><p class="table">ON</p></td>
+<td align="left" valign="top"><p class="table">What the front panel is now</p></td>
+<td align="left" valign="top"><p class="table">String=xx</p></td>
+<td align="center" valign="top"><p class="table">D</p></td>
+<td align="center" valign="top"><p class="table">28,29</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">Condition Code</p></td>
+<td align="left" valign="top"><p class="table">ON</p></td>
+<td align="left" valign="top"><p class="table">Last displayed condition status code</p></td>
+<td align="left" valign="top"><p class="table">String=xx</p></td>
+<td align="center" valign="top"><p class="table">C</p></td>
+<td align="center" valign="top"><p class="table">30,31</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">% Load Power<sup>1</sup></p></td>
+<td align="left" valign="top"><p class="table">ON</p></td>
+<td align="left" valign="top"><p class="table">Last displayed output load power</p></td>
+<td align="left" valign="top"><p class="table">String=xx</p></td>
+<td align="center" valign="top"><p class="table">P</p></td>
+<td align="center" valign="top"><p class="table">32,33</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">% Battery Time<sup>2</sup></p></td>
+<td align="left" valign="top"><p class="table">ON</p></td>
+<td align="left" valign="top"><p class="table">Last displayed number while on inverter</p></td>
+<td align="left" valign="top"><p class="table">String=xx</p></td>
+<td align="center" valign="top"><p class="table">T</p></td>
+<td align="center" valign="top"><p class="table">34,35</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">Line Voltage<sup>3</sup></p></td>
+<td align="left" valign="top"><p class="table">ON</p></td>
+<td align="left" valign="top"><p class="table">Input AC line voltage in volts ACrms</p></td>
+<td align="left" valign="top"><p class="table">String=xxx</p></td>
+<td align="center" valign="top"><p class="table">L</p></td>
+<td align="center" valign="top"><p class="table">36-38</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">Min Line Voltage<sup>3</sup></p></td>
+<td align="left" valign="top"><p class="table">ON</p></td>
+<td align="left" valign="top"><p class="table">Minimum line voltage since last reset</p></td>
+<td align="left" valign="top"><p class="table">String=xxx</p></td>
+<td align="center" valign="top"><p class="table">A</p></td>
+<td align="center" valign="top"><p class="table">39-41</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">Max Line Voltage<sup>3</sup></p></td>
+<td align="left" valign="top"><p class="table">ON</p></td>
+<td align="left" valign="top"><p class="table">Maximum line voltage since last reset</p></td>
+<td align="left" valign="top"><p class="table">String=xxx</p></td>
+<td align="center" valign="top"><p class="table">E</p></td>
+<td align="center" valign="top"><p class="table">42-44</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">Server Voltage<sup>2</sup></p></td>
+<td align="left" valign="top"><p class="table">ON</p></td>
+<td align="left" valign="top"><p class="table">Output AC line voltage in volts ACrms</p></td>
+<td align="left" valign="top"><p class="table">String=xxx</p></td>
+<td align="center" valign="top"><p class="table">S</p></td>
+<td align="center" valign="top"><p class="table">45-47</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">Boost Enabled</p></td>
+<td align="left" valign="top"><p class="table">ON</p></td>
+<td align="left" valign="top"><p class="table">Output voltage boost on? Yes/No</p></td>
+<td align="left" valign="top"><p class="table">Char=x(Y/N)</p></td>
+<td align="center" valign="top"><p class="table">B</p></td>
+<td align="center" valign="top"><p class="table">48</p></td>
+</tr>
+<tr>
+<td colspan="6" align="center" valign="top"><p class="table"><strong>Control Options:</strong></p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">Power Fail Simulation</p></td>
+<td align="left" valign="top"><p class="table">ON/EG</p></td>
+<td align="left" valign="top"><p class="table">Simulates power failure for 15 seconds</p></td>
+<td align="left" valign="top"><p class="table"></p></td>
+<td align="center" valign="top"><p class="table">^B^U</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">Battery Run Test</p></td>
+<td align="left" valign="top"><p class="table">ON/EG</p></td>
+<td align="left" valign="top"><p class="table">Run on battery for xx minutes</p></td>
+<td align="left" valign="top"><p class="table"></p></td>
+<td align="center" valign="top"><p class="table">^Bxx</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">Shutdown</p></td>
+<td align="left" valign="top"><p class="table">ON/EG</p></td>
+<td align="left" valign="top"><p class="table">Inverter shutdown (immediate)</p></td>
+<td align="left" valign="top"><p class="table"></p></td>
+<td align="center" valign="top"><p class="table">^O^F</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">Timed Shutdown</p></td>
+<td align="left" valign="top"><p class="table">ON/EG</p></td>
+<td align="left" valign="top"><p class="table">Inverter shutdown in xxx seconds</p></td>
+<td align="left" valign="top"><p class="table"></p></td>
+<td align="center" valign="top"><p class="table">Zxxx</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">Reset Min/Max</p></td>
+<td align="left" valign="top"><p class="table">ON</p></td>
+<td align="left" valign="top"><p class="table">Reset AC input minimum and maximum</p></td>
+<td align="left" valign="top"><p class="table"></p></td>
+<td align="center" valign="top"><p class="table">R</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="paragraph"><p>All incoming characters EXCEPT &#8220;X&#8221; require a trailing CR,LF sequence to be recognized. Responses from the UPS
+<strong>EXCEPT CURRENT STATUS</strong> are followed by a CR,LF sequence. All request characters are upper case. Invalid
+characters or request format returns a &#8220;*&#8221;. CR,LF to the host machine. A valid request that cannot be executed at the
+time returns a &#8220;#&#8221; to the host. Periods occupy data positions that have not had an event to load them.<br /></p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<em><sup>1</sup> % Load Power is only valid when the UPS is on line. The last known value will be kept in this variable.</em>
+</p>
+</li>
+<li>
+<p>
+<em><sup>2</sup> % Battery Time is only valid when the UPS is on Inverter. The last known value will be kept in this variable.</em>
+</p>
+</li>
+<li>
+<p>
+<em><sup>3</sup> Line voltage measurements are not intended to be a substitute for power monitoring equipment.</em>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-02-21 14:29:58 CET
+</div>
+</div>
+</body>
+</html>

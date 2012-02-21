@@ -1,0 +1,472 @@
+
+SEC UPS Protocol
+
+
+
+*	<<message,Message Format>>
+
+*	<<setcmds,Set Commands>>
+
+*	<<pollcmds,Query (Poll) Commands>>
+
+*	<<variables,Variables>>
+
+[[message]]
+=== Message Format +
+
+All messages passed between the PC and the UPS look like
+
+[source, c]
+----
+
+	^<type><len><data>
+
+----
+
+where
+
+[options="autowidth",cols="<,<",style="asciidoc",grid="all",frame="all"]
+|=============
+	|^	|The header character 
+	|<type> 	|The type of message being passed. The PC passes the following	message types to the UPS: +
+
+* P -> PC polls UPS (a query)
+* S -> PC sets UPS variable
+
+The UPS returns the following message types to the PC: +
+
+* D -> UPS returns Data to PC (result of query)
+* 0 -> UPS rejected command sent from PC
+* 1 -> UPS accepted command sent from PC
+
+	|<len> 	|3 chars - length of following data (zero padded decimal ascii) 
+	|<data> 	|<len> characters of data 
+|=============== 
+
+[[setcmds]]
+=== Set Commands +
+
+[options="header,autowidth",cols="<,<,<,<"]
+|=============
+|Command 	|Description 			|Argument 			|Value 
+|ATR 		|Enable/Disable Auto Restart 	|Enable/Disable Auto Restart 	| 0 -> Enable +
+1 -> Disable +
+ 
+|PSD 		|Shutdown After Delay 	|Delay (seconds) 	|min: 1 +
+max: 999 
+	|PSD 	|Cancel Shutdown 	|-1 	|  
+	|RWD 	|Reboot With Duration 	|Delay (seconds) 	|min: 1 +
+max: 30000 
+	|SDA 	|Set Shutdown Type 	|Shutdown Type 	| 0 - UPS Output +
+1 - UPS System +
+ 
+	|STD 	|Startup After Delay 	|Delay (seconds) 	|min: 1 +
+max: 30000 
+	|TST 	|UPS Test 	|UPS Test 	| 0 - General Test +
+1 - Battery Test +
+2 - Deep Battery Test +
+ 
+	|TST 	|Abort Test 	|-1 	|  
+	|UID 	|Set Identification 	|Set Identification 	|a string 
+	|NOM 	|Set Nominal Input Voltage 	|Nominal Input Voltage 	| 0 - 110 +
+1 - 120 +
+2 - 208 +
+3 - 220 +
+4 - 230 +
+5 - 240 +
+ 
+	|NOM, 	|Set Nominal Input Frequency 	|Nominal Input Frequency (Hz) 	| 0 - 50 +
+1 - 60 +
+ 
+	|NOM,, 	|Set Nominal Output Voltage 	|Nominal Output Voltage (Volts) 	| 0 - 110 +
+1 - 120 +
+2 - 208 +
+3 - 220 +
+4 - 230 +
+5 - 240 +
+ 
+	|NOM,,, 	|Set Nominal Output Frequency 	|Nominal Output Frequency (Hz) 	| 0 - 50 +
+1 - 60 +
+ 
+	|NOM,,,, 	|Set Nominal Volt-Amp Rating 	|Nominal Volt-Amp Rating 	|a string 
+	|NOM,,,,, 	|Set Nominal Output Power 	|Nominal Output Power (Watts) 	|a string 
+	|NOM,,,,,, 	|Set Low Battery Time 	|Time (minutes) 	| 0 - 2 +
+1 - 5 +
+2 - 10 +
+ 
+	|NOM,,,,,,, 	|Set Audible Alarm State 	|Audible Alarm 	| 0 - Disabled +
+1 - Enabled +
+2 - Muted +
+3 - Low Battery +
+ 
+	|NOM,,,,,,,,,, 	|Set Battery Install Date 	|Enter date in MMDDYYYY format 	|a string 
+	|NOM,,,,,,,,,,, 	|Set Battery Life 	|Enter battery life in days 	|min: 0 +
+max: 3000 
+	|NOM,,,,,,,, 	|Set Low Voltage Transfer Point 	|Set the low voltage at which the UPS should switch to battery 	|min: 50 +
+max: 240 
+	|NOM,,,,,,,,, 	|Set High Voltage Xfer Pt. 	|Set the high voltage at which the UPS should switch to battery 	|min: 50 +
+max: 240 
+	|UBR 	|Set the UPS Baud Rate 	|UPS Baud Rate 	| 0 - 1200 +
+1 - 2400 +
+2 - 4800 +
+3 - 9600 +
+4 - 19200 +
+ 
+	|STD 	|Cancel Restart 	|-1 	|  
+|=============== 
+
+[[pollcmds]]
+=== Query (Poll) Commands +
+
+[options="header,autowidth",cols="<,<,<"]
+|=============
+	|Command 	|Field 	|Variable Name 
+	|AP1 	|  	|Returns part 1 of a list of variable numbers that are supported by this UPS 
+	|AP1 	|  	|Returns part 2 of a list of variable numbers that are supported by this UPS 
+	|[[ATR]]ATR 	|1 +
+	| link:#Auto_Restart[Auto Restart] +
+ 
+	|[[MAN]]MAN 	|1 +
+	| link:#Manufacturer[Manufacturer] +
+ 
+	|[[MOD]]MOD 	|1 +
+	| link:#Model[Model] +
+ 
+	|[[NOM]]NOM 	|1 +
+2 +
+3 +
+4 +
+5 +
+6 +
+7 +
+8 +
+9 +
+10 +
+11 +
+12 +
+	| link:#Nominal_Input_Voltage[Nominal Input Voltage] +
+link:#Nom_Input_Frequency[Nom Input Frequency] +
+link:#Nom_Output_Voltage[Nom Output Voltage] +
+link:#Nom_Output_Frequency[Nom Output Frequency] +
+link:#Nom_VA_Rating[Nom VA Rating] +
+link:#Nominal_Output_Power[Nominal Output Power] +
+link:#Nom_Low_Battery_Time[Nom Low Battery Time] +
+link:#Audible_Alarm[Audible Alarm] +
+link:#Low_Volt_Xfer_Pt[Low Volt Xfer Pt] +
+link:#High_Volt_Xfer_Pt[High Volt Xfer Pt] +
+link:#Battery_Installed[Battery Installed] +
+link:#Nominal_Battery_Life[Nominal Battery Life] +
+ 
+	|[[SDA]]SDA 	|1 +
+	| link:#Shutdown_Type[Shutdown Type] +
+ 
+	|[[ST1]]ST1 	|1 +
+2 +
+3 +
+4 +
+5 +
+6 +
+7 +
+8 +
+9 +
+	| link:#Battery_Condition[Battery Condition] +
+link:#Battery_Status[Battery Status] +
+link:#Battery_Charge[Battery Charge] +
+link:#Seconds_on_Battery[Seconds on Battery] +
+link:#Estimated_Minutes[Estimated Minutes] +
+link:#Estimated_Charge[Estimated Charge] +
+link:#Battery_Voltage[Battery Voltage] +
+link:#Battery_Current[Battery Current] +
+link:#Battery_Temperature[Battery Temperature] +
+ 
+	|[[ST2]]ST2 	|1 +
+2 +
+3 +
+4 +
+5 +
+6 +
+7 +
+8 +
+9 +
+10 +
+11 +
+12 +
+13 +
+14 +
+	| link:#Input_Line_Bads[Input Line Bads] +
+link:#Input_Num_Lines[Input Num Lines] +
+link:#Input_Frequency[Input Frequency] +
+link:#Input_Voltage[Input Voltage] +
+link:#Input_Current[Input Current] +
+link:#Input_Power[Input Power] +
+link:#Input_Frequency_2[Input Frequency 2] +
+link:#Input_Voltage_2[Input Voltage 2] +
+link:#Input_Current_2[Input Current 2] +
+link:#Input_Power_2[Input Power 2] +
+link:#Input_Frequency_3[Input Frequency 3] +
+link:#Input_Voltage_3[Input Voltage 3] +
+link:#Input_Current_3[Input Current 3] +
+link:#Input_Power_3[Input Power 3] +
+ 
+	|[[ST3]]ST3 	|1 +
+2 +
+3 +
+4 +
+5 +
+6 +
+7 +
+8 +
+9 +
+10 +
+11 +
+12 +
+13 +
+14 +
+15 +
+	| link:#Output_Source[Output Source] +
+link:#Output_Frequency[Output Frequency] +
+link:#Output_Num_Lines[Output Num Lines] +
+link:#Output_Voltage[Output Voltage] +
+link:#Output_Current[Output Current] +
+link:#Output_Power[Output Power] +
+link:#Output_Load[Output Load] +
+link:#Output_Voltage_2[Output Voltage 2] +
+link:#Output_Current_2[Output Current 2] +
+link:#Output_Power_2[Output Power 2] +
+link:#Output_Load_2[Output Load 2] +
+link:#Output_Voltage_3[Output Voltage 3] +
+link:#Output_Current_3[Output Current 3] +
+link:#Output_Power_3[Output Power 3] +
+link:#Output_Load_3[Output Load 3] +
+ 
+	|[[ST4]]ST4 	|1 +
+2 +
+3 +
+4 +
+5 +
+6 +
+7 +
+8 +
+9 +
+10 +
+11 +
+	| link:#Bypass_Frequency[Bypass Frequency] +
+link:#Bypass_Num_Lines[Bypass Num Lines] +
+link:#Bypass_Voltage[Bypass Voltage] +
+link:#Bypass_Current[Bypass Current] +
+link:#Bypass_Power[Bypass Power] +
+link:#Bypass_Voltage_2[Bypass Voltage 2] +
+link:#Bypass_Current_2[Bypass Current 2] +
+link:#Bypass_Power_2[Bypass Power 2] +
+link:#Bypass_Voltage_3[Bypass Voltage 3] +
+link:#Bypass_Current_3[Bypass Current 3] +
+link:#Bypass_Power_3[Bypass Power 3] +
+ 
+	|[[ST5]]ST5 	|1 +
+2 +
+3 +
+4 +
+5 +
+6 +
+7 +
+8 +
+9 +
+10 +
+11 +
+12 +
+13 +
+14 +
+15 +
+	| link:#Temperature_Alarm[Temperature Alarm] +
+link:#Input_Bad_Alarm[Input Bad Alarm] +
+link:#Output_Bad_Alarm[Output Bad Alarm] +
+link:#Overload_Alarm[Overload Alarm] +
+link:#Bypass_Bad_Alarm[Bypass Bad Alarm] +
+link:#Output_Off_Alarm[Output Off Alarm] +
+link:#UPS_Shutdown_Alarm[UPS Shutdown Alarm] +
+link:#Charger_Failure_Alarm[Charger Failure Alarm] +
+link:#System_Off_Alarm[System Off Alarm] +
+link:#Fan_Failure_Alarm[Fan Failure Alarm] +
+link:#Fuse_Failure_Alarm[Fuse Failure Alarm] +
+link:#General_Fault_Alarm[General Fault Alarm] +
+link:#Awaiting_Power_Alarm[Awaiting Power Alarm] +
+link:#Shutdown_Pending_Alm[Shutdown Pending Alm] +
+link:#Shutdown_Imminent_Alm[Shutdown Imminent Alm] +
+ 
+	|[[STR]]STR 	|1 +
+2 +
+	| link:#Test_Results_Summary[Test Results Summary] +
+link:#Test_Results_Detail[Test Results Detail] +
+ 
+	|[[UID]]UID 	|1 +
+	| link:#UPS_Identification[UPS Identification] +
+ 
+	|[[VER]]VER 	|1 +
+	| link:#Software_Version[Software Version] +
+ 
+|=============== 
+
+[[variables]]
+
+=== Variables  +
+
+[options="header,autowidth",cols="<,<,<,<,<,<"]
+|=============
+	|Number 	|Variable 	|Units 	|Command 	|Field 	|Value 
+	|1 	|[[Awaiting_Power_Alarm]]Awaiting Power Alarm 	|  	|ST5 	|13 	| 0 - Normal +
+1 - Alarm +
+ 
+	|2 	|[[Bypass_Bad_Alarm]]Bypass Bad Alarm 	|  	|ST5 	|5 	| 0 - Normal +
+1 - Alarm +
+ 
+	|3 	|[[Charger_Failure_Alarm]]Charger Failure Alarm 	|  	|ST5 	|8 	| 0 - Normal +
+1 - Alarm +
+ 
+	|4 	|[[Fan_Failure_Alarm]]Fan Failure Alarm 	|  	|ST5 	|10 	| 0 - Normal +
+1 - Alarm +
+ 
+	|5 	|[[Fuse_Failure_Alarm]]Fuse Failure Alarm 	|  	|ST5 	|11 	| 0 - Normal +
+1 - Alarm +
+ 
+	|6 	|[[General_Fault_Alarm]]General Fault Alarm 	|  	|ST5 	|12 	| 0 - Normal +
+1 - Alarm +
+ 
+	|7 	|[[Input_Bad_Alarm]]Input Bad Alarm 	|  	|ST5 	|2 	| 0 - Normal +
+1 - Alarm +
+ 
+	|8 	|[[Output_Bad_Alarm]]Output Bad Alarm 	|  	|ST5 	|3 	| 0 - Normal +
+1 - Alarm +
+ 
+	|9 	|[[Output_Off_Alarm]]Output Off Alarm 	|  	|ST5 	|6 	| 0 - Normal +
+1 - Alarm +
+ 
+	|10 	|[[Overload_Alarm]]Overload Alarm 	|  	|ST5 	|4 	| 0 - Normal +
+1 - Alarm +
+ 
+	|11 	|[[Shutdown_Imminent_Alm]]Shutdown Imminent Alm 	|  	|ST5 	|15 	| 0 - Normal +
+1 - Alarm +
+ 
+	|12 	|[[Shutdown_Pending_Alm]]Shutdown Pending Alm 	|  	|ST5 	|14 	| 0 - Normal +
+1 - Alarm +
+ 
+	|13 	|[[System_Off_Alarm]]System Off Alarm 	|  	|ST5 	|9 	| 0 - Normal +
+1 - Alarm +
+ 
+	|14 	|[[Temperature_Alarm]]Temperature Alarm 	|  	|ST5 	|1 	| 0 - Normal +
+1 - Alarm +
+ 
+	|15 	|[[UPS_Shutdown_Alarm]]UPS Shutdown Alarm 	|  	|ST5 	|7 	| 0 - Normal +
+1 - Alarm +
+ 
+	|16 	|[[Audible_Alarm]]Audible Alarm 	|  	|NOM 	|8 	| 0 - Disabled +
+1 - Enabled +
+2 - Muted +
+3 - Low Battery +
+ 
+	|17 	|[[Auto_Restart]]Auto Restart 	|  	|ATR 	|1 	| 0 - Enable +
+1 - Disable +
+ 
+	|18 	|[[Battery_Charge]]Battery Charge 	|  	|ST1 	|3 	| 0 - Floating +
+1 - Charging +
+2 - Resting +
+3 - Discharging +
+ 
+	|19 	|[[Battery_Condition]]Battery Condition 	|  	|ST1 	|1 	| 0 - Good +
+1 - Weak +
+2 - Replace +
+ 
+	|20 	|[[Battery_Current]]Battery Current 	|A/10 	|ST1 	|8 	|<a number> 
+	|21 	|[[Battery_Installed]]Battery Installed 	|  	|NOM 	|11 	|<a string> 
+	|22 	|[[Battery_Status]]Battery Status 	|  	|ST1 	|2 	| 0 - Normal +
+1 - Low +
+2 - Depleted +
+ 
+	|23 	|[[Battery_Temperature]]Battery Temperature 	|C 	|ST1 	|9 	|<a number> 
+	|24 	|[[Battery_Voltage]]Battery Voltage 	|V/10 	|ST1 	|7 	|<a number> 
+	|25 	|[[Bypass_Current]]Bypass Current 	|A/10 	|ST4 	|4 	|<a number> 
+	|26 	|[[Bypass_Current_2]]Bypass Current 2 	|A/10 	|ST4 	|7 	|<a number> 
+	|27 	|[[Bypass_Current_3]]Bypass Current 3 	|A/10 	|ST4 	|10 	|<a number> 
+	|28 	|[[Bypass_Frequency]]Bypass Frequency 	|Hz/10 	|ST4 	|1 	|<a number> 
+	|29 	|[[Bypass_Num_Lines]]Bypass Num Lines 	|  	|ST4 	|2 	|<a number> 
+	|30 	|[[Bypass_Power]]Bypass Power 	|W 	|ST4 	|5 	|<a number> 
+	|31 	|[[Bypass_Power_2]]Bypass Power 2 	|W 	|ST4 	|8 	|<a number> 
+	|32 	|[[Bypass_Power_3]]Bypass Power 3 	|W 	|ST4 	|11 	|<a number> 
+	|33 	|[[Bypass_Voltage]]Bypass Voltage 	|V/10 	|ST4 	|3 	|<a number> 
+	|34 	|[[Bypass_Voltage_2]]Bypass Voltage 2 	|V/10 	|ST4 	|6 	|<a number> 
+	|35 	|[[Bypass_Voltage_3]]Bypass Voltage 3 	|V/10 	|ST4 	|9 	|<a number> 
+	|36 	|[[Estimated_Charge]]Estimated Charge 	|% 	|ST1 	|6 	|<a number> 
+	|37 	|[[Estimated_Minutes]]Estimated Minutes 	|  	|ST1 	|5 	|<a number> 
+	|38 	|[[High_Volt_Xfer_Pt]]High Volt Xfer Pt 	|V 	|NOM 	|10 	|<a string> 
+	|39 	|[[UPS_Identification]]UPS Identification 	|  	|UID 	|1 	|<a string> 
+	|40 	|[[Input_Current]]Input Current 	|A/10 	|ST2 	|5 	|<a number> 
+	|41 	|[[Input_Current_2]]Input Current 2 	|A/10 	|ST2 	|9 	|<a number> 
+	|42 	|[[Input_Current_3]]Input Current 3 	|A/10 	|ST2 	|13 	|<a number> 
+	|43 	|[[Input_Frequency]]Input Frequency 	|Hz/10 	|ST2 	|3 	|<a number> 
+	|44 	|[[Input_Frequency_2]]Input Frequency 2 	|Hz/10 	|ST2 	|7 	|<a number> 
+	|45 	|[[Input_Frequency_3]]Input Frequency 3 	|Hz/10 	|ST2 	|11 	|<a number> 
+	|46 	|[[Input_Line_Bads]]Input Line Bads 	|  	|ST2 	|1 	|<a number> 
+	|47 	|[[Input_Num_Lines]]Input Num Lines 	|  	|ST2 	|2 	|<a number> 
+	|48 	|[[Input_Power]]Input Power 	|W 	|ST2 	|6 	|<a number> 
+	|49 	|[[Input_Power_2]]Input Power 2 	|W 	|ST2 	|10 	|<a number> 
+	|50 	|[[Input_Power_3]]Input Power 3 	|W 	|ST2 	|14 	|<a number> 
+	|51 	|[[Input_Voltage]]Input Voltage 	|V/10 	|ST2 	|4 	|<a number> 
+	|52 	|[[Input_Voltage_2]]Input Voltage 2 	|V/10 	|ST2 	|8 	|<a number> 
+	|53 	|[[Input_Voltage_3]]Input Voltage 3 	|V/10 	|ST2 	|12 	|<a number> 
+	|54 	|[[Low_Volt_Xfer_Pt]]Low Volt Xfer Pt 	|V 	|NOM 	|9 	|<a string> 
+	|55 	|[[Manufacturer]]Manufacturer 	|  	|MAN 	|1 	|<a string> 
+	|56 	|[[Model]]Model 	|  	|MOD 	|1 	|<a string> 
+	|57 	|[[Nominal_Battery_Life]]Nominal Battery Life 	|Days 	|NOM 	|12 	|<a string> 
+	|58 	|[[Nom_Input_Frequency]]Nom Input Frequency 	|Hz/10 	|NOM 	|2 	|<a number> 
+	|59 	|[[Nominal_Input_Voltage]]Nominal Input Voltage 	|V 	|NOM 	|1 	|<a string> 
+	|60 	|[[Nom_Low_Battery_Time]]Nom Low Battery Time 	|  	|NOM 	|7 	|<a string> 
+	|61 	|[[Nom_Output_Frequency]]Nom Output Frequency 	|Hz/10 	|NOM 	|4 	|<a number> 
+	|62 	|[[Nominal_Output_Power]]Nominal Output Power 	|W 	|NOM 	|6 	|<a string> 
+	|63 	|[[Nom_Output_Voltage]]Nom Output Voltage 	|V 	|NOM 	|3 	|<a string> 
+	|64 	|[[Nom_VA_Rating]]Nom VA Rating 	|VA 	|NOM 	|5 	|<a string> 
+	|65 	|[[Output_Current]]Output Current 	|A/10 	|ST3 	|5 	|<a number> 
+	|66 	|[[Output_Current_2]]Output Current 2 	|A/10 	|ST3 	|9 	|<a number> 
+	|67 	|[[Output_Current_3]]Output Current 3 	|A/10 	|ST3 	|13 	|<a number> 
+	|68 	|[[Output_Frequency]]Output Frequency 	|Hz/10 	|ST3 	|2 	|<a number> 
+	|69 	|[[Output_Load]]Output Load 	|% 	|ST3 	|7 	|<a number> 
+	|70 	|[[Output_Load_2]]Output Load 2 	|% 	|ST3 	|11 	|<a number> 
+	|71 	|[[Output_Load_3]]Output Load 3 	|% 	|ST3 	|15 	|<a number> 
+	|72 	|[[Output_Num_Lines]]Output Num Lines 	|  	|ST3 	|3 	|<a number> 
+	|73 	|[[Output_Power]]Output Power 	|W 	|ST3 	|6 	|<a number> 
+	|74 	|[[Output_Power_2]]Output Power 2 	|W 	|ST3 	|10 	|<a number> 
+	|75 	|[[Output_Power_3]]Output Power 3 	|W 	|ST3 	|14 	|<a number> 
+	|76 	|[[Output_Source]]Output Source 	|  	|ST3 	|1 	| 0 - Normal +
+1 - On Battery +
+2 - On Bypass +
+3 - Reducing +
+4 - Boosting +
+5 - Other +
+ 
+	|77 	|[[Output_Voltage]]Output Voltage 	|V/10 	|ST3 	|4 	|<a number> 
+	|78 	|[[Output_Voltage_2]]Output Voltage 2 	|V/10 	|ST3 	|8 	|<a number> 
+	|79 	|[[Output_Voltage_3]]Output Voltage 3 	|V/10 	|ST3 	|12 	|<a number> 
+	|80 	|[[Reboot_With_Duration]]Reboot With Duration 	|  	|RWD 	|1 	|<a number> 
+	|81 	|[[Seconds_on_Battery]]Seconds on Battery 	|  	|ST1 	|4 	|<a number> 
+	|82 	|[[Shutdown_Type]]Shutdown Type 	|  	|SDA 	|1 	| 0 - UPS Output +
+1 - UPS System +
+ 
+	|83 	|[[Shutdown_After_Delay]]Shutdown After Delay 	|  	|STD 	|1 	|<a number> 
+	|84 	|[[Software_Version]]Software Version 	|  	|VER 	|1 	|<a string> 
+	|85 	|[[Startup_After_Delay]]Startup After Delay 	|  	|STD 	|1 	|<a number> 
+	|86 	|[[Test_Results_Detail]]Test Results Detail 	|  	|STR 	|2 	|<a string> 
+	|87 	|[[Test_Results_Summary]]Test Results Summary 	|  	|STR 	|1 	| 0 - No Test +
+1 - Passed +
+2 - In Progress +
+3 - GenTestFail +
+4 - BattTstFail +
+5 - DeepTstFail +
+ 
+	|88 	|[[Test_Type]]Test Type 	|  	|TST 	|1 	|<a number> 
+	|89 	|[[Baud_Rate]]Baud Rate 	|  	|UBR 	|1 	|<a number> 
+|=============== 
+
+
+
+''''
+
+
+link:http://inm.alcatel.com.au/~marleyj/[John.Marley@alcatel.com.au]

@@ -4,15 +4,37 @@
 
 Documents in this section are provided courtesy of Eaton.
 
-*	link:UC2concept-1002889j.odt[UPScode II Concept Description] (ODT, 50 KB)
-*	link:../mge/[MGE Office Protection Systems protocol library] (serial SHUT, USB and SNMP protocols)
-*	EATON (prev. Powerware) XCP protocol:
-** link:XCP_Rev_C1_Public_021309.pdf[X-format Communications Protocol (XCP) Specification] (PDF, 996 KB)
-** link:XCP_Alarm_Map_021309.pdf[XCP Alarm Map] (PDF, 54 KB)
-** link:XCP_Meter_Map_021309.pdf[XCP Meter Map] (PDF, 21 KB)
-* EATON (prev. Powerware) SNMP information:
-** link:../snmp/Xups.mib[Powerware PowerMIB (XUPS-MIB)] (TXT, 71 KB)
+[[upscode]]
+*	link:UC2concept-1002889j.odt[UPScode II Concept Description] (now EATON)(ODT, 50 KB)
 
+[[mge]]
+*	MGE UPS SYSTEMS / MGE Office Protection Systems protocol library (serial SHUT, USB and SNMP protocols)(now EATON)
+**	link:mge/MGE-mibs.pdf[MGE UPS SYSTEMS SNMP MIBS descriptions] (PDF, 78 KB)
+**	link:mge/NUT_MGE_USB_Devices_Draft_AA.pdf[MGE USB Devices Draft AA] - official MGE HID UPS data (PDF, 310 KB)
+**	link:mge/51029473zaac.pdf[Simplified SHUT protocol] (PDF, 63 KB)
+**	link:mge/9260zw_g.pdf[U-Talk protocol general specifications] (PDF, 104 KB)
+**	link:mge/9261zwfa.pdf[U-Talk command set specifications] (PDF, 288 KB)
+**	link:mge/minutalk.pdf[U-Talk basic command set for UPS single monitoring communication] (PDF, 7 KB)
+**	link:http://www.mgeups.com/techinfo/techdoc/pdf/MGE_PnP_Devices_Draft_AA.pdf[MGE PnP Devices Draft AA] !Dead link (PDF, 24 kb)
+
+[[powerware]]
+*	Powerware (now EATON)
+**	XCP protocol:
+***	link:XCP_Rev_C1_Public_021309.pdf[X-format Communications Protocol (XCP) Specification] (PDF, 996 KB)
+***	link:XCP_Alarm_Map_021309.pdf[XCP Alarm Map] (PDF, 54 KB)
+***	link:XCP_Meter_Map_021309.pdf[XCP Meter Map] (PDF, 21 KB)
+**	SNMP protocol:
+***	link:../snmp/Xups.mib[Powerware PowerMIB (XUPS-MIB)] (TXT, 71 KB)
+
+[[fortress]]
+*	link:fortress[Best Fortress] (now EATON)- for LI 520, 720, 1020, and 1420 models
+
+[[sola]]
+*	link:sola.html[SOLA/Best Power protocol (Phoenixtec)](Now EATON) - courtesy of Invensys Energy Systems
+
+*	link:../megatec.html[Megatec Protocol]
+
+*	link:ups-protocols.html#snmp[SNMP Protocol]
 
 All protocol information on this site is provided in the hope that it
 will be useful. What you do with it is up to you.

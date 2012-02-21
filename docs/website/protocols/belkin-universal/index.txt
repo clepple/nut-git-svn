@@ -24,12 +24,12 @@ etc.
 On the surface, Belkin seems Linux-friendly, because they provide a
 Linux version of their "Bulldog Plus" UPS management software. This
 software is not included on the CD Rom which ships with the UPS, but
-one can download it from link:ttp://www.delta.com.tw/tw/ups2001/bulldog/[Belkin's website].
+one can download it from link:http://www.delta.com.tw/tw/ups2001/bulldog/[Belkin's website].
 
 
 
 However, unfortunately, the Bulldog Plus software is not as useful as
-it might seem. It has many bugs (see link:ttp://quasar.mathstat.uottawa.ca/~selinger/ups/#bulldog[Bugs in
+it might seem. It has many bugs (see link:http://quasar.mathstat.uottawa.ca/~selinger/ups/#bulldog[Bugs in
 Bulldog]), and it cannot be configured to allow an unsupervised
 recovery (the user must press the front panel button to restart the
 UPS after a power failure).
@@ -66,7 +66,7 @@ Belkin uses different communication protocols for different UPS
 hardware. Belkin's "Bulldog Plus" software apparently knows several of
 these protocols, and automatically figures out which one to use based
 on the responses it receives from the UPS. I know of the following
-protocols. The "NUT Driver" entries below refer to the link:ttp://www.exploits.org/nut/[Network UPS Tools] software.
+protocols. The "NUT Driver" entries below refer to the link:http://www.exploits.org/nut/[Network UPS Tools] software.
 
 *	*Universal UPS and compatible* +
 *Typical message:* 0x7e 03 02 01 00 84 +
@@ -84,8 +84,8 @@ protocols. The "NUT Driver" entries below refer to the link:ttp://www.exploits.o
 *Described in:*	 
 belkin.txt by Marcus Mueller <marcus@ebootis.de>
 (distributed with nut-0.44.1) +
-link:ttp://www.exploits.org/nut/library/protocols/belkin.html[http://www.exploits.org/nut/library/protocols/belkin.html] +
-link:ttp://www.exploits.org/nut/library/protocols/belkin-protocol[http://www.exploits.org/nut/library/protocols/belkin-protocol] +
+link:http://www.exploits.org/nut/library/protocols/belkin.html[http://www.exploits.org/nut/library/protocols/belkin.html] +
+link:http://www.exploits.org/nut/library/protocols/belkin-protocol[http://www.exploits.org/nut/library/protocols/belkin-protocol] +
 *NUT Driver:* belkin +
 *Date:*	 ca. 2000 +
 *	*Older Belkin USVs, compatible with Trust425&625 UPS* +
@@ -578,13 +578,13 @@ The only way to test whether these "transfer points" actually work would be to v
 
 The lower 4 bits determine the UPS type: 0=online, 1=offline, 2=line-interactive. In the Belkin Monitor, this is used to determine the type of "wiring diagram" displayed (and does not affect anything else, as far as I can tell). 
 
-Online: image:figonline.png["Wiring Diagram: AC Input -> Charger -> Battery -> Inverter -> AC Output"]Charger -> Battery -> Inverter -> AC Output"> 
+Online: image:images/figonline.png["Wiring Diagram: AC Input -> Charger -> Battery -> Inverter -> AC Output"]Charger -> Battery -> Inverter -> AC Output">
 
 Offline: +
-image:figoffline.png["Wiring Diagram: AC Input -> Charger -> Battery -> Inverter -> AC Output and AC Input -> AC Output"]Charger -> Battery -> Inverter -> AC Output and AC Input -> AC Output"> 
+image:images/figoffline.png["Wiring Diagram: AC Input -> Charger -> Battery -> Inverter -> AC Output and AC Input -> AC Output"]Charger -> Battery -> Inverter -> AC Output and AC Input -> AC Output">
 
 Line-interactive: +
-image:figlineint.png["Wiring Diagram: AC Input -> AC Output and Battery -> AC Output"]AC Output and Battery -> AC Output"> 
+image:images/figlineint.png["Wiring Diagram: AC Input -> AC Output and Battery -> AC Output"]AC Output and Battery -> AC Output">
 
 Example: a value of 0x41 means firmware version = 4, UPS type = offline.
 |10:	|battery test status	|1 byte	|RW	|0	|When read, this register takes the following values: 
