@@ -1,7 +1,5 @@
 
-WARNING: this is a Work In Progress document. For the time being, you
-should refer to the
-link:http://old.networkupstools.org/protocols/[old NUT website library]. 
+WARNING: This page is an arrangement of the old NUT Protocols Library. if you notice a discrepancy, confirm it by visiting the link:http://old.networkupstools.org/protocols/[old NUT website library].
 
 UPS Protocols
 -------------
@@ -30,62 +28,68 @@ Belkin
 Eaton
 ~~~~~
 
-- link:protocols/eaton/[Eaton Protocols Library] - all official Eaton documents are here, including Powerware, MGE, ...
+- link:protocols/eaton/[Eaton Protocols Library] - all official Eaton documents are here, including:
 
-- link:protocols/fortress/[Best Fortress protocol] - for LI 520, 720, 1020, and 1420 models
-
-- SOLA/Best Power protocol (Phoenixtec) - courtesy of Invensys Energy Systems
+**	link:protocols/eaton/#fortress[Best Fortress protocol] - for LI 520, 720, 1020, and 1420 models
+**	link:protocols/eaton/#sola[SOLA/Best Power protocol (Phoenixtec)] - courtesy of Invensys Energy Systems
+**	link:protocols/eaton/#mge[MGE UPS SYSTEMS / MGE Office Protection Systems]
+**	link:protocols/eaton/#upscode[UPScode II]
+**	link:protocols/eaton/#powerware[PowerWare] (XCP & SNMP protocol)
+**	<<megatec,Megatec UPS Protocol>>
+**	<<snmp,SNMP protocols>>
 
 MicroDowell
 ~~~~~~~~~~~
 
-- MicroDowell UPS Serial Protocol v3.3.1 (PDF, 225KB)
+- link:protocols/MicroDowell_UPS_serial_protocol_v3.3.1.pdf[MicroDowell UPS Serial Protocol v3.3.1] (PDF, 225KB)
 
 MGE
 ~~~
 
-- MGE Protocols Library - all official MGE documents are here
+- link:protocols/eaton/#mge[MGE Protocols Library] (now EATON) - all official MGE documents are here
 
 ONEAC
 ~~~~~
 
-- ONEAC serial information - two scans
+- link:protocols/oneac.html[ONEAC serial information] - two scans
 
 Opti-UPS
 ~~~~~~~~
 
-- Opti-UPS protocol - more guesswork
+- link:protocols/optiups.html[Opti-UPS protocol] - more guesswork
 
 Powercom
 ~~~~~~~~
 
 All these document are officially provided by Powercom
 
-- link:ups-protocols/powercom/Software_USB_communication_controller_BNT_series.doc[USB information for BNT series]
-- link:ups-protocols/powercom/Software_USB_communication_controller_IMPERIAL_series_R21.doc[USB information for IMPERIAL series]
-- link:ups-protocols/powercom/Software_USB_communication_controller_SKP_series.doc[USB information for SKP series]
-- link:ups-protocols/powercom/Software_USB_communication_controller_WOW_series.doc[USB information for WOW series]
+- link:protocols/powercom/Software_USB_communication_controller_BNT_series.doc[USB information for BNT series]
+- link:protocols/powercom/Software_USB_communication_controller_IMPERIAL_series_R21.doc[USB information for IMPERIAL series]
+- link:protocols/powercom/Software_USB_communication_controller_SKP_series.doc[USB information for SKP series]
+- link:protocols/powercom/Software_USB_communication_controller_WOW_series.doc[USB information for WOW series]
 
 PowerKinetics
 ~~~~~~~~~~~~~
 
-- PowerKinetics MiniCOL protocol - courtesy of PowerKinetics technical support
+- link:protocols/minicol[PowerKinetics MiniCOL protocol] - courtesy of PowerKinetics technical support
 
 Standard protocols
 ~~~~~~~~~~~~~~~~~~
 
 SEC 
 ^^^
-- link:ups-protocols/sec.html[SEC protocol] - superset of the US9003, below
+- link:protocols/sec.html[SEC protocol] - superset of the US9003, below
 
-- link:ups-protocols/sec-standard.html[SEC standard UPS Communication interface] - 15 scanned pages
+- link:protocols/sec-1[SEC standard UPS Communication interface] - 15 scanned pages
 
-- link:us9003.html[US9003 UPS Communication Interface] 
+- link:protocols/us9003.html[US9003 UPS Communication Interface] 
 
+
+[[snmp]]
 SNMP
 ^^^^
 
-- link:ups-protocols/snmp.html[SNMP]
+- link:protocols/snmp.html[SNMP]
 - link:http://powerquality.eaton.com/Support/Software-Drivers/Downloads/connectivity-firmware/bestpwr2.mib[Best Power MIB]
 
 USB/HID Power Devices Class
@@ -97,5 +101,6 @@ USB/HID Power Devices Class
 Various
 ~~~~~~~
 
-- link:ups-protocols/megatec.html[Megatec] UPS Protocol
+[[megatec]]
+- link:protocols/megatec.html[Megatec] UPS Protocol
 

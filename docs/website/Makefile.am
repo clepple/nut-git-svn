@@ -1,6 +1,8 @@
 # FIXME: do we really have to distribute these many Kb too?
 # RCS should be enough, and website generation should use
 # source from subversion tags!
+SUBDIRS = protocols
+
 EXTRA_DIST = news.txt projects.txt website.txt \
 	ups-protocols.txt $(LAYOUT).conf $(SCRIPT_FILES) $(LAYOUT_FILES) \
 	$(FAVICON_FILES)
@@ -81,7 +83,7 @@ website:
 	@echo "Not building website since 'asciidoc' was not found."
 endif !HAVE_ASCIIDOC
 
-.PHONY: website $(OUTDIR)
+.PHONY: website $(OUTDIR) protocols
 
 $(OUTDIR):
 	$(RM) -r $(OUTDIR)
