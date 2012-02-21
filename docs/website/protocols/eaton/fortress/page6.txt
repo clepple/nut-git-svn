@@ -1,0 +1,324 @@
+
+link:page5.html[Previous]
+|
+link:../[Up]
+| Page 6
+
+
+
+''''
+
+
+== 500 Using Parameters +
+
+=== 501 Parameter Table +
+
+The table on the next few pages shows the parameters that you can view or program
+from a terminal or computer. Some of these parameters keep track of
+information (like Time or Date) or display operating and power
+conditions (like voltage, current, or temperature). Other parameters,
+(Like User ID) let you program the Fortress for special operating
+conditions. +
+
+When you use the Fortress commands to display and program parameters,
+you can identify the parameter with either its number or name. If you
+use the name, you can enter the whole parameter name or just the
+letters in the short form. (See the Name column in the parameter
+table). +
+
+Passwords restrict access to some parameters; see the "Password to
+Change" column in the table and Section 40 1. +
+
+image:images/gr000019.png["warning"] +
+image:images/gr000020.png["parameter table"] +
+image:images/gr000021.png["parameter table"] +
+image:images/gr000022.png["parameter table"] +
+image:images/gr000023.png["parameter table"] +
+image:images/gr000024.png["parameter table"] +
+image:images/gr000025.png["parameter table"] +
+image:images/gr000026.png["parameter table"] +
+image:images/gr000027.png["parameter table"]
+
+
+
+=== 502 Automatic Startup and Shutdown (Parameters 90-93) +
+
+If you do not want the Fortress to run constantly, you can program it to startup
+and shut down automatically using parameters 0, II, and 90-93. Just
+follow the steps below. +
+
+. You must enter the Service password before you can change
+parameters 90-93. To enter the password, use the command *pw
+2639*. +
+. Using the *display* command, display parameters 0 and 11 to
+make sure the time and the day of the week are correct. (Note that
+parameter 0 shows the time in 24-hour or military time.) If both
+parameters are correct, go to step 2. If not, follow steps a-b: +
+
+.. Use this
+command to change the time: *program time <new time>.* Be sure to use the 24-hour system. For example, if the time is
+9:30 a.m., use the command *program time 09:30.* If the time
+is 7:00 p.m., use the command *program time 19:00.* +
+.. To change the day of the week, use this command: *program
+day <new day of week>.* For the new day of the week, 0 =
+Sunday, I = Monday, 2 = Tuesday, 3 = Wednesday, 4 = Thursday, 5 =
+Friday, and 6 = Saturday. For example, if the day of the week is
+Monday, use the command *program day 1.*
+
+. Parameters 90-93 let you set up automatic startup and
+shutdown. +
+. Parameter 91 (ontiniedays or ontd) lets you choose which days you
+want the Fortress to automatically shut down. When you receive the
+Fortress, this is set to 0, which means none of the days have been
+selected. +
+
+If you want the Fortress to start automatically every day, use this
+command: *program ontd 127.* If you only want Fortress to
+operate some days, use the table below. In the right column enter "0"
+for each day you do not want the Fortress to operate. For the days
+you do want the Fortress to operate, enter the day's value from the
+second column. Then, add the right column and use this command to
+change the parameter setting: *program ontd <total of right
+column>.* +
+
+image:images/gr000028.png["day of week table"] +
+
+__Example: __If you wanted the Fortress to operate
+automatically Monday through Friday, you would write "0" next to
+Sunday and Saturday and the values next to the other day. 0 + 2 + 4 +
+8 + 16 + 32 + 0 = 62, so you would use the command *program ontd
+62.*
+
+. Parameter 90
+(powerontime or ont) sets the time you want the Fortress to start
+automatically. When you receive the Fortress, this parameter is set
+to 8:00 a.m. If you want the Fortress to start at a different time,
+use this command: *program ont <new start time>.* Be sure
+to use 24-hour or military time. For example, if you want the
+Fortress to start at 9:00 a.m., use the command *program ont 09:00.*
+If you want the Fortress to start at 3:00 p.m., use the command
+*program ont 15:00.*
+. Parameter 92 (powerofftime or offt) sets the time you want the
+Fortress to shut down automatically. When you receive the Fortress,
+this parameter is set to 17: 00, which is 5: 00 p.m. If you want the
+Fortress to shut down at a different time, use this command:
+*program offt <new shutdown time>.* Be sure to use 24-hour
+or military time. +
+. Parameter 93 (offtimedays or oftd) lets you choose which days you
+want the Fortress to shut down. When you receive the Fortress, this
+is set to 0, which means none of the days have been selected. If you
+want the Fortress to shut down automatically every day, use this
+command: *program oftd 255.* +
+If you only want Fortress to shut down some days, use the table
+on page 29 to calculate the setting just as you did for parameter 9 1. __If you want the Fortress to start and shut down on the same
+days, you can use the setting you calculatedfor parameter 91.__
+. Clear the Service password using the clearpassword
+command.
+
+=== 503 Choosing Which Alarms Enable the Alarm Contact (Parameter 81) +
+
+When you receive the Fortress, the alann contact (pin 5) only closes for the Low
+Battery, Near Low Battery, and Low Runtime alarms. __This setting is
+important ifyou are using yourfree CheckUPS II Suite software
+pack-age or other automatic shutdown software.__ However, if you
+are not using CheckUPS and you would like other alarms to close the
+contact, you can use parameter 81 to determine which alarms will
+close the contact. (See Section 504 for information about other
+settings that affect the alarm contact.) +
+
+__No matter how you program parameter 81,when the UPS is off, the alarm contact will be open.__ +
+
+To program parameter 8 1, follow these steps: +
+
+1. Enter the Service password using the command *password 2639*. +
+2. Display parameter 81 using the *display 81* command. +
+3. The table on the next page will help you calculate the new
+parameter settmig based on the alarms that you want to activate the
+contact. If you do not want any of the alarms to activate the
+contact, write "0" for the total. If you want some of the alarms to
+activate the contact, see the table to find the Alarm Value for each
+of these alarms; write the value for these alarms in the third column
+of the table. Write "0" for alarms that should not activate the
+contacts. Then, add the numbers in the third column. For example, to
+enable alarms A (Low Battery), B (Near Low Battery), and C (High
+Battery),write "I" for alarm A, "2" for alarm B, "4" for alarm C, and
+"0" for the rest of the alarms. Ile total is 7. +
+
+__If you are using the Fortress with an AS/400, you should ONLY
+enable the alarm contact for the Low Battery, Near Low Battery, and
+Low Runtime alarms. In the blanks, A = 1, B = 2, D=8, and C and E- K
+= 0. The total = 11.__ +
+
+
+image:images/gr000029.png["alarm table"] +
+
+
+4. Now, change the parameter 81 setting to the total you found in step 3. To do this,
+use the *program 81 <new setting>* command. +
+__Example:__ If you would like to activate the contact for alarms
+A, B, and C and your total in step 3 was 7, enter the command
+*program 81 7*. +
+5. Use the *display 81* command to display the parameter once
+more and confirm that you have entered the correct setting. +
+6. Clear the Service password using the *clearpassword* or
+*cp* command. +
+
+
+
+=== 504 Changing the Settings for Alarm and Battery Contacts (Parameters 80 and 88-89) +
+
+Parameters 80 and 88-89 let you program how the alarm and battery contacts operate. +
+
+
+==== Alarm Contact (Pin 5) +
+
+When you receive the Fortress, a Low Battery Alarm will cause the
+normally open contact on pin 5 to close to common (pin 4). (Section
+503 tells you how to activate the contact for other alarms.) The
+contact is normally open because parameter 80 is set to 0)Neg when
+you receive the Fortress. If you would like the contact to be
+normally closed and to open during the alarm, you must change
+parameter 80 to 1)Pos. __No matter how you program parameter 80,
+when the UPS is off, the alarm contact will be open.__ To change the parameter, follow these
+steps: +
+
+. Enter the Service password using the command *password 2639*. +
+. Program parameter 80 to 1)Pos using this command: *program 81 1*. +
+. Clear the password using the *clearpassword* or *cp* command. +
+
+==== On Battery Contact(Pin 3) +
+
+When you receive the Fortress, the on battery contact (pin 3) is
+a normally open contact that closes 15 seconds after the Fortress
+starts running on battery power. Using parameter 88, you can change
+the contact to a normally closed contact. Using parameter 89, you can
+adjust the 15-second delay. +
+
+Parameter 88 is set to 0)Neg when you receive the UPS. This means
+that the contact is normally open and that it closes when the
+Fortress runs on battery power. To change the contact to a normally
+closed contact that opens when the Fortress runs on battery, follow
+these steps: +
+
+. Enter the Service password using the command *password 2639*. +
+. Program parameter 88 to 1)Pos using this command: *program 88 1*. __No matter how you program parameter 88, when the UPS is off, the inverter contact will be open.__ +
+. Clear the password using the *clearpassword* or *cp* command.
+
+After the Fortress begins running on battery power, parameter 89
+determines how long the Fortress will wait before closing the on
+battery contact. When you receive the Fortress, this parameter is set
+to 15 seconds. You can decrease the delay to as little as 0.1 seconds
+or increase it to as much as 25.5 seconds. To do this, follow these
+steps: +
+
+. Enter the Service password using the command *password 2639*. 
+. To change the delay, enter the command *program 89 <new delay in seconds>*. For example, if you want the delay to be 20
+seconds instead of 15 seconds, enter *program 89 20*. +
+. Clear the password using the command *clearpassword* or *cp*. +
+
+
+=== 505 Changing Remote Shutdown Settings (Parameters 82-84 and 85-87) +
+
+==== Pin 7 Shutdown 
+
+The Remote Shutdown available on pin 7 lets you shut down the
+Fortress' output power through a remote switch. The switch must have
+a set of contacts that can short pin 7 on the UPS communication port
+to pin 4 (common). (Use a shielded, single twisted pair cable to
+connect your switch to these pins.) The connection will shut down the
+UPS' output power to the protected equipment. When this happens, the
+UPS will sound alarm "Sd" for "shutdown" (Morse code alarm H). When
+you are ready to restart the UPS, the shutdown switch must remove the
+connection to pin 7 on the UPS communication port. Then, you can
+press the ( | ) button to restart the UPS. +
+
+You can change the way this feature operates by using parameters 85,
+86, and 87. +
+
+Parameter 85 determines whether this shutdown works with a normally
+open or normally closed switch. When you receive the Fortress, it is
+programmed to expect a normally open switch, and the Fortress shuts
+down when the switch input is shorted to pin 4. You can change the
+Fortress to work with a normally closed switch. To do this, you must
+change the setting of parameter 85 from 0)Neg to 1)Pos. Follow these
+steps: +
+
+. Enter the Service password using the command *password 2639*. +
+. Change the parameter setting using the command *program 85 1*. +
+. Clear the password using the command *clearpassword* or *cp*. 
+
+Parameter 86 determines
+how long the shutdown signal should be. In some environments with a
+lot of electrical noise, the noise could mimic the shutdown signal
+and cause a Fortress shutdown. To avoid this problem, you can
+increase the amount of time that the signal must be present before
+Fortress recognizes it. When you receive your Fortress, this
+parameter is set to 0.2 seconds, By changing the parameter value, you
+can decrease the required signal length to 0.1 seconds or increase it
+to as much as 25.5 seconds. To change the value, follow these
+steps: +
+
+. Enter the Service password using the command *password 2639.*
+. Change the parameter setting using the command *program 86
+<new value in seconds>*. For example, if you want to change
+the parameter value to 2 seconds, you would use the command
+*program 86 2*. +
+. Clear the password using the command *clearpassword* or
+*cp*. +
+
+
+After the Fortress recognizes a shutdown signal, parameter 87
+determines how long the Fortress will wait before shutting down. When
+you receive your Fortress, this parameter is set to 0.1 seconds. By
+changing the parameter value, you can increase the delay to as much
+as 2000 seconds (33 minutes). Follow these steps: +
+
+. Enter the Service password using the command *password 2639*. +
+. Change the parameter value using the command *program 87 <new delay in seconds>*. For example, if you want the Fortress to delay 3 seconds, use the command *program 87 3*. +
+. Clear the password using the command *clearpassword* or *cp*. +
+
+
+==== Pin 1 Shutdown +
+
+If your Fortress is set to Extended Signal communication mode
+(see Section 200), remote shutdown is also available on pin 1. If the
+UPS is using battery power, a +12-volt signal applied to the pin for
+5 seconds will shut down the UPS 30 seconds later. The UPS willl
+automatically restart when the power outage ends (unless you have
+changed parameter 39). +
+
+You can change the way this feature operates by using parameters 82,
+83, and 84. +
+
+Parameter 82 determines the type of signal on pin 1 that will start a
+Fortress shutdown. When you receive the Fortress, this is programmed
+to 0)Neg, which means ground or a -12V input causes the shutdown. If
+you change the parameter to 1)Pos, a +12V input shuts down the UPS.
+
+.Note:
+[NOTE]
+==================
++12V is available on pin 8 of the Fortress' port. +
+==================
+
+. Enter the Service password using the command *password
+2639*. +
+. Change the parameter value using the command *program 82
+1*. +
+. Clear the password using the command *clearpassword* or
+*cp*. +
+
+
+''''
+
+Graciously scanned and provided to the NUT Protocol Library by Chris McKinnon.
+
+''''
+
+
+
+link:page5.html[Previous]
+|
+link:../[Up]
+| Page 6
+

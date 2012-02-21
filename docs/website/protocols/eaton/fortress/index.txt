@@ -1,0 +1,8 @@
+== Fortress UPS Protocols(now EATON)
+
+*	link:page1.html[Page 1] - Communicating with Fortress Using the RS232 Port
+*	link:page2.html[Page 2] - 100 How You Can Use the Communication Port 
+*	link:page3.html[Page 3] - 200 Choosing a Communication Mode
+*	link:page4.html[Page 4] - 300 Starting Two-way RS232 Communication
+*	link:page5.html[Page 5] - 400 Using Commands to Communicate with the Fortress
+*	link:page6.html[Page 6] - 500 Using Parameters

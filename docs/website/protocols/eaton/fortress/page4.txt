@@ -1,0 +1,106 @@
+
+link:page3.html[Previous]
+|
+link:../[Up]
+| Page 4 |
+link:page5.html[Next]
+
+
+
+''''
+
+
+=== 300 Starting Two-way RS232 Communication +
+
+You can set up two-way (full-duplex) communication with the Fortress using a dumb
+terminal or terminal communication program. Two-way communication
+allows you to issue commands to the Fortress and to display
+information on your computer or terminal's screen. The commands are
+in Section 400. To set up two-way communication, follow these
+steps: +
+
+* Order an interface cable from Best Power (or call Best Power for
+cable specifications). Connect this cable to the UPS and to the
+terminal. (Instead of a terminal, you can use a computer with
+terminal emulation software such as CROSSTALK' or Procomm-, or the
+Windows Terminal function.) If you are using a terminal, note that
+Fortress supports the Televideo 900 series, ADM3A and WSE 50
+emulation.
+
+.Note:
+[NOTE]
+=================
+If you are connecting the Fortress to a modem, you must
+configure the modem properly. Set +
+up the modem to ignore RTS and CTS signals (disable hardware
+handshaking). Enable sup +
+port for X/ON X/OFF software handshaking. At the Fortress, parameters
+73 and 74 enable +
+software handshaking; unless you have changed the settings of these
+parameters, Fortress is +
+already set up for software handshaking.
+==================
+
+* Start the terminal or run terminal emulation software on your
+computer. 
+* Set the ten-ninal or terminal emulation software for the
+following:
+* Set the ten-ninal or terminal emulation software for the following: • FULL DUPLEX • 1200 baud (see note in step 4) • 8 data bits and 1 stop bit • No parity
+* Press <ENTER> at your keyboard. You should receive a => prompt. Press <ENTER> a few times to make sure the Fortress responds.
+.Note:
+[NOTE]
+====================
+If you want to change the baud rate at which the Fortress communicates, follow these steps:
+====================
+.... Set your
+computer or terminal baud rate to 1200 temporarily so you can
+communicate with the Fortress. +
+.... Find the DIP switches on the back of the Fortress; then, find
+DIP switch 1. +
+image:images/gr000004.png["dip switch detail"]
+.... If DIP switch I is
+set to the right, the Fortress baud rate will stay 1200 until you
+change the DIP switch setting. If DIP switch I is set to the left
+as it is in the drawing, the Fortress baud rate depends on the
+setting of parameter 70. When the Fortress is shipped, parameter
+70 is also set to 1200. To change the DIP switch setting, use a
+*nonmetal* object such as a toothpick to move DIP switch I
+from one side to the other; if the UPS is on, it will beep.
+*Make sure you do not accidentally change the position of
+another DIP switch. +
+.... Establish communication with the Fortress. Then, enter the
+Service password by typing *password 2639*<ENTER>. +
+.... To display baud rate (parameter 70), type *display 70*
+<ENTER>. If you have never changed the parameter
+setting, the display will show "70 Baud 2)1200." Setting 0 300, 1
+= 600, and 2 = 1200. +
+.... To change the setting type *program 70 <new setting>*
+<ENTER>. Example: To change the baud rate to 300, type
+*program 70 0* <ENTER>. +
+.... Clear the password by typing clearpassword <ENTER>. 
+
+
+
+
+* To control or monitor
+the Fortress, simply type the command you need and press
+<ENTER>. (See Section 402 for a list of commands.) You can use
+the following keystrokes as you type commands or view
+displays:
+
+
+
+image:images/gr000005.png["control characters"]
+
+
+
+''''
+
+
+
+link:page3.html[Previous]
+|
+link:../[Up]
+| Page 4 |
+link:page5.html[Next]
+
