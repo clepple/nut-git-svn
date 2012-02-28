@@ -65,7 +65,7 @@ int	deny_severity = LOG_WARNING;
 	/* everything else */
 	const char	*progname;
 
-static nut_ctype_t	*firstclient = NULL;
+nut_ctype_t	*firstclient = NULL;
 /* static nut_ctype_t	*lastclient = NULL; */
 
 	/* default is to listen on all local interfaces */
