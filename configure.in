@@ -446,11 +446,11 @@ if test "${nut_with_ssl}" != "no"; then
    fi
 fi
 
-AM_CONDITIONAL(WITH_SSL, test "${nut_with_ssl}" = "yes")
 AM_CONDITIONAL(WITH_NSS, test "${nut_with_nss}" = "yes")
 AM_CONDITIONAL(WITH_OPENSSL, test "${nut_with_openssl}" = "yes")
 
-NUT_REPORT_FEATURE([enable SSL support], [${nut_with_ssl} ${nut_ssl_lib}])
+NUT_REPORT_FEATURE([enable SSL support], [${nut_with_ssl}], [${nut_ssl_lib}],
+					[WITH_SSL], [Define to enable SSL])
 
 dnl ----------------------------------------------------------------------
 dnl Check for --with-wrap
