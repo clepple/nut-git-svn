@@ -149,7 +149,7 @@ static int ssl_error(PRFileDesc *ssl, int ret)
 static SECStatus AuthCertificate(CERTCertDBHandle *arg, PRFileDesc *fd,
 	PRBool checksig, PRBool isServer)
 {
-	ctype_t *client  = (ctype_t *)SSL_RevealPinArg(fd);
+	nut_ctype_t *client  = (nut_ctype_t *)SSL_RevealPinArg(fd);
 	SECStatus status = SSL_AuthCertificate(arg, fd, checksig, isServer);
 	upslogx(LOG_INFO, "Intend to authenticate client %s : %s.",
 		client?client->addr:"(unnamed)",
@@ -157,7 +157,7 @@ static SECStatus AuthCertificate(CERTCertDBHandle *arg, PRFileDesc *fd,
 	return status;
 }
 
-static SECStatus BadCertHandler(ctype_t *arg, PRFileDesc *fd)
+static SECStatus BadCertHandler(nut_ctype_t *arg, PRFileDesc *fd)
 {
 	upslogx(LOG_WARNING, "Certificate validation failed for %s",
 		(arg&&arg->addr)?arg->addr:"<unnamed>");
@@ -173,7 +173,7 @@ static SECStatus BadCertHandler(ctype_t *arg, PRFileDesc *fd)
 #endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
 }
 
-static void HandshakeCallback(PRFileDesc *fd, ctype_t *client_data)
+static void HandshakeCallback(PRFileDesc *fd, nut_ctype_t *client_data)
 {
 	upslogx(LOG_INFO, "SSL handshake done successfully with client %s",
 		client_data->addr);
@@ -185,11 +185,13 @@ static void HandshakeCallback(PRFileDesc *fd, ctype_t *client_data)
 
 void ssl_init()
 {
+#ifdef WITH_OPENSSL
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
 	const SSL_METHOD	*ssl_method;
 #else
 	SSL_METHOD	*ssl_method;
-#endif
+#endif /* OPENSSL_VERSION_NUMBER >= 0x10000000L */
+#endif /* WITH_OPENSSL */
 #ifdef WITH_NSS
 	SECStatus status;
 #endif /* WITH_NSS */
