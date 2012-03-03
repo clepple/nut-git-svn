@@ -42,24 +42,6 @@
 #endif /* WITH_NSS */
 
 
-/* stubs for non-ssl compiles */
-void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
-{
-	send_err(client, NUT_ERR_FEATURE_NOT_SUPPORTED);
-	return;
-}
-
-int ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
-{
-	upslogx(LOG_ERR, "ssl_write called but SSL wasn't compiled in");
-	return -1;
-}
-
-int ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
-{
-	upslogx(LOG_ERR, "ssl_read called but SSL wasn't compiled in");
-	return -1;
-}
 char	*certfile = NULL;
 char	*certname = NULL;
 char	*certpasswd = NULL;
@@ -69,12 +51,6 @@ int certrequest = 0;
 #endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
 int	ssl_initialized = 0;
 
-void ssl_finish(nut_ctype_t *client)
-{
-	if (client->ssl) {
-		upslogx(LOG_ERR, "ssl_finish found active SSL connection but SSL wasn't compiled in");
-	}
-}
 #ifdef WITH_SSL
 
 #ifdef WITH_OPENSSL
@@ -438,28 +414,6 @@ void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
 		return;
 	}
 	
-static int ssl_accept(nut_ctype_t *client)
-{
-	int	ret;
-
-	ret = SSL_accept(client->ssl);
-	switch (ret)
-	{
-	case 1:
-		client->ssl_connected = 1;
-		upsdebugx(3, "SSL connected");
-		break;
-		
-	case 0:
-		upslog_with_errno(LOG_ERR, "SSL_accept do not accept handshake.");
-		ssl_error(client->ssl, ret);
-		break;
-	case -1:
-		upslog_with_errno(LOG_ERR, "Unknown return value from SSL_accept");
-		ssl_error(client->ssl, ret);
-		break;
-	}
-	
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 
 	socket = PR_ImportTCPSocket(client->sock_fd);
@@ -541,7 +495,7 @@ static int ssl_accept(nut_ctype_t *client)
 	client->ssl_connected = 1;
 }
 
-void ssl_finish(ctype_t *client)
+void ssl_finish(nut_ctype_t *client)
 {
 	if (client->ssl) {
 #ifdef WITH_OPENSSL
