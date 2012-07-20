@@ -2,8 +2,10 @@
 
 AM_CFLAGS = -I$(top_srcdir)/include
 
-noinst_LTLIBRARIES = libparseconf.la libcommon.la
+noinst_LTLIBRARIES = libparseconf.la libcommon.la libnutconf.la
 libparseconf_la_SOURCES = parseconf.c
+
+libnutconf_la_SOURCES = nutconf.c
 
 # do not hard depend on '../include/nut_version.h', since it blocks
 # 'dist', and is only required for actual build, in which case
@@ -13,3 +15,10 @@ libcommon_la_SOURCES = common.c state.c upsconf.c
 # ensure inclusion of local implementation of missing systems functions
 # using LTLIBOBJS. Refer to configure.in -> AC_REPLACE_FUNCS
 libcommon_la_LIBADD = libparseconf.la @LTLIBOBJS@
+
+
+TESTS = testnutconf
+check_PROGRAMS = $(TESTS)
+
+testnutconf_SOURCES = test.cpp
+testnutconf_LDADD = libnutconf.la
