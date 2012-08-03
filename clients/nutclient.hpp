@@ -111,13 +111,14 @@ public:
 	Device getDevice(const std::string& name)throw(NutException);
 	std::vector<Device> getDevices()throw(NutException);
 
-protected:
+
 	std::vector<std::string> get(const std::string& subcmd, const std::string& params = "")
 		throw(nut::NutException);
 
 	std::vector<std::vector<std::string> > list(const std::string& subcmd, const std::string& params = "")
 		throw(nut::NutException);
 
+protected:
 	std::string sendQuery(const std::string& req)throw(nut::IOException);
 	static void detectError(const std::string& req)throw(nut::NutException);
 
