@@ -363,6 +363,7 @@ std::vector<std::string> Client::explode(const std::string& str, size_t begin)
 			{
 				/* if(!temp.empty()) : Must not occur */
 					res.push_back(temp);
+				temp.clear();
 				state = INIT;
 			}
 			else if(c=='\\')
@@ -373,6 +374,7 @@ std::vector<std::string> Client::explode(const std::string& str, size_t begin)
 			{
 				/* if(!temp.empty()) : Must not occur */
 					res.push_back(temp);
+				temp.clear();
 				state = QUOTED_STRING;
 			}
 			/* What about bad characters ? */
@@ -389,6 +391,7 @@ std::vector<std::string> Client::explode(const std::string& str, size_t begin)
 			else if(c=='"')
 			{
 				res.push_back(temp);
+				temp.clear();
 				state = INIT;
 			}
 			/* What about bad characters ? */
@@ -524,6 +527,41 @@ std::string Device::getDescription()throw(NutException)
 	return getClient()->get("UPSDESC", getName())[0];
 }
 
+std::vector<std::string> Device::getVariableValue(const std::string& name)
+	throw(NutException)
+{
+	return getClient()->get("VAR", getName() + " " + name);
+}
+
+std::map<std::string,std::vector<std::string> > Device::getVariableValues()
+	throw(NutException)
+{
+	std::map<std::string,std::vector<std::string> >  map;
+	
+	std::vector<std::vector<std::string> > res = getClient()->list("VAR", getName());
+	for(size_t n=0; n<res.size(); ++n)
+	{
+		std::vector<std::string>& vals = res[n];
+		std::string var = vals[0];
+		vals.erase(vals.begin());
+		map[var] = vals;
+	}
+
+	return map;
+}
+
+std::set<std::string> Device::getVariableNames()throw(NutException)
+{
+	std::set<std::string> set;
+	
+	std::vector<std::vector<std::string> > res = getClient()->list("VAR", getName());
+	for(size_t n=0; n<res.size(); ++n)
+	{
+		set.insert(res[n][0]);
+	}
+
+	return set;
+}
 
 } /* namespace nut */
 
