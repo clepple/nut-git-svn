@@ -108,6 +108,8 @@ public:
 	std::string getHost()const;
 	int getPort()const;
 
+	void authenticate(const std::string& user, const std::string& passwd)throw(NutException);
+
 	Device getDevice(const std::string& name)throw(NutException);
 	std::vector<Device> getDevices()throw(NutException);
 
@@ -203,8 +205,6 @@ private:
 	Device* _device;
 	std::string _name;
 };
-
-
 
 } /* namespace nut */
 

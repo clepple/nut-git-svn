@@ -255,6 +255,13 @@ void Client::disconnect()
 	_socket->disconnect();
 }
 
+void Client::authenticate(const std::string& user, const std::string& passwd)
+	throw(NutException)
+{
+	detectError(sendQuery("USERNAME " + user));
+	detectError(sendQuery("PASSWORD " + passwd));
+}
+
 std::vector<std::string> Client::get
 	(const std::string& subcmd, const std::string& params) throw(NutException)
 {
