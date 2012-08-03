@@ -514,7 +514,7 @@ Device::operator bool()const
 
 bool Device::operator!()const
 {
-	return _client==NULL ||  _name.empty();
+	return !isOk();
 }
 
 bool Device::operator==(const Device& dev)const
@@ -561,6 +561,125 @@ std::set<std::string> Device::getVariableNames()throw(NutException)
 	}
 
 	return set;
+}
+
+std::set<std::string> Device::getRWVariableNames()throw(NutException)
+{
+	std::set<std::string> set;
+	
+	std::vector<std::vector<std::string> > res = getClient()->list("RW", getName());
+	for(size_t n=0; n<res.size(); ++n)
+	{
+		set.insert(res[n][0]);
+	}
+
+	return set;
+}
+
+Variable Device::getVariable(const std::string& name)throw(NutException)
+{
+	getClient()->get("VAR", getName() + " " + name);
+	return Variable(this, name);
+}
+
+std::set<Variable> Device::getVariables()throw(NutException)
+{
+	std::set<Variable> set;
+
+	std::vector<std::vector<std::string> > res = getClient()->list("VAR", getName());
+	for(size_t n=0; n<res.size(); ++n)
+	{
+		set.insert(Variable(this, res[n][0]));
+	}
+
+	return set;
+}
+
+std::set<Variable> Device::getRWVariables()throw(NutException)
+{
+	std::set<Variable> set;
+
+	std::vector<std::vector<std::string> > res = getClient()->list("RW", getName());
+	for(size_t n=0; n<res.size(); ++n)
+	{
+		set.insert(Variable(this, res[n][0]));
+	}
+
+	return set;
+}
+
+
+/*
+ *
+ * Variable implementation
+ *
+ */
+
+Variable::Variable(Device* dev, const std::string& name):
+_device(dev),
+_name(name)
+{
+}
+
+Variable::Variable(const Variable& var):
+_device(var._device),
+_name(var._name)
+{
+}
+
+Variable::~Variable()
+{
+}
+
+std::string Variable::getName()const
+{
+	return _name;
+}
+
+const Device* Variable::getDevice()const
+{
+	return _device;
+}
+
+Device* Variable::getDevice()
+{
+	return _device;
+}
+
+bool Variable::isOk()const
+{
+	return _device!=NULL && !_name.empty();
+
+}
+
+Variable::operator bool()const
+{
+	return isOk();
+}
+
+bool Variable::operator!()const
+{
+	return !isOk();
+}
+
+bool Variable::operator==(const Variable& var)const
+{
+	return var._device==_device && var._name==_name;
+}
+
+bool Variable::operator<(const Variable& var)const
+{
+	return getName()<var.getName();
+}
+
+std::vector<std::string> Variable::getValue()throw(NutException)
+{
+	return getDevice()->getClient()->get("VAR", getDevice()->getName() + " " + getName());
+}
+
+std::string Variable::getDescription()throw(NutException)
+{
+	return getDevice()->getClient()->get("DESC", getDevice()->getName() + " " + getName())[0];
 }
 
 } /* namespace nut */

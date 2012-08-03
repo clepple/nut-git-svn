@@ -37,7 +37,7 @@ class Socket;
 
 class Client;
 class Device;
-
+class Variable;
 
 /**
  * Basic nut exception.
@@ -93,6 +93,7 @@ public:
 class Client
 {
 	friend class Device;
+	friend class Variable;
 public:
 	Client();
 	Client(const std::string& host, int port = 3493)throw(nut::IOException);
@@ -154,12 +155,51 @@ public:
 	std::vector<std::string> getVariableValue(const std::string& name)throw(NutException);
 	std::map<std::string,std::vector<std::string> > getVariableValues()throw(NutException);
 	std::set<std::string> getVariableNames()throw(NutException);
+	std::set<std::string> getRWVariableNames()throw(NutException);
+
+	Variable getVariable(const std::string& name)throw(NutException);
+	std::set<Variable> getVariables()throw(NutException);
+	std::set<Variable> getRWVariables()throw(NutException);
 
 protected:
 	Device(Client* client, const std::string& name);
 
 private:
 	Client* _client;
+	std::string _name;
+};
+
+/**
+ * Variable attached to a device.
+ * Variable is a lightweight class which can be copied easily.
+ */
+class Variable
+{
+	friend class Device;
+public:
+	~Variable();
+
+	Variable(const Variable& var);
+
+	std::string getName()const;
+	const Device* getDevice()const;
+	Device* getDevice();
+
+	bool isOk()const;
+	operator bool()const;
+	bool operator!()const;
+	bool operator==(const Variable& var)const;
+
+	bool operator<(const Variable& var)const;
+
+	std::vector<std::string> getValue()throw(NutException);
+	std::string getDescription()throw(NutException);
+
+protected:
+	Variable(Device* dev, const std::string& name);
+
+private:
+	Device* _device;
 	std::string _name;
 };
 
