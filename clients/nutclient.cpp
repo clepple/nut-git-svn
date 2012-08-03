@@ -446,6 +446,25 @@ std::vector<std::string> Client::explode(const std::string& str, size_t begin)
 	return res;
 }
 
+std::string Client::escape(const std::string& str)
+{
+	std::string res = "\"";
+	
+	for(size_t n=0; n<str.size(); n++)
+	{
+		char c = str[n];
+		if(c=='"')
+			res += "\\\"";
+		else if(c=='\\')
+			res += "\\\\";
+		else
+			res += c;
+	}
+
+	res += '"';
+	return res; 
+}
+
 Device Client::getDevice(const std::string& name)throw(NutException)
 {
 	try
@@ -591,10 +610,21 @@ std::set<std::string> Device::getRWVariableNames()throw(NutException)
 
 void Device::setVariable(const std::string& name, const std::string& value)throw(NutException)
 {
-	// TODO escape value
-	std::string query = "SET VAR " + getName() + " " + name + " " + value;
+	std::string query = "SET VAR " + getName() + " " + name + " " + Client::escape(value);
 	getClient()->detectError(getClient()->sendQuery(query));
 }
+
+void Device::setVariable(const std::string& name, const std::vector<std::string>& values)
+	throw(NutException)
+{
+	std::string query = "SET VAR " + getName() + " " + name;
+	for(size_t n=0; n<values.size(); ++n)
+	{
+		query += " " + Client::escape(values[n]);
+	}
+	getClient()->detectError(getClient()->sendQuery(query));
+}
+
 
 
 Variable Device::getVariable(const std::string& name)throw(NutException)
@@ -764,6 +794,12 @@ void Variable::setValue(const std::string& value)throw(NutException)
 {
 	getDevice()->setVariable(getName(), value);
 }
+
+void Variable::setValues(const std::vector<std::string>& values)throw(NutException)
+{
+	getDevice()->setVariable(getName(), values);
+}
+
 
 /*
  *
