@@ -46,6 +46,7 @@ public:
 	NutException(const std::string& msg):_msg(msg){}
 	virtual ~NutException() throw() {}
 	virtual const char * what() const throw() {return this->_msg.c_str();}
+	virtual std::string str() const throw() {return this->_msg;}
 private:
 	std::string _msg;
 };
@@ -145,6 +146,8 @@ public:
 	operator bool()const;
 	bool operator!()const;
 	bool operator==(const Device& dev)const;
+
+	std::string getDescription()throw(NutException);
 
 protected:
 	Device(Client* client, const std::string& name);

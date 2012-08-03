@@ -42,13 +42,27 @@ int main(int, char**)
 		std::vector<Device> devs = client.getDevices();
 		for(auto dev : devs)
 		{
-			cout << dev.getName() << endl;
+			try
+			{
+				cout << dev.getName() << " : " << dev.getDescription() << endl;
+			}
+			catch(NutException& ex)
+			{
+				if(ex.str()=="DRIVER-NOT-CONNECTED")
+				{
+					cerr << dev.getName() << " : not connected" << endl;
+				}
+				else
+				{
+					throw;
+				}
+			}
 		}
 
 	}
 	catch(NutException& ex)
 	{
-		cerr << ex.what() << endl;
+		cerr << "Exception : '" << ex.what() << "'" << endl;
 	}
 
 	return 0;

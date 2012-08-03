@@ -438,7 +438,7 @@ Device Client::getDevice(const std::string& name)throw(NutException)
 	}
 	catch(NutException& ex)
 	{
-		if(ex.what()=="UNKNOWN-UPS")
+		if(ex.str()=="UNKNOWN-UPS")
 			return Device(NULL, "");
 		else
 			throw;
@@ -519,6 +519,10 @@ bool Device::operator==(const Device& dev)const
 	return dev._client==_client && dev._name==_name;
 }
 
+std::string Device::getDescription()throw(NutException)
+{
+	return getClient()->get("UPSDESC", getName())[0];
+}
 
 
 } /* namespace nut */
