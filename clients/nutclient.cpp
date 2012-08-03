@@ -621,6 +621,43 @@ std::set<Variable> Device::getRWVariables()throw(NutException)
 	return set;
 }
 
+std::set<std::string> Device::getCommandNames()throw(NutException)
+{
+	std::set<std::string> cmds;
+
+	std::vector<std::vector<std::string> > res = getClient()->list("CMD", getName());
+	for(size_t n=0; n<res.size(); ++n)
+	{
+		cmds.insert(res[n][0]);
+	}
+
+	return cmds;
+}
+
+std::set<Command> Device::getCommands()throw(NutException)
+{
+	std::set<Command> cmds;
+
+	std::vector<std::vector<std::string> > res = getClient()->list("CMD", getName());
+	for(size_t n=0; n<res.size(); ++n)
+	{
+		cmds.insert(Command(this, res[n][0]));
+	}
+
+	return cmds;
+}
+
+Command Device::getCommand(const std::string& name)throw(NutException)
+{
+	getClient()->get("CMDDESC", name);
+	return Command(this, name);
+}
+
+void Device::executeCommand(const std::string& name)throw(NutException)
+{
+	getClient()->detectError(getClient()->sendQuery("INSTCMD " + getName() + " " + name));
+}
+
 void Device::login()throw(NutException)
 {
 	getClient()->detectError(getClient()->sendQuery("LOGIN " + getName()));
@@ -713,6 +750,80 @@ std::vector<std::string> Variable::getValue()throw(NutException)
 std::string Variable::getDescription()throw(NutException)
 {
 	return getDevice()->getClient()->get("DESC", getDevice()->getName() + " " + getName())[0];
+}
+
+
+/*
+ *
+ * Command implementation
+ *
+ */
+
+Command::Command(Device* dev, const std::string& name):
+_device(dev),
+_name(name)
+{
+}
+
+Command::Command(const Command& cmd):
+_device(cmd._device),
+_name(cmd._name)
+{
+}
+
+Command::~Command()
+{
+}
+
+std::string Command::getName()const
+{
+	return _name;
+}
+
+const Device* Command::getDevice()const
+{
+	return _device;
+}
+
+Device* Command::getDevice()
+{
+	return _device;
+}
+
+bool Command::isOk()const
+{
+	return _device!=NULL && !_name.empty();
+
+}
+
+Command::operator bool()const
+{
+	return isOk();
+}
+
+bool Command::operator!()const
+{
+	return !isOk();
+}
+
+bool Command::operator==(const Command& cmd)const
+{
+	return cmd._device==_device && cmd._name==_name;
+}
+
+bool Command::operator<(const Command& cmd)const
+{
+	return getName()<cmd.getName();
+}
+
+std::string Command::getDescription()throw(NutException)
+{
+	return getDevice()->getClient()->get("CMDDESC", getDevice()->getName() + " " + getName())[0];
+}
+
+void Command::execute()throw(NutException)
+{
+	getDevice()->executeCommand(getName());
 }
 
 } /* namespace nut */
