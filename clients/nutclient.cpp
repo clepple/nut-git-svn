@@ -589,6 +589,14 @@ std::set<std::string> Device::getRWVariableNames()throw(NutException)
 	return set;
 }
 
+void Device::setVariable(const std::string& name, const std::string& value)throw(NutException)
+{
+	// TODO escape value
+	std::string query = "SET VAR " + getName() + " " + name + " " + value;
+	getClient()->detectError(getClient()->sendQuery(query));
+}
+
+
 Variable Device::getVariable(const std::string& name)throw(NutException)
 {
 	getClient()->get("VAR", getName() + " " + name);
@@ -752,6 +760,10 @@ std::string Variable::getDescription()throw(NutException)
 	return getDevice()->getClient()->get("DESC", getDevice()->getName() + " " + getName())[0];
 }
 
+void Variable::setValue(const std::string& value)throw(NutException)
+{
+	getDevice()->setVariable(getName(), value);
+}
 
 /*
  *

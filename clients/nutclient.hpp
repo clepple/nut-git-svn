@@ -162,6 +162,7 @@ public:
 	std::map<std::string,std::vector<std::string> > getVariableValues()throw(NutException);
 	std::set<std::string> getVariableNames()throw(NutException);
 	std::set<std::string> getRWVariableNames()throw(NutException);
+	void setVariable(const std::string& name, const std::string& value)throw(NutException);
 
 	Variable getVariable(const std::string& name)throw(NutException);
 	std::set<Variable> getVariables()throw(NutException);
@@ -210,6 +211,8 @@ public:
 
 	std::vector<std::string> getValue()throw(NutException);
 	std::string getDescription()throw(NutException);
+
+	void setValue(const std::string& value)throw(NutException);
 
 protected:
 	Variable(Device* dev, const std::string& name);
