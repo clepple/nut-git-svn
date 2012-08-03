@@ -45,7 +45,6 @@ int main(int, char**)
 			try
 			{
 				cout << dev.getName() << " : " << dev.getDescription() << endl;
-
 				std::set<Variable> vars = dev.getVariables();
 				for(auto var : vars)
 				{
@@ -65,6 +64,8 @@ int main(int, char**)
 				}
 			}
 		}
+
+		client.logout();
 
 	}
 	catch(NutException& ex)

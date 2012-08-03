@@ -109,6 +109,7 @@ public:
 	int getPort()const;
 
 	void authenticate(const std::string& user, const std::string& passwd)throw(NutException);
+	void logout()throw(NutException);
 
 	Device getDevice(const std::string& name)throw(NutException);
 	std::vector<Device> getDevices()throw(NutException);
@@ -163,6 +164,11 @@ public:
 	Variable getVariable(const std::string& name)throw(NutException);
 	std::set<Variable> getVariables()throw(NutException);
 	std::set<Variable> getRWVariables()throw(NutException);
+
+	void login()throw(NutException);
+	void master()throw(NutException);
+	void forcedShutdown()throw(NutException);
+	int getNumLogins()throw(NutException);
 
 protected:
 	Device(Client* client, const std::string& name);

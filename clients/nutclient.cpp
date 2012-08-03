@@ -38,9 +38,9 @@
    typedef struct sockaddr SOCKADDR;
    typedef struct in_addr IN_ADDR;
 #endif /* WIN32 */
-
 /* End of Windows/Linux Socket compatibility layer: */
 
+#include <cstdlib>
 
 namespace nut
 {
@@ -260,6 +260,12 @@ void Client::authenticate(const std::string& user, const std::string& passwd)
 {
 	detectError(sendQuery("USERNAME " + user));
 	detectError(sendQuery("PASSWORD " + passwd));
+}
+
+void Client::logout()throw(NutException)
+{
+	detectError(sendQuery("LOGOUT"));
+	_socket->disconnect();
 }
 
 std::vector<std::string> Client::get
@@ -615,6 +621,26 @@ std::set<Variable> Device::getRWVariables()throw(NutException)
 	return set;
 }
 
+void Device::login()throw(NutException)
+{
+	getClient()->detectError(getClient()->sendQuery("LOGIN " + getName()));
+}
+
+void Device::master()throw(NutException)
+{
+	getClient()->detectError(getClient()->sendQuery("MASTER " + getName()));
+}
+
+void Device::forcedShutdown()throw(NutException)
+{
+	getClient()->detectError(getClient()->sendQuery("FSD " + getName()));
+}
+
+int Device::getNumLogins()throw(NutException)
+{
+	std::string num = getClient()->get("NUMLOGINS", getName())[0];
+	return atoi(num.c_str());
+}
 
 /*
  *
