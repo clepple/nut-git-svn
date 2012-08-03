@@ -128,6 +128,7 @@ protected:
 	static void detectError(const std::string& req)throw(nut::NutException);
 
 	static std::vector<std::string> explode(const std::string& str, size_t begin=0);
+	static std::string escape(const std::string& str);
 
 private:
 	std::string _host;
@@ -163,6 +164,7 @@ public:
 	std::set<std::string> getVariableNames()throw(NutException);
 	std::set<std::string> getRWVariableNames()throw(NutException);
 	void setVariable(const std::string& name, const std::string& value)throw(NutException);
+	void setVariable(const std::string& name, const std::vector<std::string>& values)throw(NutException);
 
 	Variable getVariable(const std::string& name)throw(NutException);
 	std::set<Variable> getVariables()throw(NutException);
@@ -213,6 +215,7 @@ public:
 	std::string getDescription()throw(NutException);
 
 	void setValue(const std::string& value)throw(NutException);
+	void setValues(const std::vector<std::string>& values)throw(NutException);
 
 protected:
 	Variable(Device* dev, const std::string& name);
