@@ -48,8 +48,13 @@ int main(int, char**)
 				std::set<Variable> vars = dev.getVariables();
 				for(auto var : vars)
 				{
-					cout << "  " << var.getName() << " : " << var.getValue()[0]
+					cout << "  - " << var.getName() << " : " << var.getValue()[0]
 						<< " (" << var.getDescription() << ")" << endl;
+				}
+				std::set<Command> cmds = dev.getCommands();
+				for(auto cmd : cmds)
+				{
+					cout << "  + " << cmd.getName() << " : " << cmd.getDescription() << endl;
 				}
 			}
 			catch(NutException& ex)

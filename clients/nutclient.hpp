@@ -38,6 +38,7 @@ class Socket;
 class Client;
 class Device;
 class Variable;
+class Command;
 
 /**
  * Basic nut exception.
@@ -94,6 +95,7 @@ class Client
 {
 	friend class Device;
 	friend class Variable;
+	friend class Command;
 public:
 	Client();
 	Client(const std::string& host, int port = 3493)throw(nut::IOException);
@@ -165,6 +167,11 @@ public:
 	std::set<Variable> getVariables()throw(NutException);
 	std::set<Variable> getRWVariables()throw(NutException);
 
+	std::set<std::string> getCommandNames()throw(NutException);
+	std::set<Command> getCommands()throw(NutException);
+	Command getCommand(const std::string& name)throw(NutException);
+	void executeCommand(const std::string& name)throw(NutException);
+
 	void login()throw(NutException);
 	void master()throw(NutException);
 	void forcedShutdown()throw(NutException);
@@ -206,6 +213,41 @@ public:
 
 protected:
 	Variable(Device* dev, const std::string& name);
+
+private:
+	Device* _device;
+	std::string _name;
+};
+
+/**
+ * Command attached to a device.
+ * Command is a lightweight class which can be copied easily.
+ */
+class Command
+{
+	friend class Device;
+public:
+	~Command();
+
+	Command(const Command& cmd);
+
+	std::string getName()const;
+	const Device* getDevice()const;
+	Device* getDevice();
+
+	bool isOk()const;
+	operator bool()const;
+	bool operator!()const;
+	bool operator==(const Command& var)const;
+
+	bool operator<(const Command& var)const;
+
+	std::string getDescription()throw(NutException);
+
+	void execute()throw(NutException);
+
+protected:
+	Command(Device* dev, const std::string& name);
 
 private:
 	Device* _device;
