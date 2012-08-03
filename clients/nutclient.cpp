@@ -45,7 +45,6 @@
 namespace nut
 {
 
-
 namespace internal
 {
 
@@ -430,6 +429,96 @@ std::vector<std::string> Client::explode(const std::string& str, size_t begin)
 
 	return res;
 }
+
+Device Client::getDevice(const std::string& name)throw(NutException)
+{
+	try
+	{
+		get("UPSDESC", name);
+	}
+	catch(NutException& ex)
+	{
+		if(ex.what()=="UNKNOWN-UPS")
+			return Device(NULL, "");
+		else
+			throw;
+	}
+	return Device(this, name);
+}
+
+std::vector<Device> Client::getDevices()throw(NutException)
+{
+	std::vector<Device> arr;
+
+	std::vector<std::vector<std::string> > devs = list("UPS");
+	for(std::vector<std::vector<std::string> >::iterator it=devs.begin();
+		it!=devs.end(); ++it)
+	{
+		std::string id = (*it)[0];
+		if(!id.empty())
+			arr.push_back(Device(this, id));
+	}
+
+	return arr;
+}
+
+/*
+ *
+ * Device implementation
+ *
+ */
+
+Device::Device(Client* client, const std::string& name):
+_client(client),
+_name(name)
+{
+}
+
+Device::Device(const Device& dev):
+_client(dev._client),
+_name(dev._name)
+{
+}
+
+Device::~Device()
+{
+}
+
+std::string Device::getName()const
+{
+	return _name;
+}
+
+const Client* Device::getClient()const
+{
+	return _client;
+}
+
+Client* Device::getClient()
+{
+	return _client;
+}
+
+bool Device::isOk()const
+{
+	return _client!=NULL && !_name.empty();
+}
+
+Device::operator bool()const
+{
+	return isOk();	
+}
+
+bool Device::operator!()const
+{
+	return _client==NULL ||  _name.empty();
+}
+
+bool Device::operator==(const Device& dev)const
+{
+	return dev._client==_client && dev._name==_name;
+}
+
 
 
 } /* namespace nut */

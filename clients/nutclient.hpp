@@ -33,6 +33,10 @@ class Socket;
 } /* namespace internal */
 
 
+class Client;
+class Device;
+
+
 /**
  * Basic nut exception.
  */
@@ -85,6 +89,7 @@ public:
  */
 class Client
 {
+	friend class Device;
 public:
 	Client();
 	Client(const std::string& host, int port = 3493)throw(nut::IOException);
@@ -99,8 +104,10 @@ public:
 	std::string getHost()const;
 	int getPort()const;
 
+	Device getDevice(const std::string& name)throw(NutException);
+	std::vector<Device> getDevices()throw(NutException);
+
 protected:
-public:
 	std::vector<std::string> get(const std::string& subcmd, const std::string& params = "")
 		throw(nut::NutException);
 
@@ -118,6 +125,34 @@ private:
 	internal::Socket* _socket;
 };
 
+
+/**
+ * Device attached to a client.
+ * Device is a lightweight class which can be copied easily.
+ */
+class Device
+{
+	friend class Client;
+public:
+	~Device();
+	Device(const Device& dev);
+
+	std::string getName()const;
+	const Client* getClient()const;
+	Client* getClient();
+
+	bool isOk()const;
+	operator bool()const;
+	bool operator!()const;
+	bool operator==(const Device& dev)const;
+
+protected:
+	Device(Client* client, const std::string& name);
+
+private:
+	Client* _client;
+	std::string _name;
+};
 
 
 } /* namespace nut */
