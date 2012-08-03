@@ -22,6 +22,8 @@
 
 #include <string>
 #include <vector>
+#include <map>
+#include <set>
 #include <exception>
 
 namespace nut
@@ -149,6 +151,10 @@ public:
 
 	std::string getDescription()throw(NutException);
 
+	std::vector<std::string> getVariableValue(const std::string& name)throw(NutException);
+	std::map<std::string,std::vector<std::string> > getVariableValues()throw(NutException);
+	std::set<std::string> getVariableNames()throw(NutException);
+
 protected:
 	Device(Client* client, const std::string& name);
 
@@ -156,6 +162,7 @@ private:
 	Client* _client;
 	std::string _name;
 };
+
 
 
 } /* namespace nut */

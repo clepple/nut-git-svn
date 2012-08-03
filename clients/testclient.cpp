@@ -45,6 +45,12 @@ int main(int, char**)
 			try
 			{
 				cout << dev.getName() << " : " << dev.getDescription() << endl;
+
+				std::map<std::string,std::vector<std::string> > vars = dev.getVariableValues();
+				for(auto var : vars)
+				{
+					cout << "  " << var.first << " : " << var.second[0] << endl;
+				}
 			}
 			catch(NutException& ex)
 			{
