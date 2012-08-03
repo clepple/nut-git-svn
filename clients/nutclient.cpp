@@ -256,8 +256,8 @@ void Client::disconnect()
 	_socket->disconnect();
 }
 
-std::string Client::get(const std::string& subcmd, const std::string& params)
-	throw(nut::IOException)
+std::vector<std::string> Client::get
+	(const std::string& subcmd, const std::string& params) throw(NutException)
 {
 	std::string req = subcmd;
 	if(!params.empty())
@@ -271,11 +271,11 @@ std::string Client::get(const std::string& subcmd, const std::string& params)
 		throw NutException("Invalid response");
 	}
 	
-	return res.substr(req.size()+1);
+	return explode(res, req.size());
 }
 
-std::vector<std::string> Client::list(const std::string& subcmd, const std::string& params)
-	throw(nut::IOException)
+std::vector<std::vector<std::string> > Client::list
+	(const std::string& subcmd, const std::string& params) throw(NutException)
 {
 	std::string req = subcmd;
 	if(!params.empty())
@@ -289,7 +289,7 @@ std::vector<std::string> Client::list(const std::string& subcmd, const std::stri
 		throw NutException("Invalid response");
 	}
 
-	std::vector<std::string> arr;
+	std::vector<std::vector<std::string> > arr;
 	while(true)
 	{
 		res = _socket->read();
@@ -300,7 +300,7 @@ std::vector<std::string> Client::list(const std::string& subcmd, const std::stri
 		}
 		if(res.substr(0, req.size()) == req)
 		{
-			arr.push_back(res.substr(req.size()+1));
+			arr.push_back(explode(res, req.size()));
 		}
 		else
 		{
@@ -322,6 +322,115 @@ void Client::detectError(const std::string& req)throw(NutException)
 		throw NutException(req.substr(4));
 	}
 }
+
+std::vector<std::string> Client::explode(const std::string& str, size_t begin)
+{
+	std::vector<std::string> res;
+	std::string temp;
+
+	enum STATE {
+		INIT,
+		SIMPLE_STRING,
+		QUOTED_STRING,
+		SIMPLE_ESCAPE,
+		QUOTED_ESCAPE
+	} state = INIT;
+
+	for(size_t idx=begin; idx<str.size(); ++idx)
+	{
+		char c = str[idx];
+		switch(state)
+		{
+		case INIT:
+			if(c==' ' /* || c=='\t' */)
+			{ /* Do nothing */ }
+			else if(c=='"')
+			{
+				state = QUOTED_STRING;
+			}
+			else if(c=='\\')
+			{
+				state = SIMPLE_ESCAPE;
+			}
+			/* What about bad characters ? */
+			else
+			{
+				temp += c;
+				state = SIMPLE_STRING;
+			}
+			break;
+		case SIMPLE_STRING:
+			if(c==' ' /* || c=='\t' */)
+			{
+				/* if(!temp.empty()) : Must not occur */
+					res.push_back(temp);
+				state = INIT;
+			}
+			else if(c=='\\')
+			{
+				state = SIMPLE_ESCAPE;
+			}
+			else if(c=='"')
+			{
+				/* if(!temp.empty()) : Must not occur */
+					res.push_back(temp);
+				state = QUOTED_STRING;
+			}
+			/* What about bad characters ? */
+			else
+			{
+				temp += c;
+			}		
+			break;
+		case QUOTED_STRING:
+			if(c=='\\')
+			{
+				state = QUOTED_ESCAPE;
+			}
+			else if(c=='"')
+			{
+				res.push_back(temp);
+				state = INIT;
+			}
+			/* What about bad characters ? */
+			else
+			{
+				temp += c;
+			}
+			break;
+		case SIMPLE_ESCAPE:
+			if(c=='\\' || c=='"' || c==' ' /* || c=='\t'*/)
+			{
+				temp += c;
+			}
+			else
+			{
+				temp += '\\' + c; // Really do this ?
+			}
+			state = SIMPLE_STRING;
+			break;
+		case QUOTED_ESCAPE:
+			if(c=='\\' || c=='"')
+			{
+				temp += c;
+			}
+			else
+			{
+				temp += '\\' + c; // Really do this ?
+			}
+			state = QUOTED_STRING;
+			break;
+		}
+	}
+
+	if(!temp.empty())
+	{
+		res.push_back(temp);
+	}
+
+	return res;
+}
+
 
 } /* namespace nut */
 

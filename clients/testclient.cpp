@@ -39,10 +39,10 @@ int main(int, char**)
 
 		cout << "connected to " << host << ":" << port << endl;
 
-		std::vector<std::string> list = client.list("UPS");
-		for(std::vector<std::string>::iterator it=list.begin(); it!=list.end(); it++)
+		std::vector<std::vector<std::string> > list = client.list("UPS");
+		for(auto it=list.begin(); it!=list.end(); it++)
 		{
-			cout << *it << endl;
+			cout << (*it)[0] << endl;
 		}
 
 	}

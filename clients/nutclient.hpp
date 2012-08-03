@@ -101,13 +101,16 @@ public:
 
 protected:
 public:
-	std::string get(const std::string& subcmd, const std::string& params = "")
-		throw(nut::IOException);
-	std::vector<std::string> list(const std::string& subcmd, const std::string& params = "")
-		throw(nut::IOException);
+	std::vector<std::string> get(const std::string& subcmd, const std::string& params = "")
+		throw(nut::NutException);
+
+	std::vector<std::vector<std::string> > list(const std::string& subcmd, const std::string& params = "")
+		throw(nut::NutException);
 
 	std::string sendQuery(const std::string& req)throw(nut::IOException);
 	static void detectError(const std::string& req)throw(nut::NutException);
+
+	static std::vector<std::string> explode(const std::string& str, size_t begin=0);
 
 private:
 	std::string _host;

@@ -55,5 +55,6 @@ libupsclient_la_LDFLAGS = -version-info 2:0:1
 libnutclientpp_la_SOURCES = nutclient.hpp nutclient.cpp
 noinst_PROGRAMS = test
 test_SOURCES = testclient.cpp
+test_CXXFLAGS = -std=gnu++0x
 test_LDADD = libnutclientpp.la
 
