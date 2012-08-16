@@ -36,6 +36,7 @@ class Socket;
 
 
 class Client;
+class TcpClient;
 class Device;
 class Variable;
 class Command;
@@ -88,8 +89,8 @@ public:
 };
 
 /**
- * A nut client is the starting point to dialog to UPSD.
- * It can connect to an UPSD then retrieve its device list.
+ * A nut client is the starting point to dialog to NUTD.
+ * It can connect to an NUTD then retrieve its device list.
  */
 class Client
 {
@@ -97,35 +98,93 @@ class Client
 	friend class Variable;
 	friend class Command;
 public:
-	Client();
-	Client(const std::string& host, int port = 3493)throw(nut::IOException);
 	~Client();
+
+	virtual void authenticate(const std::string& user, const std::string& passwd)throw(NutException)=0;
+	virtual void logout()throw(NutException)=0;
+
+	virtual Device getDevice(const std::string& name)throw(NutException)=0;
+	virtual std::set<std::string> getDeviceNames()throw(NutException)=0;
+  virtual bool hasDevice(const std::string& dev)throw(NutException);
+	virtual std::set<Device> getDevices()throw(NutException);
+  virtual std::string getDeviceDescription(const std::string& name)throw(NutException)=0;
+
+	virtual std::set<std::string> getDeviceVariableNames(const std::string& dev)throw(NutException)=0;
+	virtual std::set<std::string> getDeviceRWVariableNames(const std::string& dev)throw(NutException)=0;
+  virtual bool hasDeviceVariable(const std::string& dev, const std::string& name)throw(NutException);
+  virtual std::string getDeviceVariableDescription(const std::string& dev, const std::string& name)throw(NutException)=0;
+  virtual std::vector<std::string> getDeviceVariableValue(const std::string& dev, const std::string& name)throw(NutException)=0;
+	virtual std::map<std::string,std::vector<std::string> > getDeviceVariableValues(const std::string& dev)throw(NutException);
+	virtual void setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value)throw(NutException)=0;
+	virtual void setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values)throw(NutException)=0;
+
+  virtual std::set<std::string> getDeviceCommandNames(const std::string& dev)throw(NutException)=0;
+  virtual bool hasDeviceCommand(const std::string& dev, const std::string& name)throw(NutException);
+  virtual std::string getDeviceCommandDescription(const std::string& dev, const std::string& name)throw(NutException)=0;
+	virtual void executeDeviceCommand(const std::string& dev, const std::string& name)throw(NutException)=0;
+
+ 	virtual void deviceLogin(const std::string& dev)throw(NutException)=0;
+	virtual void deviceMaster(const std::string& dev)throw(NutException)=0;
+	virtual void deviceForcedShutdown(const std::string& dev)throw(NutException)=0;
+	virtual int deviceGetNumLogins(const std::string& dev)throw(NutException)=0;
+
+protected:
+	Client();
+};
+
+/**
+ * TCP NUTD client.
+ * It connect to NUTD with a TCP socket.
+ */
+class TcpClient : public Client
+{
+public:
+	TcpClient();
+	TcpClient(const std::string& host, int port = 3493)throw(nut::IOException);
+	~TcpClient();
 
 	void connect(const std::string& host, int port = 3493)throw(nut::IOException);
 	void connect()throw(nut::IOException);
 
 	bool isConnected()const;
 	void disconnect();
-	
+
 	std::string getHost()const;
 	int getPort()const;
 
-	void authenticate(const std::string& user, const std::string& passwd)throw(NutException);
-	void logout()throw(NutException);
+	virtual void authenticate(const std::string& user, const std::string& passwd)throw(NutException);
+	virtual void logout()throw(NutException);
+  
+	virtual Device getDevice(const std::string& name)throw(NutException);
+	virtual std::set<std::string> getDeviceNames()throw(NutException);
+  virtual std::string getDeviceDescription(const std::string& name)throw(NutException);
 
-	Device getDevice(const std::string& name)throw(NutException);
-	std::vector<Device> getDevices()throw(NutException);
+	virtual std::set<std::string> getDeviceVariableNames(const std::string& dev)throw(NutException);
+	virtual std::set<std::string> getDeviceRWVariableNames(const std::string& dev)throw(NutException);
+  virtual std::string getDeviceVariableDescription(const std::string& dev, const std::string& name)throw(NutException);
+  virtual std::vector<std::string> getDeviceVariableValue(const std::string& dev, const std::string& name)throw(NutException);
+	virtual std::map<std::string,std::vector<std::string> > getDeviceVariableValues(const std::string& dev)throw(NutException);
+	virtual void setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value)throw(NutException);
+	virtual void setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values)throw(NutException);
 
+  virtual std::set<std::string> getDeviceCommandNames(const std::string& dev)throw(NutException);
+  virtual std::string getDeviceCommandDescription(const std::string& dev, const std::string& name)throw(NutException);
+	virtual void executeDeviceCommand(const std::string& dev, const std::string& name)throw(NutException);
+
+ 	virtual void deviceLogin(const std::string& dev)throw(NutException);
+	virtual void deviceMaster(const std::string& dev)throw(NutException);
+	virtual void deviceForcedShutdown(const std::string& dev)throw(NutException);
+	virtual int deviceGetNumLogins(const std::string& dev)throw(NutException);
+
+protected:
+	std::string sendQuery(const std::string& req)throw(nut::IOException);
+	static void detectError(const std::string& req)throw(nut::NutException);
 
 	std::vector<std::string> get(const std::string& subcmd, const std::string& params = "")
 		throw(nut::NutException);
 
 	std::vector<std::vector<std::string> > list(const std::string& subcmd, const std::string& params = "")
 		throw(nut::NutException);
-
-protected:
-	std::string sendQuery(const std::string& req)throw(nut::IOException);
-	static void detectError(const std::string& req)throw(nut::NutException);
 
 	static std::vector<std::string> explode(const std::string& str, size_t begin=0);
 	static std::string escape(const std::string& str);
@@ -144,6 +203,7 @@ private:
 class Device
 {
 	friend class Client;
+	friend class TcpClient;
 public:
 	~Device();
 	Device(const Device& dev);
@@ -195,6 +255,7 @@ private:
 class Variable
 {
 	friend class Device;
+	friend class TcpClient;
 public:
 	~Variable();
 
@@ -232,6 +293,7 @@ private:
 class Command
 {
 	friend class Device;
+	friend class TcpClient;
 public:
 	~Command();
 

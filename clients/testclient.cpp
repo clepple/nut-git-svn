@@ -34,12 +34,12 @@ int main(int, char**)
 
 	try
 	{
-		Client client;
+		TcpClient client;
 		client.connect(host, port);
 
 		cout << "connected to " << host << ":" << port << endl;
 
-		std::vector<Device> devs = client.getDevices();
+		std::set<Device> devs = client.getDevices();
 		for(auto dev : devs)
 		{
 			try
