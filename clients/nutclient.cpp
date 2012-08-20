@@ -217,6 +217,14 @@ bool Client::hasDevice(const std::string& dev)throw(NutException)
   return devs.find(dev) != devs.end();
 }
 
+Device Client::getDevice(const std::string& name)throw(NutException)
+{
+  if(hasDevice(name)
+    return Device(this, name);
+  else
+    return Device(NULL, "");
+}
+
 std::set<Device> Client::getDevices()throw(NutException)
 {
 	std::set<Device> res;

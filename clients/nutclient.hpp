@@ -91,6 +91,7 @@ public:
 /**
  * A nut client is the starting point to dialog to NUTD.
  * It can connect to an NUTD then retrieve its device list.
+ * Use a specific client class to connect to a NUTD.
  */
 class Client
 {
@@ -100,33 +101,167 @@ class Client
 public:
 	~Client();
 
+  /**
+   * Intend to authenticate to a NUTD server.
+   * Set the username and password associated to the connexion.
+   * \param user User name.
+   * \param passwd Password.
+   * \todo Is his method is global to all connexion protocol or is it specific to TCP ?
+   * \note Actually, authentication fails only if already set, not if bad values are sent.
+   */
 	virtual void authenticate(const std::string& user, const std::string& passwd)throw(NutException)=0;
+  /**
+   * Disconnect from the NUTD server.
+   * \todo Is his method is global to all connexion protocol or is it specific to TCP ?
+   */
 	virtual void logout()throw(NutException)=0;
 
-	virtual Device getDevice(const std::string& name)throw(NutException)=0;
-	virtual std::set<std::string> getDeviceNames()throw(NutException)=0;
-  virtual bool hasDevice(const std::string& dev)throw(NutException);
+  /**
+   * Device manipulations.
+   * \see nut::Device
+   * \{
+   */
+  /**
+   * Retrieve a device from its name.
+   * If the device does not exist, a bad (not ok) device is returned.
+   * \param name Name of the device.
+   * \return The device.
+   */
+	virtual Device getDevice(const std::string& name)throw(NutException);
+  /**
+   * Retrieve the list of all devices supported by UPSD server.
+   * \return The set of supported devices.
+   */
 	virtual std::set<Device> getDevices()throw(NutException);
+  /**
+   * Test if a device is supported by the NUTD server.
+   * \param dev Device name.
+   * \return true if supported, false otherwise.
+   */
+  virtual bool hasDevice(const std::string& dev)throw(NutException);
+  /**
+   * Retrieve names of devices supported by NUTD server.
+   * \return The set of names of supported devices.
+   */
+	virtual std::set<std::string> getDeviceNames()throw(NutException)=0;
+  /**
+   * Retrieve the description of a device.
+   * \param name Device name.
+   * \return Device description.
+   */
   virtual std::string getDeviceDescription(const std::string& name)throw(NutException)=0;
+  /** \} */
 
+  /**
+   * Variable manipulations.
+   * \see nut::Variable
+   * \{
+   */
+  /**
+   * Retrieve names of all variables supported by a device.
+   * \param dev Device name
+   * \return Variable names
+   */
 	virtual std::set<std::string> getDeviceVariableNames(const std::string& dev)throw(NutException)=0;
+  /**
+   * Retrieve names of read/write variables supported by a device.
+   * \param dev Device name
+   * \return RW variable names
+   */
 	virtual std::set<std::string> getDeviceRWVariableNames(const std::string& dev)throw(NutException)=0;
+  /**
+   * Test if a variable is supported by a device.
+   * \param dev Device name
+   * \param name Variable name
+   * \return true if the variable is supported.
+   */
   virtual bool hasDeviceVariable(const std::string& dev, const std::string& name)throw(NutException);
+  /**
+   * Retrieve the description of a variable.
+   * \param dev Device name
+   * \param name Variable name
+   * \return Variable description if provided.
+   */
   virtual std::string getDeviceVariableDescription(const std::string& dev, const std::string& name)throw(NutException)=0;
+  /**
+   * Retrieve values of a variable.
+   * \param dev Device name
+   * \param name Variable name
+   * \return Variable values (usually one) if available.
+   */
   virtual std::vector<std::string> getDeviceVariableValue(const std::string& dev, const std::string& name)throw(NutException)=0;
+  /**
+   * Retrieve values of all variables of a device.
+   * \param dev Device name
+   * \return Variable values indexed by variable names.
+   */
 	virtual std::map<std::string,std::vector<std::string> > getDeviceVariableValues(const std::string& dev)throw(NutException);
+  /**
+   * Intend to set the value of a variable.
+   * \param dev Device name
+   * \param name Variable name
+   * \param value Variable value
+   */  
 	virtual void setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value)throw(NutException)=0;
+  /**
+   * Intend to set the value of a variable.
+   * \param dev Device name
+   * \param name Variable name
+   * \param value Variable value
+   */  
 	virtual void setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values)throw(NutException)=0;
+  /** \} */
 
+  /**
+   * Instant command manipulations.
+   * \see nut::Command
+   * \{
+   */
+  /**
+   * Retrieve names of all commands supported by a device.
+   * \param dev Device name
+   * \return Command names
+   */
   virtual std::set<std::string> getDeviceCommandNames(const std::string& dev)throw(NutException)=0;
+  /**
+   * Test if a command is supported by a device.
+   * \param dev Device name
+   * \param name Command name
+   * \return true if the command is supported.
+   */
   virtual bool hasDeviceCommand(const std::string& dev, const std::string& name)throw(NutException);
+  /**
+   * Retrieve the description of a command.
+   * \param dev Device name
+   * \param name Command name
+   * \return Command description if provided.
+   */
   virtual std::string getDeviceCommandDescription(const std::string& dev, const std::string& name)throw(NutException)=0;
+  /**
+   * Intend to execute a command.
+   * \param dev Device name
+   * \param name Command name
+   */
 	virtual void executeDeviceCommand(const std::string& dev, const std::string& name)throw(NutException)=0;
+  /** \} */
 
+  /**
+   * Device specific commands.
+   * \{
+   */
+  /**
+   * Log the current user (if authenticated) for a device.
+   * \param dev Device name.
+   */
  	virtual void deviceLogin(const std::string& dev)throw(NutException)=0;
+  /**
+   * Retrieve the number of user longged in the specified device.
+   * \param dev Device name.
+   * \return Number of logged-in users.
+   */
+	virtual int deviceGetNumLogins(const std::string& dev)throw(NutException)=0;
 	virtual void deviceMaster(const std::string& dev)throw(NutException)=0;
 	virtual void deviceForcedShutdown(const std::string& dev)throw(NutException)=0;
-	virtual int deviceGetNumLogins(const std::string& dev)throw(NutException)=0;
 
 protected:
 	Client();
@@ -139,17 +274,52 @@ protected:
 class TcpClient : public Client
 {
 public:
+  /**
+   * Construct a nut TcpClient object.
+   * You must call one of TcpClient::connect() after.
+   */
 	TcpClient();
+
+  /**
+   * Construct a nut TcpClient object then connect it to the specified server.
+   * \param host Server host name.
+   * \param port Server port.
+   */
 	TcpClient(const std::string& host, int port = 3493)throw(nut::IOException);
 	~TcpClient();
 
+  /**
+   * Connect it to the specified server.
+   * \param host Server host name.
+   * \param port Server port.
+   */
 	void connect(const std::string& host, int port = 3493)throw(nut::IOException);
+
+  /**
+   * Connect to the server.
+   * Host name and ports must have already set (usefull for reconnection).
+   */
 	void connect()throw(nut::IOException);
 
+  /**
+   * Test if the connection is active.
+   * \return tru if the connection is active.
+   */
 	bool isConnected()const;
+  /**
+   * Force the deconnection.
+   */
 	void disconnect();
 
+  /**
+   * Retriueve the host name of the server the client is connected to.
+   * \return Server host name
+   */
 	std::string getHost()const;
+  /**
+   * Retriueve the port of host of the server the client is connected to.
+   * \return Server port
+   */
 	int getPort()const;
 
 	virtual void authenticate(const std::string& user, const std::string& passwd)throw(NutException);
