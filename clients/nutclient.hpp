@@ -378,36 +378,127 @@ public:
 	~Device();
 	Device(const Device& dev);
 
+	/**
+	 * Retrieve the name of the device.
+	 * The name is the unique id under which NUTD known the device.
+	 */
 	std::string getName()const;
+	/**
+	 * Retrieve the client to which the device is attached.
+	 */
 	const Client* getClient()const;
+	/**
+	 * Retrieve the client to which the device is attached.
+	 */
 	Client* getClient();
 
+	/**
+	 * Test if the device is valid (has a name and is attached to a client).
+	 */
 	bool isOk()const;
+	/**
+	 * Test if the device is valid (has a name and is attached to a client).
+     * @see Device::isOk()
+	 */
 	operator bool()const;
+	/**
+	 * Test if the device is not valid (has no name or is not attached to any client).
+     * @see Device::isOk()
+	 */
 	bool operator!()const;
+	/**
+	 * Test if the two devices are sames (same name ad same client attached to).
+	 */
 	bool operator==(const Device& dev)const;
 
+	/**
+	 * Retrieve the description of the devce if specified.
+	 */
 	std::string getDescription()throw(NutException);
 
+	/**
+	 * Intend to retrieve the value of a variable of the device.
+	 * \param name Name of the variable to get.
+     * \return Value of the variable, if available.
+	 */
 	std::vector<std::string> getVariableValue(const std::string& name)throw(NutException);
+	/**
+	 * Intend to retrieve values of all variables of the devices.
+	 * \return Map of all variables values indexed by their names.
+	 */
 	std::map<std::string,std::vector<std::string> > getVariableValues()throw(NutException);
+	/**
+	 * Retrieve all variables names supported by the device.
+	 * \return Set of available variable names.
+	 */
 	std::set<std::string> getVariableNames()throw(NutException);
+	/**
+	 * Retrieve all Read/Write variables names supported by the device.
+	 * \return Set of available Read/Write variable names.
+	 */
 	std::set<std::string> getRWVariableNames()throw(NutException);
+	/**
+	 * Intend to set the value of a variable of the device.
+	 * \param name Variable name.
+	 * \param value New variable value.
+	 */
 	void setVariable(const std::string& name, const std::string& value)throw(NutException);
+	/**
+	 * Intend to set values of a variable of the device.
+	 * \param name Variable name.
+	 * \param value New variable values.
+	 */
 	void setVariable(const std::string& name, const std::vector<std::string>& values)throw(NutException);
 
+	/**
+	 * Retrieve a Variable object representing the specified variable.
+     * \param name Variable name.
+	 * \return Variable object.
+	 */
 	Variable getVariable(const std::string& name)throw(NutException);
+	/**
+	 * Retrieve Variable objects representing all variables available for the device.
+	 * \return Set of Variable objects.
+	 */
 	std::set<Variable> getVariables()throw(NutException);
+	/**
+	 * Retrieve Variable objects representing all Read/Write variables available for the device.
+	 * \return Set of Variable objects.
+	 */
 	std::set<Variable> getRWVariables()throw(NutException);
 
+	/**
+	 * Retrieve names of all commands supported by the device.
+	 * \return Set of available command names.
+	 */
 	std::set<std::string> getCommandNames()throw(NutException);
+	/**
+	 * Retrieve objects for all commands supported by the device.
+	 * \return Set of available Command objects.
+	 */
 	std::set<Command> getCommands()throw(NutException);
+	/**
+	 * Retrieve an object representing a command of the device.
+	 * \param name Command name.
+	 * \return Command object.
+	 */
 	Command getCommand(const std::string& name)throw(NutException);
+	/**
+	 * Intend to execute a command on the device.
+	 * \param name Command name.
+	 */
 	void executeCommand(const std::string& name)throw(NutException);
 
+	/**
+	 * Login current client's user for the device.
+	 */
 	void login()throw(NutException);
 	void master()throw(NutException);
 	void forcedShutdown()throw(NutException);
+	/**
+	 * Retrieve the number of logged user for the device.
+	 * \return Number of users.
+	 */
 	int getNumLogins()throw(NutException);
 
 protected:
@@ -431,21 +522,63 @@ public:
 
 	Variable(const Variable& var);
 
+	/**
+	 * Retrieve variable name.
+	 */
 	std::string getName()const;
+	/**
+	 * Retrieve the device to which the variable is attached to.
+	 */
 	const Device* getDevice()const;
+	/**
+	 * Retrieve the device to which the variable is attached to.
+	 */
 	Device* getDevice();
 
+	/**
+	 * Test if the variable is valid (has a name and is attached to a device).
+	 */
 	bool isOk()const;
+	/**
+	 * Test if the variable is valid (has a name and is attached to a device).
+	 * @see Variable::isOk()
+	 */
 	operator bool()const;
+	/**
+	 * Test if the variable is not valid (has no name or is not attached to any device).
+	 * @see Variable::isOk()
+	 */
 	bool operator!()const;
+	/**
+	 * Test if the two variables are sames (same name ad same device attached to).
+	 */
 	bool operator==(const Variable& var)const;
 
+	/**
+	 * Less-than operator (based on variable name) to allow variable sorting.
+	 */
 	bool operator<(const Variable& var)const;
 
+	/**
+	 * Intend to retrieve variable value.
+	 * \return Value of the variable.
+	 */
 	std::vector<std::string> getValue()throw(NutException);
+	/**
+	 * Intend to retireve variable description.
+	 * \return Variable description if provided.
+	 */
 	std::string getDescription()throw(NutException);
 
+	/**
+	 * Intend to set a value to the variable.
+	 * \param value New variable value.
+	 */
 	void setValue(const std::string& value)throw(NutException);
+	/**
+	 * Intend to set (multiple) values to the variable.
+	 * \param value New variable values.
+	 */
 	void setValues(const std::vector<std::string>& values)throw(NutException);
 
 protected:
@@ -469,19 +602,53 @@ public:
 
 	Command(const Command& cmd);
 
+	/**
+	 * Retrieve command name.
+	 */
 	std::string getName()const;
+	/**
+	 * Retrieve the device to which the command is attached to.
+	 */
 	const Device* getDevice()const;
+	/**
+	 * Retrieve the device to which the command is attached to.
+	 */
 	Device* getDevice();
 
+	/**
+	 * Test if the command is valid (has a name and is attached to a device).
+	 */
 	bool isOk()const;
+	/**
+	 * Test if the command is valid (has a name and is attached to a device).
+	 * @see Command::isOk()
+	 */
 	operator bool()const;
+	/**
+	 * Test if the command is not valid (has no name or is not attached to any device).
+	 * @see Command::isOk()
+	 */
 	bool operator!()const;
+	/**
+	 * Test if the two commands are sames (same name ad same device attached to).
+	 */
 	bool operator==(const Command& var)const;
 
+	/**
+	 * Less-than operator (based on command name) to allow comand sorting.
+	 */
 	bool operator<(const Command& var)const;
 
+	/**
+	 * Intend to retireve command description.
+	 * \return Command description if provided.
+	 */
 	std::string getDescription()throw(NutException);
 
+	/**
+	 * Intend to retrieve command description.
+	 * \return Command description if provided.
+	 */
 	void execute()throw(NutException);
 
 protected:
