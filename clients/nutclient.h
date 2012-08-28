@@ -1,4 +1,4 @@
-/* nutclient.hpp - definitions for nutclient C++ library
+/* nutclient.h - definitions for nutclient C/C++ library
 
    Copyright (C) 2012  Emilien Kia <emilien.kia@gmail.com>
 
@@ -19,6 +19,9 @@
 
 #ifndef NUTCLIENT_HPP_SEEN
 #define NUTCLIENT_HPP_SEEN
+
+/* Begin of C++ nutclient library declaration */
+#ifdef __cplusplus
 
 #include <string>
 #include <vector>
@@ -660,5 +663,9 @@ private:
 };
 
 } /* namespace nut */
+
+#endif /* __cplusplus */
+/* End of C++ nutclient library declaration */
+
 
 #endif	/* NUTCLIENT_HPP_SEEN */
