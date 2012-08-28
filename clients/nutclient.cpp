@@ -1,4 +1,4 @@
-/* nutclient.hpp - nutclient C++ library implementation
+/* nutclient.cpp - nutclient C++ library implementation
 
    Copyright (C) 2012  Emilien Kia <emilien.kia@gmail.com>
 
@@ -17,7 +17,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#include "nutclient.hpp"
+#include "nutclient.h"
 
 /* Windows/Linux Socket compatibility layer: */
 /* Thanks to Benjamin Roux (http://broux.developpez.com/articles/c/sockets/) */
@@ -41,6 +41,7 @@
 /* End of Windows/Linux Socket compatibility layer: */
 
 #include <cstdlib>
+#include <cstring>
 
 namespace nut
 {
@@ -213,23 +214,23 @@ Client::~Client()
 
 bool Client::hasDevice(const std::string& dev)throw(NutException)
 {
-  std::set<std::string> devs = getDeviceNames();
-  return devs.find(dev) != devs.end();
+	std::set<std::string> devs = getDeviceNames();
+	return devs.find(dev) != devs.end();
 }
 
 Device Client::getDevice(const std::string& name)throw(NutException)
 {
-  if(hasDevice(name)
-    return Device(this, name);
-  else
-    return Device(NULL, "");
+	if(hasDevice(name))
+		return Device(this, name);
+	else
+		return Device(NULL, "");
 }
 
 std::set<Device> Client::getDevices()throw(NutException)
 {
 	std::set<Device> res;
 
-  std::set<std::string> devs = getDeviceNames();
+	std::set<std::string> devs = getDeviceNames();
 	for(std::set<std::string>::iterator it=devs.begin(); it!=devs.end(); ++it)
 	{
 	  res.insert(Device(this, *it));
@@ -240,8 +241,8 @@ std::set<Device> Client::getDevices()throw(NutException)
 
 bool Client::hasDeviceVariable(const std::string& dev, const std::string& name)throw(NutException)
 {
-  std::set<std::string> names = getDeviceVariableNames(dev);
-  return names.find(name) != names.end();
+	std::set<std::string> names = getDeviceVariableNames(dev);
+	return names.find(name) != names.end();
 }
 
 std::map<std::string,std::vector<std::string> > Client::getDeviceVariableValues(const std::string& dev)throw(NutException)
@@ -1025,4 +1026,470 @@ void Command::execute()throw(NutException)
 }
 
 } /* namespace nut */
+
+
+/**
+ * C nutclient API.
+ */
+extern "C" {
+
+
+strarr strarr_alloc(unsigned short count)
+{
+	strarr arr = (strarr)malloc((count+1)*sizeof(char*));
+	arr[count] = NULL;
+	return arr;
+}
+
+void strarr_free(strarr arr)
+{
+	char** pstr = arr;
+	while(*pstr!=NULL)
+	{
+		free(*pstr);
+		++pstr;
+	}
+	free(arr);
+}
+
+
+static strarr stringset_to_strarr(const std::set<std::string>& strset)
+{
+	strarr arr = strarr_alloc(strset.size());
+	strarr pstr = arr;
+	for(std::set<std::string>::const_iterator it=strset.begin(); it!=strset.end(); ++it)
+	{
+		*pstr = strdup(it->c_str());
+	}
+	return arr;	
+}
+
+static strarr stringvector_to_strarr(const std::vector<std::string>& strset)
+{
+	strarr arr = strarr_alloc(strset.size());
+	strarr pstr = arr;
+	for(std::vector<std::string>::const_iterator it=strset.begin(); it!=strset.end(); ++it)
+	{
+		*pstr = strdup(it->c_str());
+	}
+	return arr;	
+}
+
+
+NUTCLIENT_t nutclient_create_tcp_client(const char* host, unsigned short port)
+{
+	nut::TcpClient* client = new nut::TcpClient;
+	try
+	{
+		client->connect(host, port);
+		return (NUTCLIENT_t)client;
+	}
+	catch(nut::NutException& ex)
+	{
+		// TODO really catch it
+		delete client;
+		return NULL;
+	}
+	
+}
+
+void nutclient_destroy(NUTCLIENT_t client)
+{
+	if(client)
+	{
+		delete (nut::Client*)client;
+	}
+}
+
+int nutclient_tcp_is_connected(NUTCLIENT_TCP_t client)
+{
+	if(client)
+	{
+		nut::TcpClient* cl = dynamic_cast<nut::TcpClient*>((nut::Client*)client);
+		if(cl)
+		{
+			return cl->isConnected() ? 1 : 0;
+		}
+	}
+	return 0;
+}
+
+void nutclient_tcp_disconnected(NUTCLIENT_TCP_t client)
+{
+	if(client)
+	{
+		nut::TcpClient* cl = dynamic_cast<nut::TcpClient*>((nut::Client*)client);
+		if(cl)
+		{
+			cl->disconnect();
+		}
+	}
+}
+
+
+int nutclient_tcp_reconnected(NUTCLIENT_TCP_t client)
+{
+	if(client)
+	{
+		nut::TcpClient* cl = dynamic_cast<nut::TcpClient*>((nut::Client*)client);
+		if(cl)
+		{
+			try
+			{
+				cl->connect();
+				return 0;
+			}
+			catch(...){}
+		}
+	}
+	return -1;
+}
+
+void nutclient_authenticate(NUTCLIENT_t client, const char* login, const char* passwd)
+{
+	if(client)
+	{
+		nut::Client* cl = (nut::Client*)client;
+		if(cl)
+		{
+			try
+			{
+				cl->authenticate(login, passwd);
+			}
+			catch(...){}
+		}
+	}
+}
+
+void nutclient_logout(NUTCLIENT_t client)
+{
+	if(client)
+	{
+		nut::Client* cl = (nut::Client*)client;
+		if(cl)
+		{
+			try
+			{
+				cl->logout();
+			}
+			catch(...){}
+		}
+	}
+}
+
+void nutclient_device_login(NUTCLIENT_t client, const char* dev)
+{
+	if(client)
+	{
+		nut::Client* cl = (nut::Client*)client;
+		if(cl)
+		{
+			try
+			{
+				cl->deviceLogin(dev);
+			}
+			catch(...){}
+		}
+	}
+}
+
+int nutclient_get_device_num_logins(NUTCLIENT_t client, const char* dev)
+{
+	if(client)
+	{
+		nut::Client* cl = (nut::Client*)client;
+		if(cl)
+		{
+			try
+			{
+				return cl->deviceGetNumLogins(dev);
+			}
+			catch(...){}
+		}
+	}
+	return -1;
+}
+
+
+void nutclient_device_master(NUTCLIENT_t client, const char* dev)
+{
+	if(client)
+	{
+		nut::Client* cl = (nut::Client*)client;
+		if(cl)
+		{
+			try
+			{
+				cl->deviceMaster(dev);
+			}
+			catch(...){}
+		}
+	}
+}
+
+void nutclient_device_forced_shutdown(NUTCLIENT_t client, const char* dev)
+{
+	if(client)
+	{
+		nut::Client* cl = (nut::Client*)client;
+		if(cl)
+		{
+			try
+			{
+				cl->deviceForcedShutdown(dev);
+			}
+			catch(...){}
+		}
+	}
+}
+
+strarr nutclient_get_devices(NUTCLIENT_t client)
+{
+	if(client)
+	{
+		nut::Client* cl = (nut::Client*)client;
+		if(cl)
+		{
+			try
+			{
+				return stringset_to_strarr(cl->getDeviceNames());
+			}
+			catch(...){}
+		}
+	}
+	return NULL;	
+}
+
+int nutclient_has_device(NUTCLIENT_t client, const char* dev)
+{
+	if(client)
+	{
+		nut::Client* cl = (nut::Client*)client;
+		if(cl)
+		{
+			try
+			{
+				return cl->hasDevice(dev)?1:0;
+			}
+			catch(...){}
+		}
+	}
+	return 0;
+}
+
+char* nutclient_get_device_description(NUTCLIENT_t client, const char* dev)
+{
+	if(client)
+	{
+		nut::Client* cl = (nut::Client*)client;
+		if(cl)
+		{
+			try
+			{
+				return strdup(cl->getDeviceDescription(dev).c_str());
+			}
+			catch(...){}
+		}
+	}
+	return NULL;
+}
+
+strarr nutclient_get_device_variables(NUTCLIENT_t client, const char* dev)
+{
+	if(client)
+	{
+		nut::Client* cl = (nut::Client*)client;
+		if(cl)
+		{
+			try
+			{
+				return stringset_to_strarr(cl->getDeviceVariableNames(dev));
+			}
+			catch(...){}
+		}
+	}
+	return NULL;
+}
+
+strarr nutclient_get_device_rw_variables(NUTCLIENT_t client, const char* dev)
+{
+	if(client)
+	{
+		nut::Client* cl = (nut::Client*)client;
+		if(cl)
+		{
+			try
+			{
+				return stringset_to_strarr(cl->getDeviceRWVariableNames(dev));
+			}
+			catch(...){}
+		}
+	}
+	return NULL;
+}
+
+int nutclient_has_device_variable(NUTCLIENT_t client, const char* dev, const char* var)
+{
+	if(client)
+	{
+		nut::Client* cl = (nut::Client*)client;
+		if(cl)
+		{
+			try
+			{
+				return cl->hasDeviceVariable(dev, var)?1:0;
+			}
+			catch(...){}
+		}
+	}
+	return 0;
+}
+
+char* nutclient_get_device_variable_description(NUTCLIENT_t client, const char* dev, const char* var)
+{
+	if(client)
+	{
+		nut::Client* cl = (nut::Client*)client;
+		if(cl)
+		{
+			try
+			{
+				return strdup(cl->getDeviceVariableDescription(dev, var).c_str());
+			}
+			catch(...){}
+		}
+	}
+	return NULL;
+}
+
+strarr nutclient_get_device_variable_values(NUTCLIENT_t client, const char* dev, const char* var)
+{
+	if(client)
+	{
+		nut::Client* cl = (nut::Client*)client;
+		if(cl)
+		{
+			try
+			{
+				return stringvector_to_strarr(cl->getDeviceVariableValue(dev, var));
+			}
+			catch(...){}
+		}
+	}
+	return NULL;
+}
+
+void nutclient_set_device_variable_value(NUTCLIENT_t client, const char* dev, const char* var, const char* value)
+{
+	if(client)
+	{
+		nut::Client* cl = (nut::Client*)client;
+		if(cl)
+		{
+			try
+			{
+				cl->setDeviceVariable(dev, var, value);
+			}
+			catch(...){}
+		}
+	}
+}
+
+void nutclient_set_device_variable_values(NUTCLIENT_t client, const char* dev, const char* var, const strarr values)
+{
+	if(client)
+	{
+		nut::Client* cl = (nut::Client*)client;
+		if(cl)
+		{
+			try
+			{
+				std::vector<std::string> vals;
+				strarr pstr = (strarr)values;
+				while(*pstr)
+				{
+					vals.push_back(std::string(*pstr));
+					++pstr;
+				}
+
+				cl->setDeviceVariable(dev, var, vals);
+			}
+			catch(...){}
+		}
+	}
+}
+
+
+
+strarr nutclient_get_device_commands(NUTCLIENT_t client, const char* dev)
+{
+	if(client)
+	{
+		nut::Client* cl = (nut::Client*)client;
+		if(cl)
+		{
+			try
+			{
+				return stringset_to_strarr(cl->getDeviceCommandNames(dev));
+			}
+			catch(...){}
+		}
+	}
+	return NULL;
+}
+
+
+int nutclient_has_device_command(NUTCLIENT_t client, const char* dev, const char* cmd)
+{
+	if(client)
+	{
+		nut::Client* cl = (nut::Client*)client;
+		if(cl)
+		{
+			try
+			{
+				return cl->hasDeviceCommand(dev, cmd)?1:0;
+			}
+			catch(...){}
+		}
+	}
+	return 0;
+}
+
+
+char* nutclient_get_device_command_description(NUTCLIENT_t client, const char* dev, const char* cmd)
+{
+	if(client)
+	{
+		nut::Client* cl = (nut::Client*)client;
+		if(cl)
+		{
+			try
+			{
+				return strdup(cl->getDeviceCommandDescription(dev, cmd).c_str());
+			}
+			catch(...){}
+		}
+	}
+	return NULL;
+}
+
+void nutclient_execute_device_command(NUTCLIENT_t client, const char* dev, const char* cmd)
+{
+	if(client)
+	{
+		nut::Client* cl = (nut::Client*)client;
+		if(cl)
+		{
+			try
+			{
+				cl->executeDeviceCommand(dev, cmd);
+			}
+			catch(...){}
+		}
+	}
+}
+
+} /* extern "C" */
+
 

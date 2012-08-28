@@ -55,7 +55,7 @@ endif
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
 libupsclient_la_LDFLAGS = -version-info 3:1:0
 
-libnutclientpp_la_SOURCES = nutclient.hpp nutclient.cpp
+libnutclientpp_la_SOURCES = nutclient.h nutclient.cpp
 noinst_PROGRAMS = test
 test_SOURCES = testclient.cpp
 test_CXXFLAGS = -std=gnu++0x

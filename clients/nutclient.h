@@ -668,4 +668,244 @@ private:
 /* End of C++ nutclient library declaration */
 
 
+
+
+/* Begin of C nutclient library declaration */
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+
+/**
+ * Array of string manipulation functions.
+ * \{
+ */
+/** Array of string.*/
+typedef char** strarr;
+/**
+ * Alloc an array of string.
+ */
+strarr strarr_alloc(unsigned short count);
+
+/**
+ * Free an array of string.
+ */
+void strarr_free(strarr arr);
+
+
+/**
+ * Nut general client types and functions.
+ * \{
+ */
+/** Hidden structure representing a connection to NUTD. */
+typedef void* NUTCLIENT_t;
+
+/**
+ * Destroy a client. 
+ * \param client Nut client handle.
+ */
+void nutclient_destroy(NUTCLIENT_t client);
+
+/**
+ * Authenticate into the server.
+ * \param client Nut client handle.
+ * \param login User name.
+ * \param passwd Password.
+ */
+void nutclient_authenticate(NUTCLIENT_t client, const char* login, const char* passwd);
+
+/**
+ * Log out from server.
+ * \param client Nut client handle.
+ */
+void nutclient_logout(NUTCLIENT_t client);
+
+/**
+ * \param client Nut client handle.
+ * \param dev Device name to test.
+ */
+void nutclient_device_login(NUTCLIENT_t client, const char* dev);
+
+/**
+ * \param client Nut client handle.
+ * \param dev Device name to test.
+ */
+int nutclient_get_device_num_logins(NUTCLIENT_t client, const char* dev);
+
+/**
+ * \param client Nut client handle.
+ * \param dev Device name to test.
+ */
+void nutclient_device_master(NUTCLIENT_t client, const char* dev);
+
+/**
+ * \param client Nut client handle.
+ * \param dev Device name to test.
+ */
+void nutclient_device_forced_shutdown(NUTCLIENT_t client, const char* dev);
+
+/**
+ * Retrieve the list of devices of a client.
+ * \param client Nut client handle.
+ * \return Array of string containing device names. Must be freed with strarr_free(strarr).
+ */
+strarr nutclient_get_devices(NUTCLIENT_t client);
+
+/**
+ * Test if a device is supported by the client.
+ * \param client Nut client handle.
+ * \param dev Device name to test.
+ * \return 1 if supported, 0 otherwise.
+ */
+int nutclient_has_device(NUTCLIENT_t client, const char* dev);
+
+/**
+ * Intend to retrieve device description.
+ * \param client Nut client handle.
+ * \param dev Device name to test.
+ * \return Description of device. Must be freed after use.
+ */
+char* nutclient_get_device_description(NUTCLIENT_t client, const char* dev);
+
+/**
+ * Intend to retrieve device variable names.
+ * \param client Nut client handle.
+ * \param dev Device name.
+ * \return Array of string containing variable names. Must be freed with strarr_free(strarr).
+ */
+strarr nutclient_get_device_variables(NUTCLIENT_t client, const char* dev);
+
+/**
+ * Intend to retrieve device read/write variable names.
+ * \param client Nut client handle.
+ * \param dev Device name.
+ * \return Array of string containing read/write variable names. Must be freed with strarr_free(strarr).
+ */
+strarr nutclient_get_device_rw_variables(NUTCLIENT_t client, const char* dev);
+
+/**
+ * Test if a variable is supported by the device and the client.
+ * \param client Nut client handle.
+ * \param dev Device name.
+ * \param var Variable name.
+ * \return 1 if supported, 0 otherwise.
+ */
+int nutclient_has_device_variable(NUTCLIENT_t client, const char* dev, const char* var);
+
+/**
+ * Intend to retrieve device variable description.
+ * \param client Nut client handle.
+ * \param dev Device name.
+ * \param var Variable name.
+ * \return Description of device variable. Must be freed after use.
+ */
+char* nutclient_get_device_variable_description(NUTCLIENT_t client, const char* dev, const char* var);
+
+/**
+ * Intend to retrieve device variable values.
+ * \param client Nut client handle.
+ * \param dev Device name.
+ * \param var Variable name.
+ * \return Array of string containing variable values. Must be freed with strarr_free(strarr).
+ */
+strarr nutclient_get_device_variable_values(NUTCLIENT_t client, const char* dev, const char* var);
+
+/**
+ * Intend to set device variable value.
+ * \param client Nut client handle.
+ * \param dev Device name.
+ * \param var Variable name.
+ * \param value Value to set.
+ */
+void nutclient_set_device_variable_value(NUTCLIENT_t client, const char* dev, const char* var, const char* value);
+
+/**
+ * Intend to set device variable  multiple values.
+ * \param client Nut client handle.
+ * \param dev Device name.
+ * \param var Variable name.
+ * \param values Values to set. The cller is responsible to free it after call.
+ */
+void nutclient_set_device_variable_values(NUTCLIENT_t client, const char* dev, const char* var, const strarr values);
+
+/**
+ * Intend to retrieve device command names.
+ * \param client Nut client handle.
+ * \param dev Device name.
+ * \return Array of string containing command names. Must be freed with strarr_free(strarr).
+ */
+strarr nutclient_get_device_commands(NUTCLIENT_t client, const char* dev);
+
+/**
+ * Test if a command is supported by the device and the client.
+ * \param client Nut client handle.
+ * \param dev Device name.
+ * \param cmd Command name.
+ * \return 1 if supported, 0 otherwise.
+ */
+int nutclient_has_device_command(NUTCLIENT_t client, const char* dev, const char* cmd);
+
+/**
+ * Intend to retrieve device command description.
+ * \param client Nut client handle.
+ * \param dev Device name.
+ * \param cmd Command name.
+ * \return Description of device command. Must be freed after use.
+ */
+char* nutclient_get_device_command_description(NUTCLIENT_t client, const char* dev, const char* cmd);
+
+/**
+ * Intend to execute device command.
+ * \param client Nut client handle.
+ * \param dev Device name.
+ * \param cmd Command name.
+ */
+void nutclient_execute_device_command(NUTCLIENT_t client, const char* dev, const char* cmd);
+
+/** \} */
+
+
+/**
+ * Nut TCP client dedicated types and functions
+ * \{
+ */
+/**
+ * Hidden structure representing a TCP connection to NUTD. 
+ * NUTCLIENT_TCP_t is back compatible to NUTCLIENT_t.
+ */
+typedef NUTCLIENT_t NUTCLIENT_TCP_t;
+
+/**
+ * Create a client to NUTD using a TCP connection.
+ * \param host Host name to connect to.
+ * \param port Host port.
+ * \return New client or NULL if failed.
+ */
+NUTCLIENT_TCP_t nutclient_create_tcp_client(const char* host, unsigned short port);
+/**
+ * Test if a nut TCP client is connected.
+ * \param client Nut TCP client handle.
+ * \return 1 if connected, 0 otherwise.
+ */
+int nutclient_tcp_is_connected(NUTCLIENT_TCP_t client);
+/**
+ * Disconnect a nut TCP client.
+ * \param client Nut TCP client handle.
+ */
+void nutclient_tcp_disconnected(NUTCLIENT_TCP_t client);
+/**
+ * Intend to reconnect a nut TCP client.
+ * \param client Nut TCP client handle.
+ * \return 0 if correctly connected.
+ * \todo Implement different error codes.
+ */
+int nutclient_tcp_reconnected(NUTCLIENT_TCP_t client);
+/** \} */
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+/* End of C nutclient library declaration */
+
+
 #endif	/* NUTCLIENT_HPP_SEEN */
