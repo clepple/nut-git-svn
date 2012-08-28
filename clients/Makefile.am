@@ -52,7 +52,7 @@ if WITH_SSL
 endif
 libupsclient_la_LDFLAGS = -version-info 2:0:1
 
-libnutclientpp_la_SOURCES = nutclient.hpp nutclient.cpp
+libnutclientpp_la_SOURCES = nutclient.h nutclient.cpp
 noinst_PROGRAMS = test
 test_SOURCES = testclient.cpp
 test_CXXFLAGS = -std=gnu++0x
