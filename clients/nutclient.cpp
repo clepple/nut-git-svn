@@ -40,8 +40,19 @@
 #endif /* WIN32 */
 /* End of Windows/Linux Socket compatibility layer: */
 
-#include <cstdlib>
-#include <cstring>
+
+/* Include nut common utility functions or define simple ones if not */
+#ifdef HAVE_NUTCOMMON
+#include "common.h"
+#else /* HAVE_NUTCOMMON */
+#include <stdlib.h>
+#include <string.h>
+static inline void *xmalloc(size_t size){return malloc(size);}
+static inline void *xcalloc(size_t number, size_t size){return calloc(number, size);}
+static inline void *xrealloc(void *ptr, size_t size){return realloc(ptr, size);}
+static inline char *xstrdup(const char *string){return strdup(string);}
+#endif /* HAVE_NUTCOMMON */
+
 
 namespace nut
 {
@@ -1036,7 +1047,7 @@ extern "C" {
 
 strarr strarr_alloc(unsigned short count)
 {
-	strarr arr = (strarr)malloc((count+1)*sizeof(char*));
+	strarr arr = (strarr)xcalloc(count+1, sizeof(char*));
 	arr[count] = NULL;
 	return arr;
 }
@@ -1059,7 +1070,7 @@ static strarr stringset_to_strarr(const std::set<std::string>& strset)
 	strarr pstr = arr;
 	for(std::set<std::string>::const_iterator it=strset.begin(); it!=strset.end(); ++it)
 	{
-		*pstr = strdup(it->c_str());
+		*pstr = xstrdup(it->c_str());
 	}
 	return arr;	
 }
@@ -1070,7 +1081,7 @@ static strarr stringvector_to_strarr(const std::vector<std::string>& strset)
 	strarr pstr = arr;
 	for(std::vector<std::string>::const_iterator it=strset.begin(); it!=strset.end(); ++it)
 	{
-		*pstr = strdup(it->c_str());
+		*pstr = xstrdup(it->c_str());
 	}
 	return arr;	
 }
@@ -1286,7 +1297,7 @@ char* nutclient_get_device_description(NUTCLIENT_t client, const char* dev)
 		{
 			try
 			{
-				return strdup(cl->getDeviceDescription(dev).c_str());
+				return xstrdup(cl->getDeviceDescription(dev).c_str());
 			}
 			catch(...){}
 		}
@@ -1354,7 +1365,7 @@ char* nutclient_get_device_variable_description(NUTCLIENT_t client, const char* 
 		{
 			try
 			{
-				return strdup(cl->getDeviceVariableDescription(dev, var).c_str());
+				return xstrdup(cl->getDeviceVariableDescription(dev, var).c_str());
 			}
 			catch(...){}
 		}
@@ -1466,7 +1477,7 @@ char* nutclient_get_device_command_description(NUTCLIENT_t client, const char* d
 		{
 			try
 			{
-				return strdup(cl->getDeviceCommandDescription(dev, cmd).c_str());
+				return xstrdup(cl->getDeviceCommandDescription(dev, cmd).c_str());
 			}
 			catch(...){}
 		}
