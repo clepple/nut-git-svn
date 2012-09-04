@@ -92,6 +92,16 @@ public:
 };
 
 /**
+ * IO oriented nut exception when there is no response.
+ */
+class TimeoutException : public IOException
+{
+public:
+	TimeoutException():IOException("Timeout"){}
+	virtual ~TimeoutException() throw() {}
+};
+
+/**
  * A nut client is the starting point to dialog to NUTD.
  * It can connect to an NUTD then retrieve its device list.
  * Use a specific client class to connect to a NUTD.
@@ -315,6 +325,19 @@ public:
 	void disconnect();
 
   /**
+   * Set the timeout in seconds.
+   * \param timeout Timeout n seconds, negative to block operations.
+   */
+  void setTimeout(long timeout);
+
+  /**
+   * Retrieve the timeout.
+   * \returns Current timeout in seconds.
+   */
+  long getTimeout()const;
+
+
+  /**
    * Retriueve the host name of the server the client is connected to.
    * \return Server host name
    */
@@ -365,6 +388,7 @@ protected:
 private:
 	std::string _host;
 	int _port;
+  long _timeout;
 	internal::Socket* _socket;
 };
 
@@ -900,6 +924,17 @@ void nutclient_tcp_disconnected(NUTCLIENT_TCP_t client);
  * \todo Implement different error codes.
  */
 int nutclient_tcp_reconnected(NUTCLIENT_TCP_t client);
+/**
+ * Set the timeout value for the TCP connection.
+ * \param timeout Timeout in seconds, negative for blocking.
+ */
+void nutclient_tcp_set_timeout(NUTCLIENT_TCP_t client, long timeout);
+/**
+ * Retrieve the timeout value for the TCP connection.
+ * \return Timeout value in seconds.
+ */
+long nutclient_tcp_get_timeout(NUTCLIENT_TCP_t client);
+
 /** \} */
 
 #ifdef __cplusplus
