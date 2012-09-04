@@ -75,6 +75,8 @@ public:
 	void disconnect();
 	bool isConnected()const;
 
+	void setTimeout(long timeout);
+
 	size_t read(void* buf, size_t sz)throw(nut::IOException);
 	size_t write(const void* buf, size_t sz)throw(nut::IOException);
 
@@ -83,12 +85,21 @@ public:
 
 private:
 	SOCKET _sock;
+	struct timeval	_tv;
 	std::string _buffer; /* Received buffer, string because data should be text only. */
 };
 
 Socket::Socket():
-_sock(INVALID_SOCKET)
+_sock(INVALID_SOCKET),
+_tv()
 {
+	_tv.tv_sec = -1;
+	_tv.tv_usec = 0;
+}
+
+void Socket::setTimeout(long timeout)
+{
+	_tv.tv_sec = timeout;
 }
 
 void Socket::connect(const std::string& host, int port)throw(nut::IOException)
@@ -147,6 +158,17 @@ size_t Socket::read(void* buf, size_t sz)throw(nut::IOException)
 		throw nut::NotConnectedException();
 	}
 
+	if(_tv.tv_sec>=0)
+	{
+		fd_set fds;
+		FD_ZERO(&fds);
+		FD_SET(_sock, &fds);
+		int ret = select(_sock+1, &fds, NULL, NULL, &_tv);
+		if (ret < 1) {
+			throw nut::TimeoutException();
+		}
+	}
+
 	ssize_t res = ::read(_sock, buf, sz);
 	if(res==-1)
 	{
@@ -161,6 +183,17 @@ size_t Socket::write(const void* buf, size_t sz)throw(nut::IOException)
 	if(!isConnected())
 	{
 		throw nut::NotConnectedException();
+	}
+
+	if(_tv.tv_sec>=0)
+	{
+		fd_set fds;
+		FD_ZERO(&fds);
+		FD_SET(_sock, &fds);
+		int ret = select(_sock+1, NULL, &fds, NULL, &_tv);
+		if (ret < 1) {
+			throw nut::TimeoutException();
+		}
 	}
 
 	ssize_t res = ::write(_sock, buf, sz);
@@ -336,6 +369,15 @@ void TcpClient::disconnect()
 	_socket->disconnect();
 }
 
+void TcpClient::setTimeout(long timeout)
+{
+	_timeout = timeout;
+}
+
+long TcpClient::getTimeout()const
+{
+	return _timeout;
+}
 
 void TcpClient::authenticate(const std::string& user, const std::string& passwd)
 	throw(NutException)
@@ -1155,6 +1197,32 @@ int nutclient_tcp_reconnected(NUTCLIENT_TCP_t client)
 	}
 	return -1;
 }
+
+void nutclient_tcp_set_timeout(NUTCLIENT_TCP_t client, long timeout)
+{
+	if(client)
+	{
+		nut::TcpClient* cl = dynamic_cast<nut::TcpClient*>((nut::Client*)client);
+		if(cl)
+		{
+			cl->setTimeout(timeout);
+		}
+	}
+}
+
+long nutclient_tcp_get_timeout(NUTCLIENT_TCP_t client)
+{
+	if(client)
+	{
+		nut::TcpClient* cl = dynamic_cast<nut::TcpClient*>((nut::Client*)client);
+		if(cl)
+		{
+			return cl->getTimeout();
+		}
+	}
+	return -1;
+}
+
 
 void nutclient_authenticate(NUTCLIENT_t client, const char* login, const char* passwd)
 {
