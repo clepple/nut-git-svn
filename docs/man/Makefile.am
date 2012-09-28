@@ -272,7 +272,8 @@ SRC_SERIAL_PAGES = \
 	tripplite.txt	\
 	tripplitesu.txt	\
 	upscode2.txt	\
-	victronups.txt
+	victronups.txt	\
+	apcupsd-ups.txt
 
 MAN_SERIAL_PAGES = \
 	apcsmart.8	\
@@ -310,7 +311,8 @@ MAN_SERIAL_PAGES = \
 	tripplite.8	\
 	tripplitesu.8	\
 	upscode2.8	\
-	victronups.8
+	victronups.8	\
+	apcupsd-ups.8
 
 if WITH_SERIAL
   man8_MANS +=  $(MAN_SERIAL_PAGES)
@@ -352,7 +354,8 @@ HTML_SERIAL_MANS = \
 	tripplite.html	\
 	tripplitesu.html	\
 	upscode2.html	\
-	victronups.html
+	victronups.html	\
+	apcupsd-ups.html
 
 # (--with-snmp)
 SRC_SNMP_PAGES = snmp-ups.txt
