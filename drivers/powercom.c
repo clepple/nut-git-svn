@@ -7,7 +7,7 @@
  *    This model is based on PowerCom (www.powercom.com) models.
  *  -Socomec Sicon Egys 420
  *
- * $Id$
+ * $Id: powercom.c 3680 2012-07-18 12:31:02Z emilienkia-guest $
  *
  * Copyrights:
  * (C) 2002 Simon Rozman <simon@rozman.net>
