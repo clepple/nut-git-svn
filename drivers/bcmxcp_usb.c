@@ -12,7 +12,7 @@
 #include <usb.h>
 
 #define SUBDRIVER_NAME	"USB communication subdriver"
-#define SUBDRIVER_VERSION	"0.21"
+#define SUBDRIVER_VERSION	"0.22"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -51,7 +51,7 @@ static int usb_set_powerware(usb_dev_handle *udev, unsigned char type, unsigned 
 	return usb_control_msg(udev, USB_ENDPOINT_OUT, USB_REQ_SET_DESCRIPTOR, (type << 8) + index, 0, buf, size, 1000);
 }
 
-static void *powerware_ups(void) {
+static void *powerware_ups(USBDevice_t *device) {
 	usb_set_descriptor = &usb_set_powerware;
 	return NULL;
 }
@@ -62,7 +62,7 @@ static int usb_set_phoenixtec(usb_dev_handle *udev, unsigned char type, unsigned
 	return usb_control_msg(udev, 0x42, 0x0d, (0x00 << 8) + 0x0, 0, buf, size, 1000);
 }
 
-static void *phoenixtec_ups(void) {
+static void *phoenixtec_ups(USBDevice_t *device) {
 	usb_set_descriptor = &usb_set_phoenixtec;
 	return NULL;
 }
@@ -155,7 +155,7 @@ int get_answer(unsigned char *data, unsigned char command)
 	while ( (!endblock) && ((XCP_USB_TIMEOUT - ellapsed_time)  > 0) ) {
 
 		/* Get (more) data if needed */
-		if ((length - bytes_read) > 0) {
+		if ((length - (bytes_read - 5)) > 0) {
 			res = usb_interrupt_read(upsdev, 0x81,
 				(char *)&buf[bytes_read],
 				(PW_ANSWER_MAX_SIZE - bytes_read),
@@ -335,7 +335,10 @@ void upsdrv_cleanup(void)
 
 void upsdrv_reconnect(void)
 {
-	upslogx(LOG_WARNING, "RECONNECT USB DEVICE\n");
+	upsdebugx(4, "==================================================");
+	upsdebugx(4, "= device has been disconnected, try to reconnect =");
+	upsdebugx(4, "==================================================");
+
 	nutusb_close(upsdev, "USB");
 	upsdev = NULL;
 	upsdrv_initups();
@@ -359,7 +362,8 @@ static usb_dev_handle *open_powerware_usb(void)
 {
 	struct usb_bus *busses = usb_get_busses();  
 	struct usb_bus *bus;
-    
+	USBDevice_t curDevice;
+
 	for (bus = busses; bus; bus = bus->next)
 	{
 		struct usb_device *dev;
@@ -370,8 +374,18 @@ static usb_dev_handle *open_powerware_usb(void)
 				continue;
 			}
 
-			if (is_usb_device_supported(pw_usb_device_table,
-				dev->descriptor.idVendor, dev->descriptor.idProduct) == SUPPORTED) {
+			curDevice.VendorID = dev->descriptor.idVendor;
+			curDevice.ProductID = dev->descriptor.idProduct;
+			curDevice.Bus = strdup(bus->dirname);
+
+			/* FIXME: we should also retrieve
+			 * dev->descriptor.iManufacturer
+			 * dev->descriptor.iProduct
+			 * dev->descriptor.iSerialNumber
+			 * as in libusb.c->libusb_open()
+			 * This is part of the things to put in common... */
+
+			if (is_usb_device_supported(pw_usb_device_table, &curDevice) == SUPPORTED) {
 				return usb_open(dev);
 			}
 		}
@@ -484,6 +498,7 @@ void nutusb_comm_fail(const char *fmt, ...)
 	if ((comm_failures > USB_ERR_LIMIT) &&
 		((comm_failures % USB_ERR_LIMIT) != 0)) {
 		/* Try reconnection */
+		upsdebugx(1, "Got to reconnect!\n");
 		upsdrv_reconnect();
 		return;
 	}
