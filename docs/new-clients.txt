@@ -49,6 +49,29 @@ High level library: libnutclient
 `libnutclient` provides a high-level interface representing devices, variables
 and commands with an object-oriented API in C++ and C.
 
+  #include <iostream>
+  #include <nutclient.h>
+  using namespace nut;
+  using namespace std;
+  
+  int main(int argc, char** argv)
+  {
+    try
+    {
+      // Connection
+      Client* client = new TcpClient("localhost", 3493);
+      Device mydev = client->getDevice("myups");
+      cout << mydev.getDescription() << endl;
+      Variable var = mydev.getVariable("device.model");
+      cout << var.getValue()[0] << endl;
+    }
+    catch(NutException& ex)
+    {
+      cerr << "Unexpected problem : " << ex.str() << endl;
+    }
+    return 0;
+  }
+
 Configuration helpers
 ~~~~~~~~~~~~~~~~~~~~~
 
