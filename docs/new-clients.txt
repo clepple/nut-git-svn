@@ -49,6 +49,8 @@ High level library: libnutclient
 `libnutclient` provides a high-level interface representing devices, variables
 and commands with an object-oriented API in C++ and C.
 
+For more information, refer to the linkman:nutclient[3] manual page.
+
   #include <iostream>
   #include <nutclient.h>
   using namespace nut;
