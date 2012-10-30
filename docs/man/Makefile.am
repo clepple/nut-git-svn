@@ -132,6 +132,7 @@ SRC_DEV_PAGES = \
 	upscli_ssl.txt \
 	upscli_strerror.txt \
 	upscli_upserror.txt \
+	nutclient.txt \
 	nutscan.txt \
 	nutscan_scan_snmp.txt \
 	nutscan_scan_usb.txt \
@@ -165,6 +166,7 @@ MAN3_DEV_PAGES = \
 	upscli_ssl.3 \
 	upscli_strerror.3 \
 	upscli_upserror.3 \
+	nutclient.3 \
 	nutscan.3 \
 	nutscan_scan_snmp.3 \
 	nutscan_scan_usb.3 \
@@ -208,6 +210,7 @@ HTML_DEV_MANS = \
 	upscli_ssl.html \
 	upscli_strerror.html \
 	upscli_upserror.html \
+	nutclient.html \
 	nutscan.html \
 	nutscan_scan_snmp.html \
 	nutscan_scan_usb.html \
