@@ -745,24 +745,28 @@ void nutclient_authenticate(NUTCLIENT_t client, const char* login, const char* p
 void nutclient_logout(NUTCLIENT_t client);
 
 /**
+ * Register current user on the device.
  * \param client Nut client handle.
  * \param dev Device name to test.
  */
 void nutclient_device_login(NUTCLIENT_t client, const char* dev);
 
 /**
+ * Retrieve the number of users registered on a device.
  * \param client Nut client handle.
  * \param dev Device name to test.
  */
 int nutclient_get_device_num_logins(NUTCLIENT_t client, const char* dev);
 
 /**
+ * Set current user as master user of the device.
  * \param client Nut client handle.
  * \param dev Device name to test.
  */
 void nutclient_device_master(NUTCLIENT_t client, const char* dev);
 
 /**
+ * Set the FSD flag for the device.
  * \param client Nut client handle.
  * \param dev Device name to test.
  */
