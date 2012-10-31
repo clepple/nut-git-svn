@@ -58,6 +58,18 @@ private:
 	std::string _msg;
 };
 
+/**
+ * System error.
+ */
+class SystemException : public NutException
+{
+public:
+	SystemException();
+	virtual ~SystemException() throw() {}
+private:
+	static std::string err();
+};
+
 
 /**
  * IO oriented nut exception.
@@ -67,8 +79,6 @@ class IOException : public NutException
 public:
 	IOException(const std::string& msg):NutException(msg){}
 	virtual ~IOException() throw() {}
-private:
-	int _errno;
 };
 
 /**
