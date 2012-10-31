@@ -37,6 +37,47 @@ BACKGROUND
 
 This driver was written in one evening to allow interworking with apcupsd.
 
+SUPPORTED VARIABLES
+-------------------
+
+[width="50%",cols="m,m",options="header"]
+|===============================
+| apcupsd variable | NUT variable(s)
+| BCHARGE          | battery.charge
+| MBATTCHG         | battery.charge.low
+| RETPCT           | battery.charge.restart
+| BATTDATE         | battery.date
+| TIMELEFT         | battery.runtime
+| MINTIMEL         | battery.runtime.low
+| BATTV            | battery.voltage
+| NOMBATTV         | battery.voltage.nominal
+| LINEFREQ         | input.frequency
+| SENSE            | input.sensitivity
+| HITRANS          | input.transfer.high
+| LOTRANS          | input.transfer.low
+| LASTXFER         | input.transfer.reason
+| LINEV            | input.voltage
+| MAXLINEV         | input.voltage.maximum
+| MINLINEV         | input.voltage.minimum
+| NOMINV           | input.voltage.nominal
+| LINEFREQ         | output.frequency
+| OUTPUTV          | output.voltage
+| NOMOUTV          | output.voltage.nominal
+| DATE             | ups.date, ups.time
+| DSHUTD           | ups.delay.shutdown
+| DWAKE            | ups.delay.start
+| FIRMWARE         | ups.firmware, ups.firmware.aux
+| UPSNAME          | ups.id
+| LOADPCT          | ups.load
+| MANDATE          | ups.mfr.date
+| NOMPOWER         | ups.realpower.nominal
+| SERIALNO         | ups.serial
+| STATUS           | ups.status
+| ITEMP            | ups.temperature
+| STESTI           | ups.test.interval
+| SELFTEST         | ups.test.result
+|===============================
+
 BUGS
 ----
 Access to apcupsd is strictly read only: no commands can be issued.
