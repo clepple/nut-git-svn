@@ -19,6 +19,12 @@
 
 #include "nutclient.h"
 
+#include <sstream>
+
+#include <errno.h>
+#include <string.h>
+#include <stdio.h>
+
 /* Windows/Linux Socket compatibility layer: */
 /* Thanks to Benjamin Roux (http://broux.developpez.com/articles/c/sockets/) */
 #ifdef WIN32
@@ -30,6 +36,7 @@
 #  include <arpa/inet.h>
 #  include <unistd.h> /* close */
 #  include <netdb.h> /* gethostbyname */
+#  include <fcntl.h>
 #  define INVALID_SOCKET -1
 #  define SOCKET_ERROR -1
 #  define closesocket(s) close(s) 
@@ -57,6 +64,24 @@ static inline char *xstrdup(const char *string){return strdup(string);}
 namespace nut
 {
 
+SystemException::SystemException():
+NutException(err())
+{
+}
+
+std::string SystemException::err()
+{
+	if(errno==0)
+		return "Undefined system error";
+	else
+	{
+		std::stringstream str;
+		str << "System error " << errno << ": " << strerror(errno);
+		return str.str();
+	}
+}
+
+
 namespace internal
 {
 
@@ -76,12 +101,14 @@ public:
 	bool isConnected()const;
 
 	void setTimeout(long timeout);
+	bool hasTimeout()const{return _tv.tv_sec>=0;}
 
 	size_t read(void* buf, size_t sz)throw(nut::IOException);
 	size_t write(const void* buf, size_t sz)throw(nut::IOException);
 
 	std::string read()throw(nut::IOException);
 	void write(const std::string& str)throw(nut::IOException);
+
 
 private:
 	SOCKET _sock;
@@ -104,12 +131,131 @@ void Socket::setTimeout(long timeout)
 
 void Socket::connect(const std::string& host, int port)throw(nut::IOException)
 {
-	if(_sock != INVALID_SOCKET)
-	{
-		disconnect();
+	int	sock_fd;
+	struct addrinfo	hints, *res, *ai;
+	char			sport[NI_MAXSERV];
+	int			v;
+	fd_set 			wfds;
+	int			error;
+	socklen_t		error_size;
+	long			fd_flags;
+
+	_sock = -1;
+
+	if (host.empty()) {
+		throw nut::UnknownHostException();
 	}
 
-	// Look for host
+	snprintf(sport, sizeof(sport), "%hu", (unsigned short int)port);
+
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
+
+	while ((v = getaddrinfo(host.c_str(), sport, &hints, &res)) != 0) {
+		switch (v)
+		{
+		case EAI_AGAIN:
+			continue;
+		case EAI_NONAME:
+			throw nut::UnknownHostException();
+		case EAI_SYSTEM:
+			throw nut::SystemException();
+		case EAI_MEMORY:
+			throw nut::NutException("Out of memory");
+		default:
+			throw nut::NutException("Unknown error");
+		}
+	}
+
+	for (ai = res; ai != NULL; ai = ai->ai_next) {
+
+		sock_fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+
+		if (sock_fd < 0) {
+			switch (errno)
+			{
+			case EAFNOSUPPORT:
+			case EINVAL:
+                break;
+			default:
+				throw nut::SystemException();
+			}
+			continue;
+		}
+
+		/* non blocking connect */
+		if(hasTimeout()) {
+			fd_flags = fcntl(sock_fd, F_GETFL);
+			fd_flags |= O_NONBLOCK;
+			fcntl(sock_fd, F_SETFL, fd_flags);
+		}
+
+		while ((v = ::connect(sock_fd, ai->ai_addr, ai->ai_addrlen)) < 0) {
+			if(errno == EINPROGRESS) {
+				FD_ZERO(&wfds);
+				FD_SET(sock_fd, &wfds);
+				select(sock_fd+1,NULL,&wfds,NULL, hasTimeout()?&_tv:NULL);
+				if (FD_ISSET(sock_fd, &wfds)) {
+					error_size = sizeof(error);
+					getsockopt(sock_fd,SOL_SOCKET,SO_ERROR,
+							&error,&error_size);
+					if( error == 0) {
+						/* connect successful */
+						v = 0;
+						break;
+					}
+					errno = error;
+				}
+				else {
+					/* Timeout */
+					v = -1;
+					break;
+				}
+			}
+
+			switch (errno)
+			{
+			case EAFNOSUPPORT:
+				break;
+			case EINTR:
+			case EAGAIN:
+				continue;
+			default:
+//				ups->upserror = UPSCLI_ERR_CONNFAILURE;
+//				ups->syserrno = errno;
+				break;
+			}
+			break;
+		}
+
+		if (v < 0) {
+			close(sock_fd);
+			continue;
+		}
+
+		/* switch back to blocking operation */
+		if(hasTimeout()) {
+			fd_flags = fcntl(sock_fd, F_GETFL);
+			fd_flags &= ~O_NONBLOCK;
+			fcntl(sock_fd, F_SETFL, fd_flags);
+		}
+
+		_sock = sock_fd;
+//		ups->upserror = 0;
+//		ups->syserrno = 0;
+		break;
+	}
+
+	freeaddrinfo(res);
+
+	if (_sock < 0) {
+		throw nut::IOException("Cannot connect to host");
+	}
+
+
+#ifdef OLD
 	struct hostent *hostinfo = NULL;
 	SOCKADDR_IN sin = { 0 };
 	hostinfo = ::gethostbyname(host.c_str());
@@ -134,6 +280,7 @@ void Socket::connect(const std::string& host, int port)throw(nut::IOException)
 		_sock = INVALID_SOCKET;
 		throw nut::IOException("Cannot connect to host");
 	}
+#endif // OLD
 }
 
 void Socket::disconnect()
