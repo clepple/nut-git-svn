@@ -35,10 +35,13 @@ For instance:
 BACKGROUND
 ----------
 
-This driver was written in one evening to allow interworking with apcupsd.
+This driver was originally written in one evening to allow interworking with apcupsd.
 
 SUPPORTED VARIABLES
 -------------------
+
+The following variables are translated from apcupsd to NUT. All times should be
+converted to seconds (please file a bug if you notice a mismatch in units).
 
 [width="50%",cols="m,m",options="header"]
 |===============================
@@ -95,4 +98,5 @@ linkman:nutupsdrv[8]
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
 The apcupsd home page: http://www.apcupsd.org/
