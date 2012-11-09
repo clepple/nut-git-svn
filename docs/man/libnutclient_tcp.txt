@@ -29,7 +29,7 @@ DESCRIPTION
 These functions allow to manage connections to linkman:upsd[8] using NUT TCP protocol.
 
 The *nutclient_tcp_create_client()* function create the 'NUTCLIENT_TCP_t' context and
-intend to connect to upsd at 'host' and 'port'.
+intend to connect to upsd at 'host' and 'port'. The context must be freed by 'nutclient_destroy()'
 
 'host' can be a sever name or a valid IPv4 or IPv6 adress like "localhost", "127.0.0.1" or "::1".
 
@@ -51,3 +51,4 @@ The *nutclient_tcp_get_timeout()* function retrieve the timeout duration for I/O
 SEE ALSO
 --------
 linkman:libnutclient[3]
+linkman:libnutclient_general[3]

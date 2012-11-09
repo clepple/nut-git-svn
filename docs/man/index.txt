@@ -110,6 +110,8 @@ Client library
 ~~~~~~~~~~~~~~
 
 - linkman:libnutclient[3]
+- linkman:libnutclient_devices[3]
+- linkman:libnutclient_general[3]
 - linkman:libnutclient_tcp[3]
 
 - linkman:upsclient[3]
