@@ -61,6 +61,8 @@ To create and manipulate it, use:
 - `nutclient_tcp_set_timeout` to set IO timeout
 - `nutclient_tcp_get_timeout` to retrieve IO timeout
 
+See linkman:nutclient_tcp[3] for details.
+
 GENERIC NUT MODEL FUNCTIONS
 ---------------------------
 
@@ -107,4 +109,8 @@ the device,
 ERROR HANDLING
 --------------
 There is currently no specific mechanism around error handling.
+
+SEE ALSO
+--------
+linkman:nutclient_tcp[3]
 
