@@ -1314,7 +1314,7 @@ int nutclient_tcp_is_connected(NUTCLIENT_TCP_t client)
 	return 0;
 }
 
-void nutclient_tcp_disconnected(NUTCLIENT_TCP_t client)
+void nutclient_tcp_disconnect(NUTCLIENT_TCP_t client)
 {
 	if(client)
 	{
@@ -1327,7 +1327,7 @@ void nutclient_tcp_disconnected(NUTCLIENT_TCP_t client)
 }
 
 
-int nutclient_tcp_reconnected(NUTCLIENT_TCP_t client)
+int nutclient_tcp_reconnect(NUTCLIENT_TCP_t client)
 {
 	if(client)
 	{

@@ -5,7 +5,7 @@ NAME
 ----
 
 nutclient_tcp_create_client, nutclient_tcp_is_connected, 
-nutclient_tcp_disconnected, nutclient_tcp_reconnected, 
+nutclient_tcp_disconnect, nutclient_tcp_reconnect,
 nutclient_tcp_set_timeout, nutclient_tcp_get_timeout, nutclient_destroy, 
 nutclient_get_devices, nutclient_has_device, nutclient_get_device_description, 
 nutclient_get_device_variables, nutclient_get_device_rw_variables, 
@@ -56,8 +56,8 @@ To create and manipulate it, use:
 
 - `nutclient_tcp_create_client` to create it, and initialize structure,
 - `nutclient_tcp_is_connected` to test if the connection is active,
-- `nutclient_tcp_disconnected` to force disconnection,
-- `nutclient_tcp_reconnected` to reconnect, forcing disconnection if needed,
+- `nutclient_tcp_disconnect` to force disconnection,
+- `nutclient_tcp_reconnect` to reconnect, forcing disconnection if needed,
 - `nutclient_tcp_set_timeout` to set IO timeout
 - `nutclient_tcp_get_timeout` to retrieve IO timeout
 

@@ -930,14 +930,14 @@ int nutclient_tcp_is_connected(NUTCLIENT_TCP_t client);
  * Disconnect a nut TCP client.
  * \param client Nut TCP client handle.
  */
-void nutclient_tcp_disconnected(NUTCLIENT_TCP_t client);
+void nutclient_tcp_disconnect(NUTCLIENT_TCP_t client);
 /**
  * Intend to reconnect a nut TCP client.
  * \param client Nut TCP client handle.
  * \return 0 if correctly connected.
  * \todo Implement different error codes.
  */
-int nutclient_tcp_reconnected(NUTCLIENT_TCP_t client);
+int nutclient_tcp_reconnect(NUTCLIENT_TCP_t client);
 /**
  * Set the timeout value for the TCP connection.
  * \param timeout Timeout in seconds, negative for blocking.
