@@ -139,6 +139,7 @@ SRC_DEV_PAGES = \
 	libnutclient_commands.txt \
 	libnutclient_devices.txt \
 	libnutclient_general.txt \
+	libnutclient_misc.txt \
 	libnutclient_tcp.txt \
 	libnutclient_variables.txt \
 	nutscan.txt \
@@ -181,6 +182,7 @@ MAN3_DEV_PAGES = \
 	libnutclient_commands.3 \
 	libnutclient_devices.3 \
 	libnutclient_general.3 \
+	libnutclient_misc.3 \
 	libnutclient_tcp.3 \
 	libnutclient_variables.3 \
 	nutscan.3 \
@@ -233,6 +235,7 @@ HTML_DEV_MANS = \
 	libnutclient_commands.html \
 	libnutclient_devices.html \
 	libnutclient_general.html \
+	libnutclient_misc.html \
 	libnutclient_tcp.html \
 	libnutclient_variables.html \
 	nutscan.html \
