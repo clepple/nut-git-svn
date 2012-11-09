@@ -133,6 +133,8 @@ SRC_DEV_PAGES = \
 	upscli_strerror.txt \
 	upscli_upserror.txt \
 	libnutclient.txt \
+	libnutclient_devices.txt \
+	libnutclient_general.txt \
 	libnutclient_tcp.txt \
 	nutscan.txt \
 	nutscan_scan_snmp.txt \
@@ -168,6 +170,8 @@ MAN3_DEV_PAGES = \
 	upscli_strerror.3 \
 	upscli_upserror.3 \
 	libnutclient.3 \
+	libnutclient_devices.3 \
+	libnutclient_general.3 \
 	libnutclient_tcp.3 \
 	nutscan.3 \
 	nutscan_scan_snmp.3 \
@@ -213,6 +217,8 @@ HTML_DEV_MANS = \
 	upscli_strerror.html \
 	upscli_upserror.html \
 	libnutclient.html \
+	libnutclient_devices.html \
+	libnutclient_general.html \
 	libnutclient_tcp.html \
 	nutscan.html \
 	nutscan_scan_snmp.html \
