@@ -919,7 +919,7 @@ typedef NUTCLIENT_t NUTCLIENT_TCP_t;
  * \param port Host port.
  * \return New client or NULL if failed.
  */
-NUTCLIENT_TCP_t nutclient_create_tcp_client(const char* host, unsigned short port);
+NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, unsigned short port);
 /**
  * Test if a nut TCP client is connected.
  * \param client Nut TCP client handle.

@@ -1,0 +1,110 @@
+LIBNUTCLIENT(3)
+===============
+
+NAME
+----
+
+nutclient_tcp_create_client, nutclient_tcp_is_connected, 
+nutclient_tcp_disconnected, nutclient_tcp_reconnected, 
+nutclient_tcp_set_timeout, nutclient_tcp_get_timeout, nutclient_destroy, 
+nutclient_get_devices, nutclient_has_device, nutclient_get_device_description, 
+nutclient_get_device_variables, nutclient_get_device_rw_variables, 
+nutclient_has_device_variable, nutclient_get_device_variable_description, 
+nutclient_get_device_variable_values, nutclient_set_device_variable_value, 
+nutclient_set_device_variable_values, nutclient_get_device_commands, 
+nutclient_has_device_command, nutclient_get_device_command_description, 
+nutclient_execute_device_command, nutclient_authenticate, nutclient_logout, 
+nutclient_device_login, nutclient_get_device_num_logins, 
+nutclient_device_master, nutclient_device_forced_shutdown - Network UPS Tools high-level client access library
+
+SYNOPSIS
+--------
+
+	#include <nutclient.h>
+
+	Refer to this file for more informations.
+
+
+DESCRIPTION
+-----------
+
+The Network UPS Tools (NUT) *nutclient* library provides a number of
+useful functions for programs to use when communicating with
+linkman:upsd[8]. It provides high-level representation of NUT data
+through client connexion, devices, variables and commands.
+Unlike linkman:upsclient[3], all low-level protocol details are
+hidden.
+
+State is maintained across calls in an opaque structure called `NUTCLIENT_t`.
+Callers are expected to create one per client connection.  These will be
+provided to most of the *nutclient* functions.  The format of this
+structure is subject to change, and client programs must not reference
+elements within it directly.
+
+`NUTCLIENT_t` represents the common connexion informations.
+Derivated versions exists for each connection type (`NUTCLIENT_TCP_t` for
+TCP connection, actually the unique connection type, `NUTCLIENT_TCP_t`
+can be passed as `NUTCLIENT_t` parameter).
+
+See the `nutclient.h` header to have more informations.
+
+TCP DEDICATED FUNCTIONS
+-----------------------
+
+TCP connection is represented by the `NUTCLIENT_TCP_t` structure.
+To create and manipulate it, use:
+
+- `nutclient_tcp_create_client` to create it, and initialize structure,
+- `nutclient_tcp_is_connected` to test if the connection is active,
+- `nutclient_tcp_disconnected` to force disconnection,
+- `nutclient_tcp_reconnected` to reconnect, forcing disconnection if needed,
+- `nutclient_tcp_set_timeout` to set IO timeout
+- `nutclient_tcp_get_timeout` to retrieve IO timeout
+
+GENERIC NUT MODEL FUNCTIONS
+---------------------------
+
+NUT connection is abstractly represented by the `NUTCLIENT_t` structure.
+To manipulate NUT model, use:
+
+- `nutclient_destroy` to free a `NUTCLIENT_t` structure, called it after
+any disconnection,
+- `nutclient_get_devices` to retrieve the list of device names,
+- `nutclient_has_device` to test if a device is known,
+- `nutclient_get_device_description` to retrieve the description of a device,
+- `nutclient_get_device_variables` to retrieve the list of variable names
+supported by a device,
+- `nutclient_get_device_rw_variables` to retrieve the list of read-write
+variable names supported by a device,
+- `nutclient_has_device_variable` to test if a variable is supported by
+a device,
+- `nutclient_get_device_variable_description` to retireve the description
+of a variable for a device,
+- `nutclient_get_device_variable_values` to retrieve values of a variable
+of the specified device,
+- `nutclient_set_device_variable_value` to intend to set the value of a
+variable of a device,
+- `nutclient_set_device_variable_values` to intend to set a multiple
+value of a variable of a device,
+- `nutclient_get_device_commands` to retrieve the list of instant commands
+names supported by a device,
+- `nutclient_has_device_command` to test if an instant command is supported by
+a device,
+- `nutclient_get_device_command_description` to retireve the description
+of an instant command for a device,
+- `nutclient_execute_device_command` to execute an instant command
+on a device,
+- `nutclient_authenticate` to authenticate client into the server,
+- `nutclient_logout` to logout the client,
+- `nutclient_device_login` to register current user on the device,
+- `nutclient_get_device_num_logins` to retrieve the number of users
+registered on a device,
+- `nutclient_device_master` to set current user as master user of
+the device,
+- `nutclient_device_forced_shutdown` to set the FSD flag for the device
+
+
+ERROR HANDLING
+--------------
+There is currently no specific mechanism around error handling.
+

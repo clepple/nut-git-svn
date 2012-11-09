@@ -1276,13 +1276,13 @@ static strarr stringvector_to_strarr(const std::vector<std::string>& strset)
 }
 
 
-NUTCLIENT_t nutclient_create_tcp_client(const char* host, unsigned short port)
+NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, unsigned short port)
 {
 	nut::TcpClient* client = new nut::TcpClient;
 	try
 	{
 		client->connect(host, port);
-		return (NUTCLIENT_t)client;
+		return (NUTCLIENT_TCP_t)client;
 	}
 	catch(nut::NutException& ex)
 	{
