@@ -1,5 +1,5 @@
-NUTCLIENT_TCP(3)
-================
+LIBNUTCLIENT_TCP(3)
+===================
 
 NAME
 ----
