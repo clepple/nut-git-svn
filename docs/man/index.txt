@@ -109,7 +109,7 @@ Developer manual pages
 Client library
 ~~~~~~~~~~~~~~
 
-- linkman:nutclient[3]
+- linkman:libnutclient[3]
 
 - linkman:upsclient[3]
 - linkman:upscli_connect[3]
