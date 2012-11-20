@@ -1,0 +1,49 @@
+##############################
+###   NUT gitignore file   ###
+##############################
+
+
+# Compiled source #
+###################
+*.o
+*.so
+*.a
+
+# Autotool and libtool files #
+##############################
+Makefile.in
+aclocal.m4
+autom4te.cache/
+m4/libtool.m4
+m4/ltoptions.m4
+m4/ltsugar.m4
+m4/ltversion.m4
+m4/lt~obsolete.m4
+config.guess
+config.sub
+configure
+depcomp
+install-sh
+ltmain.sh
+missing
+
+
+# Generated documentation #
+###########################
+docs/man/*.1
+docs/man/*.3
+docs/man/*.5
+docs/man/*.8
+
+# Varous genrated files #
+#########################
+scripts/augeas/nutupsconf.aug.in
+scripts/hal/ups-nut-device.fdi.in
+scripts/hotplug/libhid.usermap
+scripts/udev/nut-usbups.rules.in
+
+# Various saves #
+#################
+*.back
+*~
+
