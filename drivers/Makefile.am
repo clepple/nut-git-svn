@@ -34,17 +34,17 @@ if WITH_IPMI
 endif
 
 SERIAL_DRIVERLIST = bcmxcp belkin belkinunv bestfcom	\
- bestfortress bestuferrups bestups dummy-ups etapro everups 	\
+ bestfortress bestuferrups bestups pace dummy-ups etapro everups 	\
  gamatronic genericups isbmex liebert liebert-esp2 masterguard metasys	\
  oldmge-shut mge-utalk microdowell mge-shut oneac optiups powercom rhino 	\
  safenet skel solis tripplite tripplitesu upscode2 victronups powerpanel \
- blazer_ser clone clone-outlet ivtscd apcsmart apcsmart-old riello_ser
+ blazer_ser clone clone-outlet ivtscd apcsmart apcsmart-old
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
- blazer_usb richcomm_usb riello_usb
+ blazer_usb richcomm_usb
 USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST)
 HAL_DRIVERLIST = hald-addon-usbhid-ups hald-addon-bcmxcp_usb \
- hald-addon-tripplite_usb hald-addon-blazer_usb hald-addon-riello_usb
+ hald-addon-tripplite_usb hald-addon-blazer_usb
 NEONXML_DRIVERLIST = netxml-ups
 MACOSX_DRIVERLIST = macosx-ups
 
@@ -105,6 +105,7 @@ belkinunv_SOURCES = belkinunv.c
 bestfcom_SOURCES = bestfcom.c
 bestuferrups_SOURCES = bestuferrups.c
 bestups_SOURCES = bestups.c
+pace_SOURCES = pace.c
 blazer_ser_SOURCES = blazer.c blazer_ser.c
 blazer_ser_LDADD = $(LDADD) -lm
 etapro_SOURCES = etapro.c
@@ -137,8 +138,6 @@ tripplitesu_SOURCES = tripplitesu.c
 upscode2_SOURCES = upscode2.c
 upscode2_LDADD = $(LDADD) -lm
 victronups_SOURCES = victronups.c
-riello_ser_SOURCES = riello.c riello_ser.c
-riello_ser_LDADD = $(LDADD) -lm
 
 # non-serial drivers: these use custom LDADD and/or CFLAGS
 
@@ -162,8 +161,7 @@ skel_LDADD = $(LDADD_DRIVERS)
 
 # USB
 USBHID_UPS_SUBDRIVERS = apc-hid.c belkin-hid.c cps-hid.c explore-hid.c \
- liebert-hid.c mge-hid.c powercom-hid.c tripplite-hid.c idowell-hid.c \
- openups-hid.c
+ liebert-hid.c mge-hid.c powercom-hid.c tripplite-hid.c idowell-hid.c
 usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
  usb-common.c $(USBHID_UPS_SUBDRIVERS)
 usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
@@ -179,9 +177,6 @@ blazer_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
 richcomm_usb_SOURCES = richcomm_usb.c usb-common.c
 richcomm_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
-
-riello_usb_SOURCES = riello.c riello_usb.c libusb.c usb-common.c
-riello_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
 # HID-over-serial
 mge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c
@@ -208,9 +203,6 @@ hald_addon_bcmxcp_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS)
 
 hald_addon_blazer_usb_SOURCES = blazer.c blazer_usb.c libusb.c
 hald_addon_blazer_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS) -lm
-
-hald_addon_riello_usb_SOURCES = riello.c riello_usb.c libusb.c
-hald_addon_riello_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS) -lm
 
 # NEON XML/HTTP
 netxml_ups_SOURCES = netxml-ups.c mge-xml.c
@@ -246,7 +238,7 @@ dist_noinst_HEADERS = apc-mib.h apc-hid.h baytech-mib.h bcmxcp.h	\
  powercom.h powerpanel.h powerp-bin.h powerp-txt.h powerware-mib.h raritan-pdu-mib.h	\
  safenet.h serial.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
- apcsmart.h apcsmart_tabs.h apcsmart-old.h cyberpower-mib.h riello.h openups-hid.h
+ apcsmart.h apcsmart_tabs.h apcsmart-old.h cyberpower-mib.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,

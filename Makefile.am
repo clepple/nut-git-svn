@@ -1,112 +1,257 @@
-# top-level Makefile for NUT
+# Network UPS Tools: drivers
 
-# include directory for aclocal
-ACLOCAL_AMFLAGS = -I m4
+# by default, link programs in this directory with libcommon.la
+# (libtool version of the static lib, in order to access LTLIBOBJS)
+#FIXME: SERLIBS is only useful for LDADD_DRIVERS_SERIAL not for LDADD_COMMON
+LDADD_COMMON = ../common/libcommon.la ../common/libparseconf.la
+LDADD_DRIVERS = $(LDADD_COMMON) main.o dstate.o
+LDADD_HAL_DRIVERS = $(LDADD_COMMON) libnuthalmain.a
+LDADD_DRIVERS_SERIAL = $(LDADD_DRIVERS) $(SERLIBS) serial.o
 
-# subdirectories to build and distribute. The order matters, as
-# several subdirectories depend on stuff in "common" or tools being built first
-SUBDIRS = include common clients conf data tools docs drivers \
-  lib scripts server tests
+# most targets are drivers, so make this the default
+LDADD = $(LDADD_DRIVERS_SERIAL)
+# Avoid per-target CFLAGS, because this will prevent re-use of object
+# files. In any case, CFLAGS are only -I options, so there is no harm,
+# but only add them if we really use the target.
+AM_CFLAGS = -I$(top_srcdir)/include
+if WITH_HAL
+  AM_CFLAGS += $(LIBHAL_CFLAGS)
+endif
+if WITH_USB
+  AM_CFLAGS += $(LIBUSB_CFLAGS)
+endif
+if WITH_SNMP
+  AM_CFLAGS += $(LIBNETSNMP_CFLAGS)
+endif
+if WITH_NEON
+  AM_CFLAGS += $(LIBNEON_CFLAGS)
+endif
+if WITH_LIBPOWERMAN
+  AM_CFLAGS += $(LIBPOWERMAN_CFLAGS)
+endif
+if WITH_IPMI
+  AM_CFLAGS += $(LIBIPMI_CFLAGS)
+endif
 
-# COPYING is included automatically.
-EXTRA_DIST = LICENSE-GPL2 LICENSE-GPL3 MAINTAINERS UPGRADING
+SERIAL_DRIVERLIST = bcmxcp belkin belkinunv bestfcom	\
+ bestfortress bestuferrups bestups pace dummy-ups etapro everups 	\
+ gamatronic genericups isbmex liebert liebert-esp2 masterguard metasys	\
+ oldmge-shut mge-utalk microdowell mge-shut oneac optiups powercom rhino 	\
+ safenet skel solis tripplite tripplitesu upscode2 victronups powerpanel \
+ blazer_ser clone clone-outlet ivtscd apcsmart apcsmart-old
+SNMP_DRIVERLIST = snmp-ups
+USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
+ blazer_usb richcomm_usb
+USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST)
+HAL_DRIVERLIST = hald-addon-usbhid-ups hald-addon-bcmxcp_usb \
+ hald-addon-tripplite_usb hald-addon-blazer_usb
+NEONXML_DRIVERLIST = netxml-ups
+MACOSX_DRIVERLIST = macosx-ups
+
+# distribute all drivers, even ones that are not built by default
+EXTRA_PROGRAMS = $(SERIAL_DRIVERLIST) $(SNMP_DRIVERLIST) $(USB_DRIVERLIST) $(NEONXML_DRIVERLIST) $(MACOSX_DRIVERLIST)
+
+# construct the list of drivers to build
+if SOME_DRIVERS
+ driverexec_PROGRAMS = $(DRIVER_BUILD_LIST)
+else
+ driverexec_PROGRAMS =
+if WITH_SERIAL
+  driverexec_PROGRAMS += $(SERIAL_DRIVERLIST)
+endif
+if WITH_SNMP
+  driverexec_PROGRAMS += $(SNMP_DRIVERLIST)
+endif
+if WITH_USB
+   driverexec_PROGRAMS += $(USB_LIBUSB_DRIVERLIST)
+endif
+if WITH_HAL
+   halexecdir = $(HAL_CALLOUTS_PATH)
+   halexec_PROGRAMS = $(HAL_DRIVERLIST)
+endif
+if WITH_NEON
+   driverexec_PROGRAMS += $(NEONXML_DRIVERLIST)
+endif
+if WITH_LIBPOWERMAN
+   driverexec_PROGRAMS += powerman-pdu
+endif
+if WITH_IPMI
+   driverexec_PROGRAMS += nut-ipmipsu
+endif
+if WITH_MACOSX
+   driverexec_PROGRAMS += $(MACOSX_DRIVERLIST)
+endif
+else
+   driverexec_PROGRAMS += skel
+endif
+
+# always build upsdrvctl
+driverexec_PROGRAMS += upsdrvctl
+
+# ==========================================================================
+# Driver build details
+
+# upsdrvctl: the all-singing all-dancing driver control program
+upsdrvctl_SOURCES = upsdrvctl.c
+upsdrvctl_LDADD = $(LDADD_COMMON)
+
+# serial drivers: all of them use standard LDADD and CFLAGS
+apcsmart_SOURCES = apcsmart.c apcsmart_tabs.c
+apcsmart_old_SOURCES = apcsmart-old.c
+bcmxcp_SOURCES = bcmxcp.c bcmxcp_ser.c
+bcmxcp_LDADD = $(LDADD) -lm
+belkin_SOURCES = belkin.c
+belkinunv_SOURCES = belkinunv.c
+bestfcom_SOURCES = bestfcom.c
+bestuferrups_SOURCES = bestuferrups.c
+bestups_SOURCES = bestups.c
+pace_SOURCES = pace.c
+blazer_ser_SOURCES = blazer.c blazer_ser.c
+blazer_ser_LDADD = $(LDADD) -lm
+etapro_SOURCES = etapro.c
+everups_SOURCES = everups.c
+gamatronic_SOURCES = gamatronic.c
+genericups_SOURCES = genericups.c
+isbmex_SOURCES = isbmex.c
+isbmex_LDADD = $(LDADD) -lm
+ivtscd_SOURCES = ivtscd.c
+liebert_SOURCES = liebert.c
+liebert_esp2_SOURCES = liebert-esp2.c
+masterguard_SOURCES = masterguard.c
+metasys_SOURCES = metasys.c
+oldmge_shut_SOURCES = mge-shut.c hidparser.c
+mge_utalk_SOURCES = mge-utalk.c
+microdowell_SOURCES = microdowell.c
+oneac_SOURCES = oneac.c
+optiups_SOURCES = optiups.c
+powercom_SOURCES = powercom.c
+powercom_LDADD = $(LDADD) -lm
+powerpanel_SOURCES = powerpanel.c powerp-bin.c powerp-txt.c
+powerpanel_LDADD = $(LDADD) -lm
+rhino_SOURCES = rhino.c
+rhino_LDADD = $(LDADD) -lm
+safenet_SOURCES = safenet.c
+solis_SOURCES = solis.c
+tripplite_SOURCES = tripplite.c
+tripplite_LDADD = $(LDADD) -lm
+tripplitesu_SOURCES = tripplitesu.c
+upscode2_SOURCES = upscode2.c
+upscode2_LDADD = $(LDADD) -lm
+victronups_SOURCES = victronups.c
+
+# non-serial drivers: these use custom LDADD and/or CFLAGS
+
+# dummy
+dummy_ups_SOURCES = dummy-ups.c
+dummy_ups_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients
+dummy_ups_LDADD = $(LDADD_DRIVERS) ../clients/libupsclient.la
+if WITH_SSL
+  dummy_ups_CFLAGS += $(LIBSSL_CFLAGS)
+  dummy_ups_LDADD += $(LIBSSL_LIBS)
+endif
+
+# Clone drivers
+clone_SOURCES = clone.c
+clone_outlet_SOURCES = clone-outlet.c
+
+# sample skeleton driver
+
+skel_SOURCES = skel.c
+skel_LDADD = $(LDADD_DRIVERS)
+
+# USB
+USBHID_UPS_SUBDRIVERS = apc-hid.c belkin-hid.c cps-hid.c explore-hid.c \
+ liebert-hid.c mge-hid.c powercom-hid.c tripplite-hid.c idowell-hid.c
+usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
+ usb-common.c $(USBHID_UPS_SUBDRIVERS)
+usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
+
+tripplite_usb_SOURCES = tripplite_usb.c libusb.c usb-common.c
+tripplite_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
+
+bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c usb-common.c
+bcmxcp_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
+
+blazer_usb_SOURCES = blazer.c blazer_usb.c libusb.c usb-common.c
+blazer_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
+
+richcomm_usb_SOURCES = richcomm_usb.c usb-common.c
+richcomm_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
+
+# HID-over-serial
+mge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c
+# per-target CFLAGS are necessary here
+mge_shut_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE
+mge_shut_LDADD = $(LDADD)
+
+# SNMP
+snmp_ups_SOURCES = snmp-ups.c apc-mib.c baytech-mib.c compaq-mib.c eaton-mib.c \
+ ietf-mib.c mge-mib.c netvision-mib.c powerware-mib.c raritan-pdu-mib.c \
+ bestpower-mib.c cyberpower-mib.c
+snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS)
+
+# HAL
+hald_addon_usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
+ $(USBHID_UPS_SUBDRIVERS)
+hald_addon_usbhid_ups_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS)
+
+hald_addon_tripplite_usb_SOURCES = tripplite_usb.c libusb.c
+hald_addon_tripplite_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS) -lm
+
+hald_addon_bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c
+hald_addon_bcmxcp_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS)
+
+hald_addon_blazer_usb_SOURCES = blazer.c blazer_usb.c libusb.c
+hald_addon_blazer_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS) -lm
+
+# NEON XML/HTTP
+netxml_ups_SOURCES = netxml-ups.c mge-xml.c
+netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LIBS)
+
+# Powerman
+powerman_pdu_SOURCES = powerman-pdu.c
+powerman_pdu_LDADD = $(LDADD) $(LIBPOWERMAN_LIBS)
+
+# IPMI PSU
+nut_ipmipsu_SOURCES = nut-ipmipsu.c
+if WITH_FREEIPMI
+  nut_ipmipsu_SOURCES += nut-libfreeipmi.c 
+endif
+nut_ipmipsu_LDADD = $(LDADD) $(LIBIPMI_LIBS)
+
+# Mac OS X metadriver
+macosx_ups_LDADD = $(LDADD_DRIVERS)
+macosx_ups_LDFLAGS = $(LDFLAGS) -framework IOKit -framework CoreFoundation
+macosx_ups_SOURCES = macosx-ups.c
 
 # ----------------------------------------------------------------------
-# flags to pass to ./configure when calling "make distcheck" and "make
-# distcheck-light". Try to check as many features as possible! Also
-# need to give hotplug-dir and udev-dir, so that staged install does
-# not fail.
+# List of header files. The purpose of this list is not dependency
+# tracking (which is automatic), but to ensure these files are
+# distributed by "make dist".
 
-DISTCHECK_FLAGS = --with-all --with-ssl --with-doc=auto
-DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-doc=auto
+dist_noinst_HEADERS = apc-mib.h apc-hid.h baytech-mib.h bcmxcp.h	\
+ bcmxcp_io.h belkin.h belkin-hid.h bestpower-mib.h blazer.h cps-hid.h dstate.h \
+ dstate-hal.h dummy-ups.h eaton-mib.h explore-hid.h gamatronic.h genericups.h	\
+ hidparser.h hidtypes.h ietf-mib.h libhid.h libshut.h libusb.h liebert-hid.h	\
+ main.h main-hal.h mge-hid.h mge-mib.h mge-shut.h mge-utalk.h		\
+ mge-xml.h microdowell.h netvision-mib.h netxml-ups.h nut-ipmi.h oneac.h		\
+ powercom.h powerpanel.h powerp-bin.h powerp-txt.h powerware-mib.h raritan-pdu-mib.h	\
+ safenet.h serial.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
+ upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
+ apcsmart.h apcsmart_tabs.h apcsmart-old.h cyberpower-mib.h
 
-DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
- --with-hotplug-dir='$${prefix}/etc/hotplug'		\
- --with-udev-dir='$${prefix}/etc/udev'
+# Define a dummy library so that Automake builds rules for the
+# corresponding object files.  This library is not actually built,
+EXTRA_LIBRARIES = libdummy.a
+libdummy_a_SOURCES = main.c dstate.c serial.c
 
-distcheck-light:
-	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_FLAGS)" distcheck
+# the nuthalmain library combines the code for main-hal.c and
+# dstate-hal.c. It is necessary for Automake-technical reasons,
+# because per-object CFLAGS can only be specified for libraries, not
+# for object files. This library is used during the build process,
+# and is not meant to be installed.
 
-# workaround the dist generated files that are also part of the distribution
-# Note that distcleancheck is disabled for now, while waiting for a proper
-# solution, that do not break older unix systems
-#distcleancheck_listfiles = \
-#	find . -type f -exec sh -c 'test -f $(srcdir)/{} || echo {}' ';'
-distcleancheck:
-	@:
+EXTRA_LIBRARIES += libnuthalmain.a
+libnuthalmain_a_SOURCES = main-hal.c dstate-hal.c usb-common.c
 
-# Automatically generate the ChangeLog from SVN logs:
-MAINTAINERCLEAN_FILES = ChangeLog
-# Force ChangeLog regeneration upon make dist (due to inexistant 'dummy-stamp'),
-# in case it has already been generated previously
-dummy-stamp:
-ChangeLog: tools/svn2cl.authors dummy-stamp
-	svn2cl --group-by-day --include-rev --authors=$< --reparagraph --revision 'HEAD:2332' --output=$@ || \
-		echo "svn2cl failed to generate the ChangeLog. See http://trac.networkupstools.org/projects/nut/timeline" > $@
-
-if HAVE_ASCIIDOC
-website:
-	cd docs;  $(MAKE) $(AM_MAKEFLAGS) website
-	cd docs/man;  $(MAKE) $(AM_MAKEFLAGS) html-man
-	cd tools;  $(MAKE) $(AM_MAKEFLAGS) website
-	cd docs/website;  $(MAKE) $(AM_MAKEFLAGS) website
-else !HAVE_ASCIIDOC
-website:
-	@echo "Not building website since 'asciidoc' was not found."
-endif !HAVE_ASCIIDOC
-
-# ----------------------------------------------------------------------
-# targets from old build system (pre-automake).
-# supported for a period of time for backward "compatibility".
-
-WARN="----------------------------------------------------------------------"
-
-build:
-	@echo $(WARN)
-	@echo "Warning: 'make build' is deprecated. Use 'make all' instead."
-	@echo $(WARN)
-	$(MAKE) $(AM_MAKEFLAGS) all
-install-bin:
-	@echo $(WARN)
-	@echo "Warning: 'make install-bin' is deprecated." 
-	@echo "Use 'make install-exec' instead for a similar effect."
-	@echo $(WARN)
-	cd common;  $(MAKE) $(AM_MAKEFLAGS) install
-	cd drivers; $(MAKE) $(AM_MAKEFLAGS) install
-	cd server;  $(MAKE) $(AM_MAKEFLAGS) install
-	cd clients; $(MAKE) $(AM_MAKEFLAGS) install
-install-man: install-data-recursive
-	@echo $(WARN)
-	@echo "Warning: 'make install-man' is deprecated."
-	@echo "Use 'cd man; make install' instead."
-	@echo $(WARN)
-	cd man; $(MAKE) $(AM_MAKEFLAGS) install
-install-conf:
-	@echo $(WARN)
-	@echo "Warning: 'make install-conf' is deprecated."
-	@echo "Use 'cd conf; make install' instead."
-	@echo $(WARN)
-	cd conf; $(MAKE) $(AM_MAKEFLAGS) install
-# The target install-data already has a standardized meaning under automake
-install-dirs:
-	@echo $(WARN)
-	@echo "Warning: 'make install-dirs' is deprecated."
-	@echo "Use 'make installdirs' instead."
-	@echo $(WARN)
-	make installdirs
-cgi build-cgi install-cgi install-cgi-dir install-cgi-bin \
-install-cgi-man install-cgi-conf install-cgi-html: 
-	@echo "Error: 'make $@' no longer exists."
-	@echo "Use './configure --with-cgi' instead."
-install-lib:
-	@echo "Error: 'make $@' no longer exists."
-	@echo "Use './configure --with-lib' instead."
-usb build-usb install-usb:
-	@echo "Error: 'make $@' no longer exists."
-	@echo "Use './configure --with-usb' instead."
-snmp build-snmp install-snmp install-snmp-mgr install-snmp-man: 
-	@echo "Error: 'make $@' no longer exists."
-	@echo "Use './configure --with-snmp' instead."
-setver:
-	@echo "Error: 'make setver' no longer exists."
-	@echo "Edit configure.in to set version number."
+MOSTLYCLEANFILES = libnuthalmain.a
