@@ -1,0 +1,13 @@
+
+# To add a user for your upsmon, use this example:
+
+
+	[jan]
+		password  = halloo
+		upsmon master
+		
+		
+		
+# or
+#		upsmon slave
+
